@@ -7,6 +7,7 @@ Reads, read-only and locally:
   - Antigravity            ~/.gemini/antigravity*/brain/**  (markdown artifacts + media)
   - git                    commits, diffstat
   - .buildinpublic/log/     entries written by agents via AGENTS.md
+  - captures the user approved today (capture.py), and screenshots still awaiting approval
 and writes a compact, redacted digest to .buildinpublic/daily/<date>/digest.md
 
 Session formats change between releases, so parsing is deliberately tolerant:
@@ -244,26 +245,36 @@ def git_info(repo, day):
     return log, diff
 
 
-def harvest_media(repo, day, dest, sessions):
-    """Copy screenshots produced that day by browser testing into the daily folder."""
-    candidates = []
-    for d in (".playwright-mcp", "test-results", "playwright-report", "screenshots", "cypress/screenshots",
-              ".buildinpublic/assets"):
+SCREENSHOT_DIRS = (".playwright-mcp", "test-results", "playwright-report", "screenshots", "cypress/screenshots")
+
+
+def find_candidates(repo, day, sessions):
+    """Screenshots agents and browser tests produced that day. They are only candidates:
+    nothing is used in a post until the user approves it (see capture.py)."""
+    found = []
+    for d in SCREENSHOT_DIRS:
         p = repo / d
         if p.is_dir():
-            candidates += [f for f in p.rglob("*") if f.suffix.lower() in MEDIA and modified_on(f, day)]
+            found += [f for f in p.rglob("*") if f.suffix.lower() in MEDIA and modified_on(f, day)]
     for s in sessions:
-        candidates += [Path(m) for m in s.get("media", [])]
-    dest.mkdir(parents=True, exist_ok=True)
-    copied = []
-    for f in candidates[:40]:
-        target = dest / f"{f.parent.name}-{f.name}"
-        try:
-            shutil.copy2(f, target)
-            copied.append(target.name)
-        except OSError:
-            pass
-    return copied
+        found += [Path(m) for m in s.get("media", [])]
+    return sorted(set(found))[:40]
+
+
+def read_manifest(out_dir):
+    """Today's captures.json, written by capture.py: approved captures and rejected screenshots."""
+    p = out_dir / "captures" / "captures.json"
+    try:
+        m = json.loads(p.read_text()) if p.exists() else {}
+    except ValueError:
+        m = {}
+    return {"captures": m.get("captures", []), "rejected": m.get("rejected", [])}
+
+
+def undecided(candidates, manifest):
+    """Candidates the user hasn't approved or rejected yet."""
+    decided = set(manifest["rejected"]) | {c["source"] for c in manifest["captures"] if c["kind"] == "screenshot"}
+    return [c for c in candidates if str(c) not in decided]
 
 
 def read_offlimits(repo):
@@ -279,7 +290,7 @@ def read_offlimits(repo):
 
 # ---------- output ----------
 
-def render(day, repo, sources, git_log, git_diff, agent_log, media, extra):
+def render(day, repo, sources, git_log, git_diff, agent_log, captures, candidates, extra):
     L = [f"# Digest {day} · {repo.name}", ""]
     total = sum(len(v) for v in sources.values())
     L.append(f"Sessions found: " + ", ".join(f"{k} {len(v)}" for k, v in sources.items()) + f" (total {total})")
@@ -309,7 +320,16 @@ def render(day, repo, sources, git_log, git_diff, agent_log, media, extra):
             L.append("")
     L += ["## Git commits", git_log or "_none_", "", "## Uncommitted changes", git_diff or "_none_", ""]
     L += ["## Agent log entries (.buildinpublic/log)", agent_log or "_none_", ""]
-    L += ["## Snapshots collected", ("\n".join(f"- snapshots/{m}" for m in media) or "_none_"), ""]
+    L.append("## Approved captures (use only these in posts)")
+    for c in captures:
+        files = ", ".join(f"captures/{f}" for f in c.get("files", {}).values())
+        L.append(f"- {c['id']} · {c.get('time', '')} · {c['kind']} · {redact(c.get('title', ''), extra)}"
+                 + (f" · note: {redact(c['note'], extra)}" if c.get("note") else "") + f" · {files}")
+    if not captures:
+        L.append("_none_")
+    L += ["", "## Screenshot candidates (not approved: ask the user before using any)"]
+    L += [f"- {c.relative_to(repo) if c.is_relative_to(repo) else c.name}" for c in candidates] or ["_none_"]
+    L.append("")
     return "\n".join(L)
 
 
@@ -342,10 +362,13 @@ def main():
     git_log, git_diff = git_info(repo, day)
     log_file = repo / ".buildinpublic" / "log" / f"{day}.md"
     agent_log = log_file.read_text() if log_file.exists() else ""
-    media = harvest_media(repo, day, out_dir / "snapshots", sources["Antigravity"])
+    manifest = read_manifest(out_dir)
+    captures = manifest["captures"]
+    candidates = undecided(find_candidates(repo, day, sources["Antigravity"]), manifest)
     extra = read_offlimits(repo)
 
-    (out_dir / "digest.md").write_text(render(day, repo, sources, git_log, git_diff, agent_log, media, extra))
+    (out_dir / "digest.md").write_text(render(day, repo, sources, git_log, git_diff, agent_log,
+                                              captures, candidates, extra))
     print(out_dir / "digest.md")
 
 

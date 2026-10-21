@@ -4,9 +4,9 @@
 
 ### Your personal build-in-public content strategist, living in your repo.
 
-It watches the work you already do with your coding agents,<br>
-connects it to what people are talking about this week,<br>
-and hands you a nightly brief with ready-to-post drafts.
+It logs what you build with your coding agents, captures the moments you approve,<br>
+finds the trends nearest to your project and today's work,<br>
+and sends you a daily gist with posts to choose from.
 
 [![tests](https://github.com/chetanya1998/build-in-public/actions/workflows/test.yml/badge.svg)](https://github.com/chetanya1998/build-in-public/actions/workflows/test.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
@@ -14,7 +14,7 @@ and hands you a nightly brief with ready-to-post drafts.
 ![Works with](https://img.shields.io/badge/works%20with-Claude%20Code%20·%20Codex%20·%20Antigravity-6E56CF)
 ![Never auto-posts](https://img.shields.io/badge/auto--posting-never-success)
 
-[**Try the demo**](#-try-it-in-one-minute) · [Install](#-install) · [How it works](#-how-it-works) · [Privacy](#-privacy) · [Roadmap](#-roadmap)
+[Install](#-install) · [How your day works](#-how-your-day-works) · [Captures](#-captures-only-with-your-ok) · [Daily gist](#-the-daily-gist) · [Privacy](#-privacy)
 
 </div>
 
@@ -23,52 +23,64 @@ and hands you a nightly brief with ready-to-post drafts.
 > **You ship something real almost every day, then post nothing.**
 > You forget what you did, or you can't see why anyone would care.
 
-Build In Public reads the sessions **Claude Code, Codex and Antigravity** already save on your machine, plus your git history and the screenshots your agents took while testing. It finds the story in your day, links it to this week's conversations, and writes the posts. Every night at 12:00 am, or whenever you ask.
+Build In Public lives in your project. While you code with **Claude Code, Codex or Antigravity**, it keeps a log of what you built and why. When something is worth showing, it asks before capturing your terminal or browser. At the time you choose, it searches the internet for the conversations closest to your project and that day's work, and sends you a gist with a list of suggested posts. You pick one, it writes the post with a real anecdote from your day, and you review it and post it yourself.
 
-**It never posts for you.** You review, edit and post.
+**It never posts for you.**
 
-## ✨ What you get each morning
+## 🌅 How your day works
 
-A `brief.md` like this one, from the [sample brief](skills/build-in-public/demo/sample-brief.md):
-
-> **Today in one line**
-> Fixed the bug that made invoices look wrong about money: due dates that moved a day depending on where you live.
->
-> **Post idea #1 · X thread** · *"Our tests passed because CI lives in UTC"*
-> A specific, painful bug every developer recognises, with a one-line root cause and a lesson they can apply today.
->
-> **Draft**
-> Our invoices showed the wrong due date to every customer west of London, and every test passed. …
-
-Each brief has six parts:
-
-| | Section | What's in it |
-|---|---|---|
-| 📌 | **Today in one line** | The headline of your day |
-| 🚢 | **What you shipped** | 3 to 6 bullets, each linked to its session, commit or log entry |
-| 📖 | **The story** | The struggle, the result, and where it moves your product |
-| 🔥 | **What people are talking about** | This week's discussions that really connect to your work |
-| 💡 | **Post ideas** | Ranked, each with a hook, platform, trend and screenshot to attach |
-| ✍️ | **Ready-to-post drafts** | 1 or 2 full drafts in your voice, saved to `posts/` |
-
-## 🚀 Try it in one minute
-
-No setup, no network calls, nothing outside a temp folder touched:
-
-```sh
-git clone https://github.com/chetanya1998/build-in-public.git
-cd build-in-public
-sh skills/build-in-public/scripts/nightly.sh --demo --show
+```mermaid
+flowchart LR
+    A["You code with<br>your agent"] --> B["Log<br>what, why, struggle"]
+    A --> C{"Worth showing?"}
+    C -->|you say yes| D["Capture<br>terminal or browser"]
+    C -->|skip| A
+    B --> E["At your time:<br>digest + web trends"]
+    D --> E
+    E --> F["Gist: notification<br>+ email"]
+    F --> G["You pick a post"]
+    G --> H["Draft, you review"]
+    H --> I((You post))
 ```
 
-It builds a fictional project with a git history and sample Claude Code, Codex and Antigravity sessions, runs the real collector on it, and shows you:
+| When | What happens |
+|---|---|
+| **While you code** | After each meaningful task, your agent adds a short entry to today's log: what, why, how, the struggle and the result, with the exact anecdote (the error, the wrong guess, the fix). |
+| **When something's worth showing** | Tests going green after a fight, a benchmark, a new screen in a Playwright test: your agent asks *"Capture this for today's story? 1) terminal output 2) browser screenshot 3) skip"*. Nothing is captured without a yes. |
+| **At the time you chose** | It reads the day's agent sessions, git history, log and approved captures, searches the web for the trends nearest to your project and today's work, and writes the brief. |
+| **Then** | You get a desktop notification and an email with the gist: the day in one line, what you shipped, and **5 to 7 suggested posts**. |
+| **When you're ready** | Say *"review my posts"* or *"write post 2"*. Your agent drafts it for your platform, you revise and approve it, and you post it yourself. |
 
-- **`digest.md`**: what the skill actually pulled out of those sessions. Watch it redact an email, a token and an off-limits client name.
-- **`brief.md`**: a sample brief for that same day, written by hand to show the format. Your real brief is written by your own agent.
+## 📸 Captures, only with your OK
+
+<div align="center">
+<img src="docs/terminal-capture.png" alt="A terminal capture rendered as a clean terminal window image" width="640">
+</div>
+
+| Capture | What's saved |
+|---|---|
+| **Terminal** | The command's output, redacted, as text for the story and as a terminal-window image like the one above for the post. It can run the command or use output you already have. |
+| **Browser** | A screenshot of a page in your running app, on desktop and optionally mobile, with your local Playwright. |
+| **Agent screenshots** | Screenshots your agents took during browser tests (Playwright MCP, test reports, Antigravity) are only *candidates*. You approve or reject each one. |
+
+Posts only ever use approved captures. Turn capturing off with `"capture": "off"` in `.buildinpublic/config.json`.
+
+## 📬 The daily gist
+
+At the time you set (`brief_time`, for example 19:00), you get:
+
+- **A desktop notification** with the day's headline.
+- **An email** to your own address with the day in one line, what you shipped and the numbered list of suggested posts. The full brief is attached.
+
+Each suggested post has a title, platform, angle and hook line, the anecdote it uses, the trend it rides (with a link, or "no trend" when nothing truly fits), the capture to attach, and why it should work.
+
+**The trends come from your project and your day.** Searches are built from three places: today's log entries and commits, the topics you gave during setup, and your stack (read from `package.json`, `requirements.txt`, `pyproject.toml`, `go.mod`, `Cargo.toml` or `Gemfile`). The script checks Hacker News, Reddit, GitHub and dev.to. Then your agent searches the web for what people are discussing on X, LinkedIn and in the news this week. A strong story with no trend beats a forced tie-in.
 
 ## 📦 Install
 
 ```sh
+git clone https://github.com/chetanya1998/build-in-public.git
+cd build-in-public
 sh install.sh              # Claude Code, Codex and Antigravity, for your user
 sh install.sh --project    # or just the current project
 sh install.sh --only codex # or a single agent
@@ -80,38 +92,54 @@ sh install.sh --only codex # or a single agent
 | Codex | `~/.agents/skills/` | `.agents/skills/` |
 | Antigravity | `~/.gemini/config/skills/` | `.agents/skills/` |
 
-**Requirements:** Python 3.9+ only. For app screenshots, add `pip install playwright && playwright install chromium`.
+**Requirements:** Python 3.9+. For capture images: `pip install playwright && playwright install chromium`.
 
-## 🏁 Quick start
+## 🏁 Set up your project
 
-1. Open your project in your agent and say **"set up build in public"**.
-2. Build as usual.
-3. At 12:00 am you get a notification that `.buildinpublic/daily/<date>/brief.md` is ready. Or ask for **"build in public brief"** any time.
+Open your project in your agent and say **"set up build in public"**. It asks a few short questions:
 
-## 🧭 What it does
+1. What you're building, who it's for, your voice, and what's off-limits.
+2. **When you want the daily gist.**
+3. **Where to email it.** For Gmail, use `smtp.gmail.com` with an [app password](https://myaccount.google.com/apppasswords). Your agent never asks for the password. You add it to your Keychain yourself:
+   ```sh
+   security add-generic-password -s buildinpublic-smtp -a you@gmail.com -w
+   ```
+4. Your app's local URL, for browser captures.
 
-| Mode | Say this | What happens |
-|---|---|---|
-| ⚙️ **Setup** | "set up build in public" | Asks 5 short questions (product, audience, problem, voice, off-limits) and picks trend topics. Adds a logging rule to `AGENTS.md`, `GEMINI.md` and `CLAUDE.md`, and can install a git hook and schedule the nightly brief. |
-| 📝 **Capture** | "log this", or automatically after a task | Adds a short entry to today's log (what, why, how, struggle, result) and tags story-worthy moments like `#war-story`, `#metric` and `#milestone`. |
-| 🌙 **Daily brief** | runs at 12:00 am, or "build in public brief" | Reads the day's sessions, commits and screenshots, scans trends, and writes `brief.md`. |
-| ✍️ **Create** | "what should I post?", "weekly recap", "write a thread" | Drafts for X, Threads, LinkedIn, Reddit, dev.to or a short video, in your voice, and keeps your story consistent over time. |
+Then it adds the logging and capture rule to `AGENTS.md`, `CLAUDE.md` and `GEMINI.md`, and schedules the gist. Build as usual from there.
 
-## ⚡ How it works
+## 💬 Things to say to your agent
 
-```mermaid
-flowchart LR
-    CC[Claude Code] --> D
-    CX[Codex] --> D
-    AG[Antigravity] --> D
-    G[git + hook] --> D
-    S[Browser-test<br>screenshots] --> D
-    D["digest.md<br>(redacted)"] --> A{{Your agent}}
-    T["trends.md<br>HN · Reddit · GitHub · dev.to"] --> A
-    N["narrative.md<br>product · audience · voice"] --> A
-    A --> B["brief.md<br>shipped · story · ideas · drafts"]
-    B --> Y((You post))
+| Say | What happens |
+|---|---|
+| "set up build in public" | One-time setup in this project |
+| "log this" | Adds today's log entry now (your agent also does this after tasks) |
+| "capture this" | Offers a terminal or browser capture, and asks first |
+| "build in public brief" | Writes today's brief and the list of suggested posts now |
+| "review my posts" | Shows the suggested posts so you can pick one |
+| "write post 2 for LinkedIn" | Drafts it; you revise and approve it |
+| "I posted it" | Marks it posted, with the link, and adds it to your story so far |
+| "weekly recap" | Offers recap angles from the week's briefs |
+
+<details>
+<summary><b>Run the scripts by hand</b></summary>
+
+<br>
+
+```sh
+SKILL=~/.claude/skills/build-in-public
+python3 $SKILL/scripts/capture.py terminal --cmd "npm test"   # asks y/N, then captures
+python3 $SKILL/scripts/capture.py browser --url http://localhost:3000 --mobile
+python3 $SKILL/scripts/capture.py candidates                  # agent screenshots awaiting a yes or no
+python3 $SKILL/scripts/capture.py approve <id>                # or: reject <id>
+python3 $SKILL/scripts/collect.py --inspect                   # which sessions were found for this repo?
+sh $SKILL/scripts/nightly.sh                                  # the full daily run, now
+python3 $SKILL/scripts/notify.py --test                       # send a test email
+sh $SKILL/scripts/schedule.sh --time 19:00                    # change the gist time (--remove to stop)
+python3 $SKILL/scripts/doctor.py                              # check the setup
 ```
+
+</details>
 
 <details>
 <summary><b>Where the data comes from</b></summary>
@@ -122,10 +150,10 @@ flowchart LR
 |---|---|---|
 | Claude Code | `~/.claude/projects/<repo-path>/*.jsonl` | prompts, agent replies, edited files, commands |
 | Codex | `~/.codex/sessions/YYYY/MM/DD/*.jsonl[.zst]` | only sessions whose `cwd` is this repo; `.zst` needs `zstd` |
-| Antigravity | `~/.gemini/antigravity*/brain/*/` | task, plan and walkthrough artifacts, browser screenshots and recordings |
+| Antigravity | `~/.gemini/antigravity*/brain/*/` | task, plan and walkthrough artifacts; its screenshots become candidates |
 | git | `git log`, `git diff --stat` | plus `commits.log` from the optional hook |
-| Screenshots | `.playwright-mcp/`, `test-results/`, `playwright-report/`, `screenshots/` | plus `snapshot_urls` captured with Playwright |
-| Trends | Hacker News, Reddit, GitHub, dev.to (no API keys) | your agent adds its own web search for X, LinkedIn and news |
+| Captures | `.buildinpublic/daily/<date>/captures/` | only what you approved |
+| Trends | Hacker News, Reddit, GitHub, dev.to (no API keys) + your agent's web search | built from today's work, your topics and your stack |
 
 Agent session formats change between releases, so the parser is deliberately tolerant. If a source shows 0 sessions, run `doctor.py` or `collect.py --inspect` and open an issue.
 
@@ -139,63 +167,50 @@ Agent session formats change between releases, so the parser is deliberately tol
 ```
 .buildinpublic/
 ├── narrative.md        product, audience, voice, off-limits, story so far
-├── config.json         topics, platforms, brief time, agent, snapshot URLs
+├── config.json         topics, platforms, gist time, agent, app URL, capture, notify, email
 ├── log/                entries your agents write during the day
 ├── commits.log         from the optional git hook
 ├── daily/2026-10-22/
-│   ├── digest.md       sessions + git + log, redacted
-│   ├── trends.md       this week's discussions per topic
-│   ├── snapshots/      app and browser-test screenshots
-│   ├── brief.md        your daily brief
+│   ├── digest.md       sessions + git + log + captures, redacted
+│   ├── trends.md       discussions near today's work, your project and your stack
+│   ├── captures/       approved terminal and browser captures + captures.json
+│   ├── brief.md        the gist and the suggested posts
 │   └── nightly.log
-├── posts/              drafts, never auto-published
-└── assets/             screenshots and clips you saved
+├── posts/              drafts you chose: suggested → approved → posted
+└── assets/             anything else you saved for posts
 ```
 
-</details>
-
-<details>
-<summary><b>Run the pipeline by hand</b></summary>
-
-<br>
-
-```sh
-SKILL=~/.claude/skills/build-in-public
-python3 $SKILL/scripts/collect.py --inspect   # which sessions were found for this repo?
-sh $SKILL/scripts/nightly.sh                  # full pipeline for today
-sh $SKILL/scripts/schedule.sh --time 23:30    # change the schedule (--remove to stop)
-python3 $SKILL/scripts/doctor.py              # check the setup
-```
+Email settings live outside the repo, in `~/.config/buildinpublic/email.json`, and are shared by all your projects.
 
 </details>
 
 ## 🩺 Troubleshooting
 
-Something not working? Run this from your project:
-
 ```sh
 python3 ~/.claude/skills/build-in-public/scripts/doctor.py
 ```
 
-It checks your tools (Python, git, zstd, Playwright, your agent's CLI), the `.buildinpublic/` setup, the logging rules, the git hook, the nightly schedule, which sessions it can find for the last 7 days, and errors from the last nightly run. It's read-only and makes no network calls. Paste its output into an [issue](https://github.com/chetanya1998/build-in-public/issues) if you're stuck.
+It checks your tools (Python, git, zstd, Playwright, your agent's CLI), the `.buildinpublic/` setup, the logging rules, the git hook, gist delivery (notification, email settings, whether a password exists, without reading it), the schedule, which sessions it can find for the last 7 days, and errors from the last run. It's read-only and makes no network calls. Paste its output into an [issue](https://github.com/chetanya1998/build-in-public/issues) if you're stuck.
 
 ## 🔒 Privacy
 
 | | |
 |---|---|
-| 🏠 **Runs locally** | Session files are read on your machine and never uploaded by these scripts. The only network calls are the public trend searches, which send your topic keywords. |
-| 🧹 **Secrets redacted** | API keys, tokens, JWTs, private keys and emails are removed before anything is written, plus every term you list under **Off-limits** in `narrative.md`. |
+| 🏠 **Runs locally** | Session files are read on your machine and never uploaded by these scripts. Network calls: the trend searches (keywords only) and the gist email, sent to you through your own mail server. |
+| ✋ **Captures need a yes** | Nothing from your terminal or browser is saved without your approval, and agent screenshots stay candidates until you approve them. |
+| 🧹 **Secrets redacted** | API keys, tokens, JWTs, private keys and emails are removed from digests and captures, plus every term you list under **Off-limits**. |
+| 🔑 **No stored passwords** | Your SMTP password stays in your Keychain (or a `chmod 600` file on Linux). Your agent never asks for it. |
 | 📁 **This repo only** | Sessions from other projects are skipped. |
-| 🙈 **Gitignored by default** | Setup asks whether you want to commit any of it. |
 | 🤖 **Your agent, your model** | When your agent writes the brief, the redacted digest goes to that agent's model, like any other prompt. |
-| 🚫 **No recording** | No screen capture, no keystroke logging. |
+| 🚫 **Never posts** | It drafts. You post. |
 
 ## 🚧 Roadmap
 
-- [x] **Phase 1: Easy to try.** Demo mode, `doctor.py`, tests on sample sessions, CI.
-- [ ] **Phase 2: Learns what works.** Log what you posted and how it did, so ideas are ranked by what gets a response from *your* audience. Voice training from your best past posts.
-- [ ] **Phase 3: Better posts.** Before/after image pairs, metric cards, GIFs from browser-test recordings, automatic weekly recaps.
-- [ ] **Phase 4: More reach.** Cursor, Windsurf, Gemini CLI and Aider. Export to Typefully or Buffer (you still approve every post). Team mode.
+- [x] **Easy to trust.** `doctor.py`, tests on sample sessions for every agent, CI on macOS and Linux.
+- [x] **Your day, your approval.** Captures only with your OK, trends from your stack and today's work, the scheduled gist by notification and email, and choosing what to post.
+- [ ] **Learns what works.** Log how each post did, so suggestions are ranked by what gets a response from *your* audience. Voice training from your best past posts.
+- [ ] **Better visuals.** Before/after pairs, metric cards, GIFs from browser-test recordings.
+- [ ] **More reach.** Cursor, Windsurf, Gemini CLI and Aider. Export to Typefully or Buffer (you still approve every post).
 
 ## 🤝 Contributing
 

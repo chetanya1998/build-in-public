@@ -1,4 +1,4 @@
-"""Tests for collect.py, run against the demo's sample session files.
+"""Tests for collect.py and doctor.py, run against sample session files.
 
     python3 -m unittest discover tests
 
@@ -10,25 +10,42 @@ from pathlib import Path
 
 SCRIPTS = Path(__file__).resolve().parent.parent / "skills" / "build-in-public" / "scripts"
 sys.path.insert(0, str(SCRIPTS))
-import collect, demo  # noqa: E402
+import collect  # noqa: E402
+import fixtures_setup as fx  # noqa: E402
 
 DAY = dt.date(2026, 10, 21)
 
 
 class Fixture(unittest.TestCase):
+    day = DAY
+
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         root = Path(self.tmp.name).resolve()
         # A long path on purpose: file names must survive the repo prefix being stripped.
         self.repo = root / ("projects-" + "x" * 120) / "tinyinvoice"
         self.home = root / "home"
-        demo.build_repo(self.repo, DAY)
-        demo.build_fake_home(self.home, self.repo, DAY)
+        fx.build_repo(self.repo, self.day)
+        fx.build_fake_home(self.home, self.repo, self.day)
+        self.env = dict(os.environ, HOME=str(self.home))
+        self.env.pop("BIP_SMTP_PASSWORD", None)
+        for cache in ("Library/Caches/ms-playwright", ".cache/ms-playwright"):  # browsers live in the real home
+            if "PLAYWRIGHT_BROWSERS_PATH" not in self.env and (Path.home() / cache).is_dir():
+                self.env["PLAYWRIGHT_BROWSERS_PATH"] = str(Path.home() / cache)
         self._home, collect.HOME = collect.HOME, self.home
 
     def tearDown(self):
         collect.HOME = self._home
         self.tmp.cleanup()
+
+    def run_script(self, name, *args, **kw):
+        return subprocess.run([sys.executable, str(SCRIPTS / name), "--repo", str(self.repo), *args],
+                              env=self.env, capture_output=True, text=True, stdin=subprocess.DEVNULL, **kw)
+
+    def digest(self):
+        r = self.run_script("collect.py", "--date", str(self.day))
+        self.assertEqual(r.returncode, 0, r.stderr)
+        return (self.repo / ".buildinpublic" / "daily" / str(self.day) / "digest.md").read_text()
 
 
 class SourcesTest(Fixture):
@@ -81,50 +98,44 @@ class RedactTest(unittest.TestCase):
 
 class DigestTest(Fixture):
     def test_full_digest(self):
-        r = subprocess.run([sys.executable, str(SCRIPTS / "collect.py"), "--repo", str(self.repo),
-                            "--date", str(DAY)], env=dict(os.environ, HOME=str(self.home)),
-                           capture_output=True, text=True)
-        self.assertEqual(r.returncode, 0, r.stderr)
-        out = self.repo / ".buildinpublic" / "daily" / str(DAY)
-        digest = (out / "digest.md").read_text()
-
+        digest = self.digest()
         self.assertIn("Sessions found: Claude Code 1, Codex 1, Antigravity 1 (total 3)", digest)
         [edited] = [l for l in digest.splitlines() if l.startswith("**Files edited:**")]
         self.assertIn("migrations/0007_due_date_as_date.sql", edited)  # full name, repo path stripped
         self.assertNotIn(str(self.repo), edited)
-        self.assertNotIn(str(self.repo), digest.split("## Antigravity")[0])
         for commit in ("fix: due dates shift a day", "feat: retry Stripe webhooks", "feat: two-step onboarding"):
             self.assertIn(commit, digest)
         self.assertIn("#war-story", digest)  # agent log entries included
-        self.assertTrue((out / "snapshots" / "demo-conv-onboarding-after.png").exists())
-
         for leaked in ("maya@", "demo_tok_", "Acme", "a-different-project"):
             self.assertNotIn(leaked, digest)
 
-
-class DemoTest(unittest.TestCase):
-    def test_demo_runs(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            r = subprocess.run([sys.executable, str(SCRIPTS / "demo.py"), "--out", tmp, "--date", str(DAY)],
-                               capture_output=True, text=True)
-            self.assertEqual(r.returncode, 0, r.stderr)
-            out = Path(tmp) / "tinyinvoice" / ".buildinpublic" / "daily" / str(DAY)
-            self.assertIn("Antigravity 1", (out / "digest.md").read_text())
-            brief = (out / "brief.md").read_text()
-            self.assertIn(f"brief · {DAY}", brief)
-            self.assertNotIn("{{", brief)
+    def test_agent_screenshots_are_only_candidates(self):
+        digest = self.digest()
+        approved = digest.split("## Approved captures")[1].split("## Screenshot candidates")[0]
+        candidates = digest.split("## Screenshot candidates")[1]
+        self.assertIn("_none_", approved)
+        self.assertIn("onboarding-after.png", candidates)
+        self.assertFalse((self.repo / ".buildinpublic" / "daily" / str(DAY) / "snapshots").exists())
 
 
-class DoctorTest(unittest.TestCase):
-    def test_doctor_on_demo(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            subprocess.run([sys.executable, str(SCRIPTS / "demo.py"), "--out", tmp], check=True, capture_output=True)
-            r = subprocess.run([sys.executable, str(SCRIPTS / "doctor.py"), "--repo", str(Path(tmp) / "tinyinvoice")],
-                               env=dict(os.environ, HOME=str(Path(tmp) / "home")), capture_output=True, text=True)
-            self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
-            for line in ("✓ Claude Code: 1 session(s)", "✓ Codex: 1 session(s)", "✓ Antigravity: 1 session(s)",
-                         "✓ narrative.md: filled in", "0 problem(s)"):
-                self.assertIn(line, r.stdout)
+class DoctorTest(Fixture):
+    day = (dt.datetime.now() - dt.timedelta(hours=4)).date()  # doctor looks at the last 7 days
+
+    def test_doctor_on_fixture(self):
+        r = self.run_script("doctor.py")
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        for line in ("✓ Claude Code: 1 session(s)", "✓ Codex: 1 session(s)", "✓ Antigravity: 1 session(s)",
+                     "✓ narrative.md: filled in", "! Email: not set up", "0 problem(s)"):
+            self.assertIn(line, r.stdout)
+
+    def test_doctor_email_without_password(self):
+        cfg = self.home / ".config" / "buildinpublic"
+        cfg.mkdir(parents=True)
+        (cfg / "email.json").write_text('{"to": "a@b.example", "smtp_host": "smtp.b.example", '
+                                        '"smtp_user": "bip-test-nobody@b.example"}')
+        r = self.run_script("doctor.py")
+        self.assertEqual(r.returncode, 1)
+        self.assertIn("✗ Email: no SMTP password", r.stdout)
 
     def test_doctor_flags_missing_setup(self):
         with tempfile.TemporaryDirectory() as tmp:

@@ -16,4 +16,14 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - run: python -m unittest discover tests -v
-      - run: sh skills/build-in-public/scripts/nightly.sh --demo
+
+  captures:
+    # Same tests with Playwright installed, so capture images are really rendered.
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+      - run: pip install playwright && playwright install --with-deps chromium
+      - run: python -m unittest discover tests -v

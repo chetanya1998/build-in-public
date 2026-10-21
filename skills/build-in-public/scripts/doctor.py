@@ -2,14 +2,15 @@
 """Build In Public: check that everything the skill needs is in place for this repo.
 
 Checks tools (Python, git, zstd, Playwright, agent CLI), the .buildinpublic/ setup,
-agent logging rules, the git hook, the nightly schedule, which agent sessions can be
-found for the last 7 days, and the last nightly run. Read-only, no network calls.
+agent logging rules, the git hook, gist delivery (notification, email settings and
+password present, never read), the schedule, which agent sessions can be found for the
+last 7 days, and the last nightly run. Read-only, no network calls.
 Paste the output into a GitHub issue when something doesn't work.
 
 Usage: python3 doctor.py [--repo PATH]
 Exit code 1 if something is broken (✗); warnings (!) don't fail.
 """
-import argparse, datetime as dt, json, platform, re, shutil, subprocess, sys
+import argparse, datetime as dt, json, os, platform, re, shutil, subprocess, sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -56,12 +57,13 @@ def check_tools(cfg):
     else:
         ok("zstd", "not installed, not needed yet")
 
-    if cfg.get("snapshot_urls"):
+    if cfg.get("capture", "ask") != "off":
         try:
             import playwright  # noqa: F401
-            ok("Playwright", "app screenshots enabled")
+            ok("Playwright", "terminal and browser captures can make images")
         except ImportError:
-            warn("Playwright", "snapshot_urls is set but Playwright is missing: pip install playwright && playwright install chromium")
+            warn("Playwright", "missing, so captures save text only and browser captures can't run: "
+                               "pip install playwright && playwright install chromium")
 
     agent, custom = cfg.get("agent", ""), cfg.get("agent_command", "")
     if custom:
@@ -142,6 +144,40 @@ def check_setup(repo):
     return cfg
 
 
+def check_email(cfg):
+    section("Daily gist delivery")
+    if cfg.get("notify", True) in (False, "off"):
+        warn("Desktop notification", "turned off in config.json")
+    else:
+        ok("Desktop notification", "on")
+    if cfg.get("email", True) in (False, "off"):
+        ok("Email", "turned off in config.json")
+        return
+    path = Path.home() / ".config" / "buildinpublic" / "email.json"
+    if not path.exists():
+        warn("Email", f"not set up: create {str(path).replace(str(Path.home()), '~')} (see notify.py --help)")
+        return
+    try:
+        email = json.loads(path.read_text())
+    except ValueError as e:
+        fail("Email", f"email.json is invalid JSON: {e}")
+        return
+    missing = [k for k in ("to", "smtp_host", "smtp_user") if not email.get(k)]
+    if missing:
+        fail("Email", "email.json is missing " + ", ".join(missing))
+        return
+    user = email["smtp_user"]
+    pw_file = Path.home() / ".config" / "buildinpublic" / "smtp-password"
+    has_pw = bool(os.environ.get("BIP_SMTP_PASSWORD")) or pw_file.exists() or (
+        platform.system() == "Darwin" and subprocess.run(
+            ["security", "find-generic-password", "-s", "buildinpublic-smtp", "-a", user],
+            capture_output=True).returncode == 0)
+    if has_pw:
+        ok("Email", f"to {email['to']} via {email['smtp_host']} (send a test: notify.py --test)")
+    else:
+        fail("Email", f"no SMTP password: security add-generic-password -s buildinpublic-smtp -a {user} -w")
+
+
 def check_schedule(repo):
     section("Nightly schedule")
     job = "ai.buildinpublic." + re.sub(r"[^A-Za-z0-9-]", "", repo.name)
@@ -216,6 +252,7 @@ def main():
     check_install()
     cfg = check_setup(repo)
     check_tools(cfg)
+    check_email(cfg)
     check_schedule(repo)
     check_sessions(repo, today)
     check_last_run(repo)

@@ -1,0 +1,12 @@
+{
+  "topics": ["freelance invoicing", "getting paid on time"],
+  "platforms": ["x", "linkedin"],
+  "brief_time": "19:00",
+  "agent": "none",
+  "agent_command": "",
+  "app_url": "http://localhost:3000",
+  "capture": "ask",
+  "trend_sources": ["Hacker News", "Reddit", "GitHub (new repos)", "dev.to"],
+  "notify": false,
+  "email": true
+}
