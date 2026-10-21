@@ -3,13 +3,16 @@ on: [push, pull_request]
 jobs:
   test:
     strategy:
+      fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        # Ubuntu pinned to 24.04: ubuntu-latest (26.04) has no Python 3.9 builds,
+        # and 3.9 is what macOS ships as /usr/bin/python3.
+        os: [ubuntu-24.04, macos-latest]
         python: ["3.9", "3.13"]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python }}
       - run: python -m unittest discover tests -v
