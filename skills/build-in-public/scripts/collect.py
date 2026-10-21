@@ -142,7 +142,7 @@ def find_tools(obj, out, depth=0):
             target = args.get("file_path") or args.get("path") or args.get("command") or args.get("cmd") or ""
             if isinstance(target, list):
                 target = " ".join(map(str, target))
-        out.append((name, str(target)[:160]))
+        out.append((name, str(target)[:1000]))  # trimmed for display in render(), after the repo path is stripped
     for v in obj.values():
         find_tools(v, out, depth + 1)
 
@@ -303,7 +303,7 @@ def render(day, repo, sources, git_log, git_diff, agent_log, media, extra):
                 cmds = [t for n, t in s["tools"] if n.lower() in ("bash", "shell", "exec_command", "local_shell") and t]
                 L.append(f"**Tool calls:** {len(s['tools'])}")
                 if edited:
-                    L.append("**Files edited:** " + ", ".join(redact(e.replace(str(repo) + "/", ""), extra) for e in edited[:25]))
+                    L.append("**Files edited:** " + ", ".join(redact(e.replace(str(repo) + "/", "")[:160], extra) for e in edited[:25]))
                 if cmds:
                     L.append("**Commands (sample):** " + " · ".join(clip(redact(c, extra), 80) for c in cmds[-8:]))
             L.append("")

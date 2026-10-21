@@ -43,6 +43,19 @@ sh install.sh --only codex # or a single agent
 
 The scripts need only **Python 3**. App screenshots additionally need `pip install playwright && playwright install chromium`.
 
+## Try it first (1 minute, no setup)
+
+```sh
+sh skills/build-in-public/scripts/nightly.sh --demo --show
+```
+
+This builds a throwaway fictional project in a temp folder, with a git history and sample Claude Code, Codex and Antigravity sessions. It runs the real collector on it, then shows the two outputs:
+
+- `digest.md`: what the skill actually pulled out of those sessions, with an email, a token and an off-limits client name redacted.
+- `brief.md`: a sample brief for that same day, written by hand to show the format, with the shipped work, the story, ranked post ideas and ready-to-post drafts. Your own brief is written by your agent.
+
+Nothing outside the temp folder is read or changed, and there are no network calls. [See the sample brief](skills/build-in-public/demo/sample-brief.md).
+
 ## Quick start
 
 1. Open your project in your agent and say **"set up build in public"**.
@@ -56,7 +69,12 @@ SKILL=~/.claude/skills/build-in-public
 python3 $SKILL/scripts/collect.py --inspect   # what sessions were found for this repo?
 sh $SKILL/scripts/nightly.sh                  # full pipeline for today
 sh $SKILL/scripts/schedule.sh --time 23:30    # change the schedule (--remove to stop)
+python3 $SKILL/scripts/doctor.py              # check the setup if something seems off
 ```
+
+## Troubleshooting
+
+Run `python3 $SKILL/scripts/doctor.py` from your project. It checks the tools (Python, git, zstd, Playwright, your agent's CLI), the `.buildinpublic/` setup, the logging rules, the git hook, the nightly schedule, which agent sessions it can find for the last 7 days, and errors from the last nightly run. It's read-only and makes no network calls. Paste its output into an issue if you're stuck.
 
 ## Where the data comes from
 
@@ -69,7 +87,7 @@ sh $SKILL/scripts/schedule.sh --time 23:30    # change the schedule (--remove to
 | Screenshots | `.playwright-mcp/`, `test-results/`, `playwright-report/`, `screenshots/` | plus `snapshot_urls` captured with Playwright |
 | Trends | Hacker News, Reddit, GitHub, dev.to (no API keys) | the agent adds its own web search for X, LinkedIn and news |
 
-Agent session formats change between releases, so the parser is deliberately tolerant. If a source shows 0 sessions, run `collect.py --inspect` and open an issue.
+Agent session formats change between releases, so the parser is deliberately tolerant. If a source shows 0 sessions, run `doctor.py` or `collect.py --inspect` and open an issue.
 
 ## What gets created in your project
 

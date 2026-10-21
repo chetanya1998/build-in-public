@@ -90,7 +90,7 @@ Use this mode when the nightly run fires, or when the user says "build in public
    python3 <skill-dir>/scripts/trends.py       # topic discussions     -> trends.md
    python3 <skill-dir>/scripts/snapshot.py     # app screenshots       -> snapshots/  (optional)
    ```
-   If a source finds nothing, check with `collect.py --inspect`. Session file formats change between agent releases.
+   If a source finds nothing, check with `collect.py --inspect`, or run `scripts/doctor.py` to check the whole setup. Session file formats change between agent releases.
 2. **Understand the day.** Read `narrative.md`, `digest.md`, `trends.md` and the list of `snapshots/`. Work out what was really accomplished, as opposed to just touched. Spot the struggle, the decision and the result. Group several sessions on the same feature into one story.
 3. **Widen the trend scan.** If you have web search, run 2 or 3 searches on the day's actual themes, not only the configured topics. Look at what builders on X, LinkedIn and Reddit and the news are discussing this week. `trends.md` only covers HN, Reddit, GitHub and dev.to. Note any unreachable sources listed at the bottom.
 4. **Connect, honestly.** For each candidate story, look for a trend it really relates to: the day's work proves a point, contradicts a popular take, solves a problem people are complaining about, or reflects a shift everyone is noticing. Don't force a link. A strong story with no trend beats a forced tie-in.

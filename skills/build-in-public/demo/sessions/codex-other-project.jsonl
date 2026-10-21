@@ -1,0 +1,2 @@
+{"timestamp":"{{DAY}}T16:00:00Z","type":"session_meta","payload":{"id":"demo-codex-2","cwd":"/Users/someone/a-different-project","originator":"codex_cli"}}
+{"timestamp":"{{DAY}}T16:00:05Z","type":"response_item","payload":{"type":"message","role":"user","content":[{"type":"input_text","text":"This session belongs to another repo and must never show up in the digest."}]}}

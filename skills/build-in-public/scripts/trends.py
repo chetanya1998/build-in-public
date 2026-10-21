@@ -12,7 +12,7 @@ import argparse, datetime as dt, json, subprocess, time, urllib.parse, urllib.re
 from pathlib import Path
 
 ERRORS = []
-UA = {"User-Agent": "build-in-public/0.2 (+https://github.com/build-in-public)"}
+UA = {"User-Agent": "build-in-public/0.2 (+https://github.com/chetanya1998/build-in-public)"}
 
 
 def get(url):

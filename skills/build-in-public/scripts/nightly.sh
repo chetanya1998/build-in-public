@@ -2,6 +2,8 @@
 # Build In Public: end-of-day pipeline for one repo.
 #   collect sessions + git -> trends -> app snapshots -> agent writes the brief -> notify
 # Usage: sh nightly.sh [/path/to/repo] [YYYY-MM-DD]
+#        sh nightly.sh --demo [--show]   # try it on a fictional project first (see demo.py)
+if [ "$1" = "--demo" ]; then shift; exec python3 "$(dirname "$0")/demo.py" "$@"; fi
 REPO="${1:-$(pwd)}"
 SKILL_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$REPO" || exit 1

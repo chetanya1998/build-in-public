@@ -16,3 +16,14 @@ Collectors live in `skills/build-in-public/scripts/collect.py`. Each one returns
 `{"path", "cwd", "messages": [(role, text)], "tools": [(name, target)], "media": [paths]}` for
 the given repo and day. Keep them read-only, tolerant of format changes, and filtered to the repo.
 Test with `collect.py --inspect`.
+
+## Tests
+
+```sh
+python3 -m unittest discover tests
+```
+
+Standard library only, and they run in CI on macOS and Linux. The tests use the demo's sample
+sessions in `skills/build-in-public/demo/sessions/`, one file per agent in that agent's real format.
+When an agent changes its session format, add a sample of the new format there (with `{{REPO}}`
+and `{{DAY}}` placeholders, no real data) and a test for it in `tests/test_collect.py`.
