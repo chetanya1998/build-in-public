@@ -1,5 +1,5 @@
 """Tests for trends.py (what gets searched, no network) and notify.py (the gist, no email sent)."""
-import contextlib, io, json, os, sys, unittest
+import contextlib, io, json, os, subprocess, sys, unittest
 from pathlib import Path
 from unittest import mock
 
@@ -65,8 +65,7 @@ Long story.
     def email_config(self):
         cfg = self.home / ".config" / "buildinpublic"
         cfg.mkdir(parents=True, exist_ok=True)
-        (cfg / "email.json").write_text(json.dumps(
-            {"to": "me@example.com", "smtp_host": "smtp.example.com", "smtp_user": "me@example.com"}))
+        (cfg / "email.json").write_text(json.dumps({"to": "me@example.com"}))  # all that's needed
         return cfg
 
     def test_gist_from_brief(self):
@@ -91,14 +90,58 @@ Long story.
         self.assertEqual(r.returncode, 0, r.stderr)
         self.assertIn(f"Subject: Build In Public · tinyinvoice · {DAY}: Fixed due dates", r.stdout)
         self.assertIn("To: me@example.com", r.stdout)
+        self.assertIn("From: me@example.com", r.stdout)
         self.assertIn(f'filename="brief-{DAY}.md"', r.stdout)
 
     def test_no_email_settings(self):
         r = self.run_script("notify.py", "--date", str(DAY))
         self.assertEqual(r.returncode, 0, r.stderr)
-        self.assertIn("Email not set up", r.stdout)
+        self.assertIn("Email is optional and not set up", r.stdout)
 
-    def test_password_sources(self):
+    def test_method_needs_no_password(self):
+        to = {"to": "me@example.com"}
+        self.assertEqual(notify.method(to, system="Darwin"), "mail-app")
+        with mock.patch.object(notify, "sendmail_path", return_value="/usr/sbin/sendmail"):
+            self.assertEqual(notify.method(to, system="Linux"), "sendmail")
+        with mock.patch.object(notify, "sendmail_path", return_value=None):
+            self.assertIsNone(notify.method(to, system="Linux"))
+        self.assertEqual(notify.method(dict(to, smtp_host="smtp.example.com"), system="Darwin"), "smtp")
+        self.assertEqual(notify.method(dict(to, method="sendmail"), system="Darwin"), "sendmail")
+
+    def test_send_via_apple_mail(self):
+        (self.out() / "brief.md").write_text(self.BRIEF)
+        cfg = {"to": "me@example.com"}
+        msg = notify.compose(cfg, self.repo, DAY, "headline", "the body")
+        with mock.patch.object(notify, "method", return_value="mail-app"), \
+                mock.patch.object(notify.subprocess, "run", return_value=mock.Mock(returncode=0)) as run:
+            self.assertEqual(notify.send(cfg, msg, "/tmp/brief.md"), "mail-app")
+        args, kw = run.call_args
+        self.assertEqual(args[0][:3], ["osascript", "-", "me@example.com"])
+        self.assertEqual(args[0][4:], ["the body\n", "/tmp/brief.md"])
+        self.assertIn('tell application "Mail"', kw["input"])
+
+    def test_send_via_sendmail(self):
+        cfg = {"to": "me@example.com"}
+        msg = notify.compose(cfg, self.repo, DAY, "headline", "the body")
+        with mock.patch.object(notify, "method", return_value="sendmail"), \
+                mock.patch.object(notify, "sendmail_path", return_value="/usr/sbin/sendmail"), \
+                mock.patch.object(notify.subprocess, "run", return_value=mock.Mock(returncode=0)) as run:
+            notify.send(cfg, msg)
+        args, kw = run.call_args
+        self.assertEqual(args[0], ["/usr/sbin/sendmail", "-t", "-oi"])
+        self.assertIn(b"To: me@example.com", kw["input"])
+
+    def test_gist_links_shared_posts(self):
+        posts = self.repo / ".buildinpublic" / "posts"
+        posts.mkdir(parents=True, exist_ok=True)
+        (posts / "README.md").write_text("# posts")
+        subprocess.run(["git", "-C", str(self.repo), "remote", "add", "origin",
+                        "git@github.com:someone/tinyinvoice.git"], check=True)
+        _, body = notify.build_gist(self.repo, DAY)
+        self.assertIn("/someone/tinyinvoice/blob/", body)
+        self.assertIn("/.buildinpublic/posts/README.md", body)
+
+    def test_optional_smtp_password_sources(self):
         cfg = self.email_config()
         with mock.patch.object(notify, "CONFIG_DIR", cfg), mock.patch.dict(os.environ, {"BIP_SMTP_PASSWORD": "from-env"}):
             self.assertEqual(notify.smtp_password("me@example.com"), "from-env")

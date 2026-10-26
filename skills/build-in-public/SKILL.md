@@ -1,6 +1,6 @@
 ---
 name: build-in-public
-description: Personal build-in-public content strategist that lives in the user's project repo. Logs what the user builds during Claude Code, Codex and Antigravity sessions, asks before capturing terminal or browser output, searches the internet for trends near the project and the day's work, sends a scheduled daily gist (notification + email) with a list of suggested posts, and drafts the one the user picks. Never posts. Use for "build in public", "log this", "capture this", "daily gist", "build in public brief", "review my posts", "write post 2", "what should I post", weekly recap.
+description: Personal build-in-public content strategist that lives in the user's project repo. Logs what the user builds during Claude Code, Codex and Antigravity sessions, asks before capturing terminal or browser output, searches the internet for trends near the project and the day's work, sends a scheduled daily gist (notification, plus email if the user gives an address) with a list of suggested posts, drafts the one the user picks, and can add approved posts and images to the user's commits so they're on GitHub. Never posts. Use for "build in public", "log this", "capture this", "daily gist", "build in public brief", "review my posts", "write post 2", "what should I post", weekly recap.
 ---
 
 # Build In Public
@@ -8,8 +8,9 @@ description: Personal build-in-public content strategist that lives in the user'
 Builders ship something real almost every day, then post nothing. They forget what they did, or they can't see why it would interest anyone. Build In Public is the builder's personal content strategist, living in their own project:
 
 1. **During the session** it logs what was built, and asks before capturing a terminal output or a browser screen worth showing.
-2. **At the time the user chose** it reads the day's agent sessions and git history, searches the internet for the trends nearest to the project and that day's work, and sends a **gist** (desktop notification + email) with a list of suggested posts.
+2. **At the time the user chose** it reads the day's agent sessions and git history, searches the internet for the trends nearest to the project and that day's work, and sends a **gist** (a desktop notification, plus an email if they gave an address) with a list of suggested posts.
 3. **When the user picks one** it writes the post in their voice, with an anecdote from the day, a trend it rides and the approved capture to attach. The user reviews it, approves it and posts it themselves.
+4. **If they turned sharing on**, each commit also carries their approved posts and images, so after a push they can open them on GitHub, on any device, and copy them.
 
 Everything lives in the user's repo, in `.buildinpublic/`:
 
@@ -25,6 +26,8 @@ Everything lives in the user's repo, in `.buildinpublic/`:
     captures/           # approved terminal and browser captures + captures.json (scripts/capture.py)
     brief.md            # the daily gist: shipped, story, trends, suggested posts
   posts/                # drafts the user chose, with status suggested | approved | posted
+    README.md           # approved posts with their images, for GitHub (scripts/share.py)
+    images/             # the capture images those posts attach
   assets/               # anything else the user saved for posts
 ```
 
@@ -32,10 +35,10 @@ Templates are in `templates/` and scripts in `scripts/`, next to this file (`<sk
 
 ## Hard rules
 
-- **Never post, publish or send anything on the user's behalf** except the gist email to their own address.
+- **Never post, publish or send anything on the user's behalf** except the gist email to their own address. Sharing posts with commits only puts files in their repo; it never posts.
 - **Never capture without a yes.** Ask first, every time. Run `capture.py` with `--approved` only after the user said yes in chat.
 - **Only approved captures go into posts.** Screenshots agents took on their own are candidates until the user approves them.
-- **Never ask for, read out or store a password.** The user adds their SMTP password to the Keychain themselves.
+- **Never ask for, read out or store a password.** Email needs only the user's address.
 - Leave out secrets, customer details and anything under Off-limits in `narrative.md`.
 
 Choose the mode from what the user says. At the end of a task, use **Log**. When something worth showing just happened, use **Capture**. When the scheduled run fires, or the user asks for the brief, use **Daily gist**. When they want to see or choose posts, use **Review and choose**.
@@ -46,7 +49,7 @@ Choose the mode from what the user says. At the end of a task, use **Log**. When
 
 Use this when the user says "set up build in public", or before any other mode if `.buildinpublic/` doesn't exist.
 
-1. Run `sh <skill-dir>/scripts/init.sh` from the project root (add `--hook` if the user wants the git hook in step 5).
+1. Run `sh <skill-dir>/scripts/init.sh` from the project root. It can be rerun later with `--hook` (step 5) or `--share` (step 6).
 2. Fill `narrative.md` from what the README and code already say, and ask only for the rest:
    - What are you building, in one sentence? Who is it for, and what pain do they have today?
    - Why you? Where are you now (idea, prototype, beta, paying users), and what's the next milestone?
@@ -58,17 +61,14 @@ Use this when the user says "set up build in public", or before any other mode i
    - `agent` (`claude`, `codex` or `none`) or `agent_command`, for writing the brief headlessly.
    - `app_url`: their local dev server or staging URL, for browser captures.
    - `capture`: `ask` (default) or `off`.
-4. **Email.** Ask if they want the gist emailed. If yes, ask for the address to send to and the SMTP server (for Gmail: `smtp.gmail.com`, port 587, their Gmail address as the user, and an app password). Write `~/.config/buildinpublic/email.json` (format at the top of `scripts/notify.py`). **Don't ask for the password.** Tell them to add it themselves:
-   ```sh
-   security add-generic-password -s buildinpublic-smtp -a <smtp_user> -w
-   ```
-   (Linux: put it in `~/.config/buildinpublic/smtp-password` and `chmod 600` it.) Then offer `python3 <skill-dir>/scripts/notify.py --test`.
-5. **Make every agent log and ask before capturing.** Append `templates/agents-snippet.md` to whichever of `AGENTS.md`, `GEMINI.md` and `CLAUDE.md` exist (create `AGENTS.md` if none do). Offer the git hook (`init.sh --hook`).
-6. **Schedule the gist:** `sh <skill-dir>/scripts/schedule.sh --time <brief_time>`. It uses launchd on macOS (runs on wake if the Mac was asleep) or cron on Linux. `--remove` undoes it.
-7. Ask whether `.buildinpublic/` should be committed. The default is to ignore `daily/`, `posts/` and `assets/`.
-8. Finish with `python3 <skill-dir>/scripts/doctor.py` and fix anything marked ✗.
+4. **Email (optional).** Ask: "Want the daily gist emailed too? If so, which address?" If they give one, write `~/.config/buildinpublic/email.json` as `{"to": "<address>"}`. That's all: no password and no server. On macOS it's sent through Apple Mail from their default account, and on Linux through the system `sendmail`. If they skip it, they still get the desktop notification. On macOS, have them run `python3 <skill-dir>/scripts/notify.py --test` once from a terminal, so macOS can ask them to allow access to Mail, and tell them Mail needs at least one account set up. (Only if they ask for SMTP instead: the extra fields are at the top of `scripts/notify.py`, and they add the password to the Keychain themselves. Never ask for it.)
+5. **Make every agent log and ask before capturing.** Append `templates/agents-snippet.md` to whichever of `AGENTS.md`, `GEMINI.md` and `CLAUDE.md` exist (create `AGENTS.md` if none do). Offer the git hook that logs commits (`init.sh --hook`).
+6. **Posts on GitHub (optional).** Ask: "Want your approved posts and their images added to your commits, so you can open them on GitHub after you push?" If yes, run `init.sh --share`. It installs a pre-commit hook and sets `"share": "commits"`. Only posts the user approved are added, never suggestions. **If the repo is public, say plainly that anyone will be able to read those posts and see their images**, and check that this is what they want.
+7. **Schedule the gist:** `sh <skill-dir>/scripts/schedule.sh --time <brief_time>`. It uses launchd on macOS (runs on wake if the Mac was asleep) or cron on Linux. `--remove` undoes it.
+8. Ask whether the rest of `.buildinpublic/` should be committed. The default is to ignore `daily/` and `assets/`, and also `posts/` unless sharing is on.
+9. Finish with `python3 <skill-dir>/scripts/doctor.py` and fix anything marked ✗.
 
-Be upfront: it doesn't watch the screen or keystrokes. It reads the session files the agents already save, filtered to this repo, plus git history and whatever the user approves. Everything is local except the trend searches (topic keywords only) and the gist email to the user.
+Be upfront: it doesn't watch the screen or keystrokes. It reads the session files the agents already save, filtered to this repo, plus git history and whatever the user approves. Everything is local except the trend searches (topic keywords only), the optional gist email to the user, and posts they approved if they turned sharing on.
 
 ---
 
@@ -126,7 +126,7 @@ The default day is today, or yesterday if it's before 4am.
    - `## Capture tomorrow`: 1 or 2 moments worth capturing next time.
    Don't write full drafts here. The user chooses first.
 5. Append any milestone to `## Arc so far` in `narrative.md`.
-6. In a scheduled run, write the files and stop. `nightly.sh` then sends the gist (notification + email). If the user is present, show the headline and the list of suggested posts, and ask which one to write.
+6. In a scheduled run, write the files and stop. `nightly.sh` then sends the gist (a notification, plus an email if set up). If the user is present, show the headline and the list of suggested posts, and ask which one to write.
 
 If the digest shows nothing, write a short brief that says it was a quiet day, with 2 suggested posts based on the narrative (what's next, behind the scenes).
 
@@ -145,13 +145,22 @@ Use this when the user says "review my posts", "write post 2", "what should I po
    - **dev.to / blog:** a title, the problem, the approach, a snippet or diagram, the result and what's next.
    - **Short video:** a 30 to 45 second script with a hook, a demo and one takeaway.
    Rules for every draft: lead with the moment, not "Today I worked on...". Use the real anecdote and real numbers. One idea per post. Name the capture file to attach (from `captures/`). No hype words, nothing that isn't in the log or sessions, nothing from Off-limits.
-4. Show the draft and revise it until the user is happy. Then save it to `.buildinpublic/posts/<date>-<platform>-<slug>.md`, starting with:
+4. Show the draft and revise it until the user is happy. Then save it to `.buildinpublic/posts/<date>-<platform>-<slug>.md` in this format (`share.py` reads it):
    ```
+   ---
    status: approved
+   platform: x
+   date: <date>
    attach: daily/<date>/captures/<file>.png
    trend: <link or none>
+   ---
+   # <title>
+
+   <the post text, exactly as it should be posted>
    ```
-5. The user copies and posts it. When they say they posted, set `status: posted`, add `link:`, and add a line to `## Arc so far` in `narrative.md`, so later posts can call back ("Two weeks ago I said X. Here's what happened.").
+   Use `status: suggested` for a draft they haven't approved yet.
+5. If sharing is on (`"share": "commits"`), run `python3 <skill-dir>/scripts/share.py` so they can preview `posts/README.md`, and tell them the post and its image go out with their next commit. They can open it on GitHub after pushing.
+6. The user copies and posts it. When they say they posted, set `status: posted`, add `link:`, and add a line to `## Arc so far` in `narrative.md`, so later posts can call back ("Two weeks ago I said X. Here's what happened.").
 
 For a **weekly recap**, read the week's `brief.md` files and posts, and offer 3 recap angles to choose from in the same way.
 

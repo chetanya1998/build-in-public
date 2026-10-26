@@ -14,7 +14,7 @@ import argparse, datetime as dt, json, os, platform, re, shutil, subprocess, sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-import collect  # noqa: E402
+import collect, notify, share  # noqa: E402
 
 SKILL_DIR = Path(__file__).resolve().parent.parent
 RESULTS = []
@@ -155,27 +155,55 @@ def check_email(cfg):
         return
     path = Path.home() / ".config" / "buildinpublic" / "email.json"
     if not path.exists():
-        warn("Email", f"not set up: create {str(path).replace(str(Path.home()), '~')} (see notify.py --help)")
+        ok("Email", "optional, not set up (to add it, just your address: {\"to\": \"you@example.com\"} in "
+                    + str(path).replace(str(Path.home()), "~") + ")")
         return
     try:
         email = json.loads(path.read_text())
     except ValueError as e:
         fail("Email", f"email.json is invalid JSON: {e}")
         return
-    missing = [k for k in ("to", "smtp_host", "smtp_user") if not email.get(k)]
-    if missing:
-        fail("Email", "email.json is missing " + ", ".join(missing))
+    if not email.get("to"):
+        fail("Email", "email.json needs your address: {\"to\": \"you@example.com\"}")
         return
-    user = email["smtp_user"]
-    pw_file = Path.home() / ".config" / "buildinpublic" / "smtp-password"
-    has_pw = bool(os.environ.get("BIP_SMTP_PASSWORD")) or pw_file.exists() or (
-        platform.system() == "Darwin" and subprocess.run(
-            ["security", "find-generic-password", "-s", "buildinpublic-smtp", "-a", user],
-            capture_output=True).returncode == 0)
-    if has_pw:
-        ok("Email", f"to {email['to']} via {email['smtp_host']} (send a test: notify.py --test)")
+    how = notify.method(email)
+    if how == "mail-app":
+        ok("Email", f"to {email['to']} via Apple Mail (needs an account in Mail; run notify.py --test once to allow access)")
+    elif how == "sendmail":
+        (ok if notify.sendmail_path() else fail)("Email", f"to {email['to']} via sendmail"
+                                                 + ("" if notify.sendmail_path() else ", but no sendmail is installed"))
+    elif how == "smtp":
+        user = email.get("smtp_user", "")
+        pw_file = Path.home() / ".config" / "buildinpublic" / "smtp-password"
+        has_pw = bool(os.environ.get("BIP_SMTP_PASSWORD")) or pw_file.exists() or (
+            platform.system() == "Darwin" and subprocess.run(
+                ["security", "find-generic-password", "-s", "buildinpublic-smtp", "-a", user],
+                capture_output=True).returncode == 0)
+        (ok if has_pw else fail)("Email", f"to {email['to']} via SMTP {email.get('smtp_host')}" + (
+            "" if has_pw else f": no password found (security add-generic-password -s buildinpublic-smtp -a {user} -w)"))
     else:
-        fail("Email", f"no SMTP password: security add-generic-password -s buildinpublic-smtp -a {user} -w")
+        fail("Email", "no Apple Mail or sendmail on this machine to send it with; remove email.json or set up msmtp")
+
+
+def check_share(repo, cfg):
+    section("Posts on GitHub")
+    hook = repo / ".git" / "hooks" / "pre-commit"
+    hooked = hook.exists() and "share.py" in hook.read_text(errors="ignore")
+    if cfg.get("share") != "commits":
+        ok("Share with commits", "off (to turn on: sh <skill>/scripts/init.sh --share)")
+        return
+    if not hooked:
+        fail("Share with commits", "on in config.json, but the pre-commit hook is missing: sh <skill>/scripts/init.sh --share")
+        return
+    target = re.search(r'python3 "([^"]+/share\.py)"', hook.read_text(errors="ignore"))
+    if target and not Path(target.group(1)).exists():
+        fail("Share with commits", f"the hook points to {target.group(1)}, which no longer exists: rerun init.sh --share")
+        return
+    shared = len(share.shared_posts(repo))
+    remote = run("git", "-C", str(repo), "remote", "get-url", "origin")
+    ok("Share with commits", f"{shared} approved post(s) go out with your next commit"
+       + (f"; on GitHub after you push" if "github.com" in remote else "; no GitHub remote yet"))
+    warn("Visibility", "if this repo is public, everyone can read shared posts and see their images")
 
 
 def check_schedule(repo):
@@ -253,6 +281,7 @@ def main():
     cfg = check_setup(repo)
     check_tools(cfg)
     check_email(cfg)
+    check_share(repo, cfg)
     check_schedule(repo)
     check_sessions(repo, today)
     check_last_run(repo)

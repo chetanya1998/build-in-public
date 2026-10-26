@@ -1,12 +1,24 @@
 {
-  "topics": ["<main topic, e.g. saas pricing>", "<audience pain, e.g. cloud costs>"],
-  "platforms": ["x", "linkedin"],
+  "topics": [
+    "<main topic, e.g. saas pricing>",
+    "<audience pain, e.g. cloud costs>"
+  ],
+  "platforms": [
+    "x",
+    "linkedin"
+  ],
   "brief_time": "00:00",
   "agent": "claude",
   "agent_command": "",
   "app_url": "http://localhost:3000",
   "capture": "ask",
-  "trend_sources": ["Hacker News", "Reddit", "GitHub (new repos)", "dev.to"],
+  "trend_sources": [
+    "Hacker News",
+    "Reddit",
+    "GitHub (new repos)",
+    "dev.to"
+  ],
   "notify": true,
-  "email": true
+  "email": true,
+  "share": "off"
 }

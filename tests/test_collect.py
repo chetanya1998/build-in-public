@@ -5,7 +5,7 @@
 Standard library only. Each test builds a fake home folder (agent session files) and a
 small git repo in a temp folder, so nothing on your machine is read.
 """
-import datetime as dt, os, subprocess, sys, tempfile, unittest
+import datetime as dt, os, site, subprocess, sys, tempfile, unittest
 from pathlib import Path
 
 SCRIPTS = Path(__file__).resolve().parent.parent / "skills" / "build-in-public" / "scripts"
@@ -29,7 +29,9 @@ class Fixture(unittest.TestCase):
         fx.build_fake_home(self.home, self.repo, self.day)
         self.env = dict(os.environ, HOME=str(self.home))
         self.env.pop("BIP_SMTP_PASSWORD", None)
-        for cache in ("Library/Caches/ms-playwright", ".cache/ms-playwright"):  # browsers live in the real home
+        # The fake HOME would hide packages and browsers installed for the real user (pip --user, Playwright).
+        self.env.setdefault("PYTHONUSERBASE", site.getuserbase())
+        for cache in ("Library/Caches/ms-playwright", ".cache/ms-playwright"):
             if "PLAYWRIGHT_BROWSERS_PATH" not in self.env and (Path.home() / cache).is_dir():
                 self.env["PLAYWRIGHT_BROWSERS_PATH"] = str(Path.home() / cache)
         self._home, collect.HOME = collect.HOME, self.home
@@ -125,17 +127,34 @@ class DoctorTest(Fixture):
         r = self.run_script("doctor.py")
         self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
         for line in ("✓ Claude Code: 1 session(s)", "✓ Codex: 1 session(s)", "✓ Antigravity: 1 session(s)",
-                     "✓ narrative.md: filled in", "! Email: not set up", "0 problem(s)"):
+                     "✓ narrative.md: filled in", "✓ Email: optional, not set up", "✓ Share with commits: off",
+                     "0 problem(s)"):
             self.assertIn(line, r.stdout)
 
-    def test_doctor_email_without_password(self):
+    def email_json(self, text):
         cfg = self.home / ".config" / "buildinpublic"
-        cfg.mkdir(parents=True)
-        (cfg / "email.json").write_text('{"to": "a@b.example", "smtp_host": "smtp.b.example", '
-                                        '"smtp_user": "bip-test-nobody@b.example"}')
+        cfg.mkdir(parents=True, exist_ok=True)
+        (cfg / "email.json").write_text(text)
+
+    @unittest.skipUnless(sys.platform == "darwin", "Apple Mail is macOS only")
+    def test_doctor_email_address_only(self):
+        self.email_json('{"to": "a@b.example"}')
+        r = self.run_script("doctor.py")
+        self.assertEqual(r.returncode, 0, r.stdout)
+        self.assertIn("✓ Email: to a@b.example via Apple Mail", r.stdout)
+
+    def test_doctor_optional_smtp_without_password(self):
+        self.email_json('{"to": "a@b.example", "smtp_host": "smtp.b.example", "smtp_user": "bip-test-nobody@b.example"}')
         r = self.run_script("doctor.py")
         self.assertEqual(r.returncode, 1)
-        self.assertIn("✗ Email: no SMTP password", r.stdout)
+        self.assertIn("no password found", r.stdout)
+
+    def test_doctor_share_hook_missing(self):
+        cfg = self.repo / ".buildinpublic" / "config.json"
+        cfg.write_text(cfg.read_text().replace('"capture": "ask"', '"capture": "ask", "share": "commits"'))
+        r = self.run_script("doctor.py")
+        self.assertEqual(r.returncode, 1)
+        self.assertIn("pre-commit hook is missing", r.stdout)
 
     def test_doctor_flags_missing_setup(self):
         with tempfile.TemporaryDirectory() as tmp:

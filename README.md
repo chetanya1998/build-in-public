@@ -6,7 +6,8 @@
 
 It logs what you build with your coding agents, captures the moments you approve,<br>
 finds the trends nearest to your project and today's work,<br>
-and sends you a daily gist with posts to choose from.
+and sends you a daily gist with posts to choose from.<br>
+Approved posts and images can go out with your commits, so they're on GitHub.
 
 [![tests](https://github.com/chetanya1998/build-in-public/actions/workflows/test.yml/badge.svg)](https://github.com/chetanya1998/build-in-public/actions/workflows/test.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
@@ -14,7 +15,7 @@ and sends you a daily gist with posts to choose from.
 ![Works with](https://img.shields.io/badge/works%20with-Claude%20Code%20·%20Codex%20·%20Antigravity-6E56CF)
 ![Never auto-posts](https://img.shields.io/badge/auto--posting-never-success)
 
-[Install](#-install) · [How your day works](#-how-your-day-works) · [Captures](#-captures-only-with-your-ok) · [Daily gist](#-the-daily-gist) · [Privacy](#-privacy)
+[Install](#-install) · [How your day works](#-how-your-day-works) · [Captures](#-captures-only-with-your-ok) · [Daily gist](#-the-daily-gist) · [Posts on GitHub](#-your-posts-on-github) · [Privacy](#-privacy)
 
 </div>
 
@@ -37,10 +38,11 @@ flowchart LR
     C -->|skip| A
     B --> E["At your time:<br>digest + web trends"]
     D --> E
-    E --> F["Gist: notification<br>+ email"]
+    E --> F["Gist: notification<br>+ optional email"]
     F --> G["You pick a post"]
     G --> H["Draft, you review"]
-    H --> I((You post))
+    H --> J["Commit: post + image<br>on GitHub"]
+    J --> I((You post))
 ```
 
 | When | What happens |
@@ -48,8 +50,9 @@ flowchart LR
 | **While you code** | After each meaningful task, your agent adds a short entry to today's log: what, why, how, the struggle and the result, with the exact anecdote (the error, the wrong guess, the fix). |
 | **When something's worth showing** | Tests going green after a fight, a benchmark, a new screen in a Playwright test: your agent asks *"Capture this for today's story? 1) terminal output 2) browser screenshot 3) skip"*. Nothing is captured without a yes. |
 | **At the time you chose** | It reads the day's agent sessions, git history, log and approved captures, searches the web for the trends nearest to your project and today's work, and writes the brief. |
-| **Then** | You get a desktop notification and an email with the gist: the day in one line, what you shipped, and **5 to 7 suggested posts**. |
-| **When you're ready** | Say *"review my posts"* or *"write post 2"*. Your agent drafts it for your platform, you revise and approve it, and you post it yourself. |
+| **Then** | You get a desktop notification with the gist, and an email too if you gave an address: the day in one line, what you shipped, and **5 to 7 suggested posts**. |
+| **When you're ready** | Say *"review my posts"* or *"write post 2"*. Your agent drafts it for your platform, and you revise and approve it. |
+| **When you commit** | If sharing is on, your approved posts and their images go into the commit. Push, then open them on GitHub from any device, copy, and post. |
 
 ## 📸 Captures, only with your OK
 
@@ -70,11 +73,26 @@ Posts only ever use approved captures. Turn capturing off with `"capture": "off"
 At the time you set (`brief_time`, for example 19:00), you get:
 
 - **A desktop notification** with the day's headline.
-- **An email** to your own address with the day in one line, what you shipped and the numbered list of suggested posts. The full brief is attached.
+- **An email (optional)** with the day in one line, what you shipped and the numbered list of suggested posts, with the full brief attached. **All it needs is your address:** no password, no mail server. On macOS it's sent through Apple Mail from the account you already use there. On Linux it goes through your system's `sendmail`.
 
 Each suggested post has a title, platform, angle and hook line, the anecdote it uses, the trend it rides (with a link, or "no trend" when nothing truly fits), the capture to attach, and why it should work.
 
 **The trends come from your project and your day.** Searches are built from three places: today's log entries and commits, the topics you gave during setup, and your stack (read from `package.json`, `requirements.txt`, `pyproject.toml`, `go.mod`, `Cargo.toml` or `Gemfile`). The script checks Hacker News, Reddit, GitHub and dev.to. Then your agent searches the web for what people are discussing on X, LinkedIn and in the news this week. A strong story with no trend beats a forced tie-in.
+
+## 🐙 Your posts on GitHub
+
+Turn on sharing during setup (or run `init.sh --share`), and every commit you make also carries the posts you **approved**, with the images they attach:
+
+```
+.buildinpublic/posts/
+├── README.md                          ← one page: each post's text and image, newest first
+├── 2026-10-22-x-ci-lives-in-utc.md
+└── images/3ca93f-terminal-npm-run-bench.png
+```
+
+Push as usual, then open `.buildinpublic/posts/README.md` on GitHub, on your laptop or your phone, and copy the post with its image. Suggested posts you haven't approved are never added. If you've set up the email, the gist links to this page.
+
+> **Public repo?** Then anyone can read the shared posts and see their images. Setup checks with you first, and `BIP_SKIP_SHARE=1 git commit …` skips sharing for a single commit.
 
 ## 📦 Install
 
@@ -100,11 +118,9 @@ Open your project in your agent and say **"set up build in public"**. It asks a 
 
 1. What you're building, who it's for, your voice, and what's off-limits.
 2. **When you want the daily gist.**
-3. **Where to email it.** For Gmail, use `smtp.gmail.com` with an [app password](https://myaccount.google.com/apppasswords). Your agent never asks for the password. You add it to your Keychain yourself:
-   ```sh
-   security add-generic-password -s buildinpublic-smtp -a you@gmail.com -w
-   ```
-4. Your app's local URL, for browser captures.
+3. **Your email address, if you want the gist emailed.** That's optional, and nothing else is needed: no password.
+4. **Whether to add approved posts to your commits,** so you can open them on GitHub.
+5. Your app's local URL, for browser captures.
 
 Then it adds the logging and capture rule to `AGENTS.md`, `CLAUDE.md` and `GEMINI.md`, and schedules the gist. Build as usual from there.
 
@@ -134,7 +150,8 @@ python3 $SKILL/scripts/capture.py candidates                  # agent screenshot
 python3 $SKILL/scripts/capture.py approve <id>                # or: reject <id>
 python3 $SKILL/scripts/collect.py --inspect                   # which sessions were found for this repo?
 sh $SKILL/scripts/nightly.sh                                  # the full daily run, now
-python3 $SKILL/scripts/notify.py --test                       # send a test email
+python3 $SKILL/scripts/notify.py --test                       # send a test email (if you set one)
+python3 $SKILL/scripts/share.py                               # rebuild posts/README.md now
 sh $SKILL/scripts/schedule.sh --time 19:00                    # change the gist time (--remove to stop)
 python3 $SKILL/scripts/doctor.py                              # check the setup
 ```
@@ -177,10 +194,12 @@ Agent session formats change between releases, so the parser is deliberately tol
 │   ├── brief.md        the gist and the suggested posts
 │   └── nightly.log
 ├── posts/              drafts you chose: suggested → approved → posted
+│   ├── README.md       approved posts with images, for GitHub
+│   └── images/
 └── assets/             anything else you saved for posts
 ```
 
-Email settings live outside the repo, in `~/.config/buildinpublic/email.json`, and are shared by all your projects.
+Your email address lives outside the repo, in `~/.config/buildinpublic/email.json` (`{"to": "you@example.com"}`), and is shared by all your projects.
 
 </details>
 
@@ -190,16 +209,17 @@ Email settings live outside the repo, in `~/.config/buildinpublic/email.json`, a
 python3 ~/.claude/skills/build-in-public/scripts/doctor.py
 ```
 
-It checks your tools (Python, git, zstd, Playwright, your agent's CLI), the `.buildinpublic/` setup, the logging rules, the git hook, gist delivery (notification, email settings, whether a password exists, without reading it), the schedule, which sessions it can find for the last 7 days, and errors from the last run. It's read-only and makes no network calls. Paste its output into an [issue](https://github.com/chetanya1998/build-in-public/issues) if you're stuck.
+It checks your tools (Python, git, zstd, Playwright, your agent's CLI), the `.buildinpublic/` setup, the logging rules, the git hook, gist delivery (notification and how the email would be sent), sharing posts with commits, the schedule, which sessions it can find for the last 7 days, and errors from the last run. It's read-only and makes no network calls. Paste its output into an [issue](https://github.com/chetanya1998/build-in-public/issues) if you're stuck.
 
 ## 🔒 Privacy
 
 | | |
 |---|---|
-| 🏠 **Runs locally** | Session files are read on your machine and never uploaded by these scripts. Network calls: the trend searches (keywords only) and the gist email, sent to you through your own mail server. |
+| 🏠 **Runs locally** | Session files are read on your machine and never uploaded by these scripts. Network calls: the trend searches (keywords only) and the optional gist email, sent to you from your own mail app. |
 | ✋ **Captures need a yes** | Nothing from your terminal or browser is saved without your approval, and agent screenshots stay candidates until you approve them. |
 | 🧹 **Secrets redacted** | API keys, tokens, JWTs, private keys and emails are removed from digests and captures, plus every term you list under **Off-limits**. |
-| 🔑 **No stored passwords** | Your SMTP password stays in your Keychain (or a `chmod 600` file on Linux). Your agent never asks for it. |
+| 🔑 **No passwords** | Email needs only your address. It's sent through the mail app you're already signed in to. |
+| 🐙 **You choose what's shared** | Only posts you approved go into commits, and only if you turned sharing on. |
 | 📁 **This repo only** | Sessions from other projects are skipped. |
 | 🤖 **Your agent, your model** | When your agent writes the brief, the redacted digest goes to that agent's model, like any other prompt. |
 | 🚫 **Never posts** | It drafts. You post. |
@@ -207,7 +227,7 @@ It checks your tools (Python, git, zstd, Playwright, your agent's CLI), the `.bu
 ## 🚧 Roadmap
 
 - [x] **Easy to trust.** `doctor.py`, tests on sample sessions for every agent, CI on macOS and Linux.
-- [x] **Your day, your approval.** Captures only with your OK, trends from your stack and today's work, the scheduled gist by notification and email, and choosing what to post.
+- [x] **Your day, your approval.** Captures only with your OK, trends from your stack and today's work, the scheduled gist by notification and optional email, choosing what to post, and approved posts on GitHub with your commits.
 - [ ] **Learns what works.** Log how each post did, so suggestions are ranked by what gets a response from *your* audience. Voice training from your best past posts.
 - [ ] **Better visuals.** Before/after pairs, metric cards, GIFs from browser-test recordings.
 - [ ] **More reach.** Cursor, Windsurf, Gemini CLI and Aider. Export to Typefully or Buffer (you still approve every post).
