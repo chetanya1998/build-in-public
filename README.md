@@ -15,7 +15,7 @@ Approved posts and images can go out with your commits, so they're on GitHub.
 ![Works with](https://img.shields.io/badge/works%20with-Claude%20Code%20·%20Codex%20·%20Antigravity-6E56CF)
 ![Never auto-posts](https://img.shields.io/badge/auto--posting-never-success)
 
-[Install](#-install) · [How your day works](#-how-your-day-works) · [Captures](#-captures-only-with-your-ok) · [Daily gist](#-the-daily-gist) · [Posts on GitHub](#-your-posts-on-github) · [Privacy](#-privacy)
+[Get started](#-getting-started) · [How your day works](#-how-your-day-works) · [Captures](#-captures-only-with-your-ok) · [Daily gist](#-the-daily-gist) · [Posts on GitHub](#-your-posts-on-github) · [Privacy](#-privacy)
 
 </div>
 
@@ -94,37 +94,101 @@ Push as usual, then open `.buildinpublic/posts/README.md` on GitHub, on your lap
 
 > **Public repo?** Then anyone can read the shared posts and see their images. Setup checks with you first, and `BIP_SKIP_SHARE=1 git commit …` skips sharing for a single commit.
 
-## 📦 Install
+## 🚀 Getting started
+
+### 1. Check the requirements
+
+- **Python 3.9 or newer.** macOS already has it. Check with `python3 --version`.
+- **git**, and a project that's a git repo.
+- **At least one agent:** [Claude Code](https://claude.com/claude-code), Codex or Antigravity.
+- **Optional, for capture images:** Playwright, installed for the same `python3`:
+  ```sh
+  python3 -m pip install --user playwright
+  python3 -m playwright install chromium
+  ```
+  Without it, terminal captures are saved as text only, and browser captures are skipped.
+
+### 2. Install the skill
 
 ```sh
 git clone https://github.com/chetanya1998/build-in-public.git
 cd build-in-public
-sh install.sh              # Claude Code, Codex and Antigravity, for your user
-sh install.sh --project    # or just the current project
-sh install.sh --only codex # or a single agent
+sh install.sh
 ```
 
-| Agent | User install | Project install |
-|---|---|---|
-| Claude Code | `~/.claude/skills/` | `.claude/skills/` |
-| Codex | `~/.agents/skills/` | `.agents/skills/` |
-| Antigravity | `~/.gemini/config/skills/` | `.agents/skills/` |
+This installs it for your user, in every supported agent, so it works in all your projects:
 
-**Requirements:** Python 3.9+. For capture images: `pip install playwright && playwright install chromium`.
+| Agent | Installed to |
+|---|---|
+| Claude Code | `~/.claude/skills/build-in-public` |
+| Codex | `~/.agents/skills/build-in-public` |
+| Antigravity | `~/.gemini/config/skills/build-in-public` |
 
-## 🏁 Set up your project
+<details>
+<summary>Other ways to install</summary>
 
-Open your project in your agent and say **"set up build in public"**. It asks a few short questions:
+<br>
 
-1. What you're building, who it's for, your voice, and what's off-limits.
-2. **When you want the daily gist.**
-3. **Your email address, if you want the gist emailed.** That's optional, and nothing else is needed: no password.
-4. **Whether to add approved posts to your commits,** so you can open them on GitHub.
-5. Your app's local URL, for browser captures.
+```sh
+sh install.sh --only claude        # one agent only: claude, codex or antigravity
+```
 
-Then it adds the logging and capture rule to `AGENTS.md`, `CLAUDE.md` and `GEMINI.md`, and schedules the gist. Build as usual from there.
+To install into **one project only**, run the installer **from that project's folder**:
 
-## 💬 Things to say to your agent
+```sh
+cd ~/code/my-app                                  # your project
+sh /path/to/build-in-public/install.sh --project   # where you cloned this repo
+```
+
+That puts it in `.claude/skills/` (Claude Code) and `.agents/skills/` (Codex and Antigravity) inside the project.
+
+</details>
+
+### 3. Restart your agent
+
+Agents load skills when a session starts. Close your agent and open it again, or start a new session.
+
+### 4. Set it up in your project
+
+Open your **own project** in your agent and say:
+
+> **set up build in public**
+
+It reads your README and code first, then asks only what it can't work out:
+
+| It asks | Why |
+|---|---|
+| What you're building, who it's for, why you, your stage | So posts tell one consistent story |
+| Your platforms and voice | X, LinkedIn, Threads, Reddit, dev.to or short video |
+| What's off-limits | Client names, revenue, internal URLs: these are always redacted |
+| **When you want the daily gist** | For example 19:00. Scheduled with launchd (macOS) or cron (Linux) |
+| **Your email address** (optional) | Only the address: no password, no mail server |
+| **Add approved posts to your commits?** (optional) | So you can open them on GitHub after you push |
+| Your app's local URL | For browser captures, for example `http://localhost:3000` |
+
+Then it creates `.buildinpublic/` in your project, adds the logging and capture rule to `AGENTS.md`, `CLAUDE.md` and `GEMINI.md`, installs the git hooks you said yes to, schedules the gist, and runs a checkup.
+
+**If you gave an email address on macOS**, send a test once from a terminal in your project. macOS will ask you to let it use Mail, and Mail needs at least one account set up:
+
+```sh
+python3 ~/.claude/skills/build-in-public/scripts/notify.py --test
+```
+
+### 5. Use it every day
+
+You mostly just code. Here's a day:
+
+1. **Code as usual** with your agent. After each meaningful task it adds a short entry to today's log, quietly, in one line.
+2. **When something's worth showing**, it asks: *"Capture this for today's story? 1) terminal output 2) browser screenshot 3) skip"*. Say yes or no. Nothing is captured without a yes.
+3. **At your gist time**, you get a notification (and the email, if you set one) with what you shipped and **5 to 7 suggested posts**.
+4. **Pick one.** Open your agent in the project and say **"review my posts"** or **"write post 2 for LinkedIn"**. It drafts the post with the real anecdote, the trend it rides and the image to attach.
+5. **Revise it** until you like it ("shorter", "less formal", "lead with the number"), then approve it.
+6. **Commit and push as usual.** If sharing is on, the approved post and its image go along with your commit. Open `.buildinpublic/posts/README.md` on GitHub, on any device.
+7. **Post it yourself**, then tell your agent **"I posted it"** with the link, so later posts can call back to it.
+
+> **No headless agent for the scheduled run?** The gist still arrives, built from what was found that day. Say **"build in public brief"** to your agent to get the story and the suggested posts. For the full brief at your gist time, set `"agent": "claude"` (needs the `claude` CLI) or `"agent": "codex"` in `.buildinpublic/config.json`.
+
+### 💬 Things to say to your agent
 
 | Say | What happens |
 |---|---|
@@ -136,6 +200,24 @@ Then it adds the logging and capture rule to `AGENTS.md`, `CLAUDE.md` and `GEMIN
 | "write post 2 for LinkedIn" | Drafts it; you revise and approve it |
 | "I posted it" | Marks it posted, with the link, and adds it to your story so far |
 | "weekly recap" | Offers recap angles from the week's briefs |
+
+### 🔄 Update or remove it
+
+**Update** to the latest version:
+
+```sh
+cd build-in-public && git pull && sh install.sh
+```
+
+**Remove it from a project:** from the project's folder, stop its daily schedule:
+
+```sh
+sh ~/.claude/skills/build-in-public/scripts/schedule.sh --remove
+```
+
+Then delete the Build In Public lines from `.git/hooks/post-commit` and `.git/hooks/pre-commit`, and the Build In Public section from `AGENTS.md`, `CLAUDE.md` and `GEMINI.md`. Your `.buildinpublic/` folder is yours to keep or delete.
+
+**Uninstall it everywhere:** first remove it from each project as above, then delete the `build-in-public` folders from the table in step 2, and `~/.config/buildinpublic/`.
 
 <details>
 <summary><b>Run the scripts by hand</b></summary>
