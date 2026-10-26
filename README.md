@@ -6,8 +6,7 @@
 
 It logs what you build with your coding agents, captures the moments you approve,<br>
 finds the trends nearest to your project and today's work,<br>
-and sends you a daily gist with posts to choose from.<br>
-Approved posts and images can go out with your commits, so they're on GitHub.
+and sends you a daily gist with posts to choose from.
 
 [![tests](https://github.com/chetanya1998/build-in-public/actions/workflows/test.yml/badge.svg)](https://github.com/chetanya1998/build-in-public/actions/workflows/test.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
