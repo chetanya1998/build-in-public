@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build In Public: what are people talking about this week around your project and today's work?
+"""Build Your Product in Public: what are people talking about this week around your project and today's work?
 
 Searches free, key-less public sources (Hacker News, Reddit, GitHub, dev.to) for:
   - today's work: themes taken from today's log entries and commit messages

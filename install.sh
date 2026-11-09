@@ -1,5 +1,5 @@
 #!/bin/sh
-# Build In Public installer
+# Build Your Product in Public installer
 # Usage:
 #   sh install.sh            # install for your user (Claude Code, Codex, Antigravity)
 #   sh install.sh --project  # install into the current project only
@@ -33,7 +33,7 @@ copy() { # $1 = label, $2 = target dir
   echo "  ✓ $1 → $2/build-in-public"
 }
 
-echo "Installing Build In Public ($MODE)…"
+echo "Installing Build Your Product in Public ($MODE)…"
 [ -z "$ONLY" ] || [ "$ONLY" = claude ]      && copy "Claude Code" "$CLAUDE_DIR"
 [ -z "$ONLY" ] || [ "$ONLY" = codex ]       && copy "Codex"       "$CODEX_DIR"
 if [ -z "$ONLY" ] || [ "$ONLY" = antigravity ]; then

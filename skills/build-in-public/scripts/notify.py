@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build In Public: send today's gist as a desktop notification, and optionally an email.
+"""Build Your Product in Public: send today's gist as a desktop notification, and optionally an email.
 
 The gist is the top of brief.md: the day in one line, what you shipped, and the list of
 suggested posts to choose from, plus a link to your approved posts on GitHub when they're
@@ -156,7 +156,7 @@ def smtp_password(user):
 
 def compose(cfg, repo, day, headline, body):
     msg = EmailMessage()
-    msg["Subject"] = f"Build In Public · {repo.name} · {day}: {headline}"[:180]
+    msg["Subject"] = f"Build Your Product in Public · {repo.name} · {day}: {headline}"[:180]
     msg["From"] = cfg.get("from") or cfg.get("smtp_user") or cfg["to"]
     msg["To"] = cfg["to"]
     msg.set_content(body)
@@ -224,7 +224,7 @@ def main():
         if not cfg:
             sys.exit(f"Email is optional and not set up. To add it: echo '{{\"to\": \"you@example.com\"}}' > {CONFIG_DIR / 'email.json'}")
         msg = compose(cfg, repo, day, "test email",
-                      "This is a test from Build In Public. Your daily gist will arrive like this.")
+                      "This is a test from Build Your Product in Public. Your daily gist will arrive like this.")
         if a.dry_run:
             print(f"(would send via {method(cfg)})\n{msg}")
             return
@@ -235,7 +235,7 @@ def main():
     headline, body = build_gist(repo, day)
     notify = project.get("notify", True)
     if notify not in (False, "off") and not a.no_desktop and not a.dry_run:
-        desktop("Build In Public", f"{day}: {headline}")
+        desktop("Build Your Product in Public", f"{day}: {headline}")
 
     cfg = email_settings() if project.get("email", True) not in (False, "off") else None
     if not cfg:

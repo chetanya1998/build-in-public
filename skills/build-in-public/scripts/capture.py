@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build In Public: capture a moment for today's story, only with the user's approval.
+"""Build Your Product in Public: capture a moment for today's story, only with the user's approval.
 
 Captures go to .buildinpublic/daily/<date>/captures/ and are listed in captures.json.
 The daily brief only uses approved captures.

@@ -1,20 +1,22 @@
 <div align="center">
 
-# 🛠️ Build In Public
+# 🛠️ Build Your Product in Public
 
 ### Your personal build-in-public content strategist, living in your repo.
 
 It logs what you build with your coding agents, captures the moments you approve,<br>
 finds the trends nearest to your project and today's work,<br>
-and sends you a daily gist with posts to choose from.
+and sends you a daily gist with posts to choose from.<br>
+Across all your projects, on macOS, Windows and Linux.
 
 [![tests](https://github.com/chetanya1998/build-in-public/actions/workflows/test.yml/badge.svg)](https://github.com/chetanya1998/build-in-public/actions/workflows/test.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 ![Python 3.9+](https://img.shields.io/badge/python-3.9%2B-3776AB?logo=python&logoColor=white)
 ![Works with](https://img.shields.io/badge/works%20with-Claude%20Code%20·%20Codex%20·%20Antigravity-6E56CF)
+![Runs on](https://img.shields.io/badge/runs%20on-macOS%20·%20Windows%20·%20Linux-555)
 ![Never auto-posts](https://img.shields.io/badge/auto--posting-never-success)
 
-[Get started](#-getting-started) · [How your day works](#-how-your-day-works) · [Captures](#-captures-only-with-your-ok) · [Daily gist](#-the-daily-gist) · [Posts on GitHub](#-your-posts-on-github) · [Privacy](#-privacy)
+**[🌐 Website](https://chetanya1998.github.io/build-in-public/)** · [Get started](#-getting-started) · [How your day works](#-how-your-day-works) · [Captures](#-captures-only-with-your-ok) · [Daily gist](#-the-daily-gist) · [Posts on GitHub](#-your-posts-on-github) · [All your projects](#-across-all-your-projects-optional) · [Reminders](#-reminders-when-you-go-quiet) · [Privacy](#-privacy)
 
 </div>
 
@@ -23,9 +25,11 @@ and sends you a daily gist with posts to choose from.
 > **You ship something real almost every day, then post nothing.**
 > You forget what you did, or you can't see why anyone would care.
 
-Build In Public lives in your project. While you code with **Claude Code, Codex or Antigravity**, it keeps a log of what you built and why. When something is worth showing, it asks before capturing your terminal or browser. At the time you choose, it searches the internet for the conversations closest to your project and that day's work, and sends you a gist with a list of suggested posts. You pick one, it writes the post with a real anecdote from your day, and you review it and post it yourself.
+Build Your Product in Public lives in your project. While you code with **Claude Code, Codex or Antigravity**, it keeps a log of what you built and why. When something is worth showing, it asks before capturing your terminal or browser. At the time you choose, it searches the internet for the conversations closest to your project and that day's work, and sends you a gist with a list of suggested posts. You pick one, it writes the post with a real anecdote from your day, and you review it and post it yourself.
 
 **It never posts for you.**
+
+Working on many projects? The optional [`buildinpublic` CLI](#-across-all-your-projects-optional) also keeps a private journal of **every** AI coding session in **every** project, on macOS, Windows and Linux, and [nudges you](#-reminders-when-you-go-quiet) when a couple of days pass without a post.
 
 ## 🌅 How your day works
 
@@ -93,12 +97,87 @@ Push as usual, then open `.buildinpublic/posts/README.md` on GitHub, on your lap
 
 > **Public repo?** Then anyone can read the shared posts and see their images. Setup checks with you first, and `BIP_SKIP_SHARE=1 git commit …` skips sharing for a single commit.
 
+## 🧭 Across all your projects (optional)
+
+The skill works inside one project at a time. If you jump between repos, or just want a record of everything you build with AI, add the companion **`buildinpublic` CLI**. It keeps one private journal of every Claude Code, Codex and Antigravity session in every project, in `~/.buildinpublic/` (`%USERPROFILE%\.buildinpublic\` on Windows). It runs on **macOS, Windows and Linux**.
+
+**Install**
+
+```sh
+# macOS / Linux
+curl -fsSL https://raw.githubusercontent.com/chetanya1998/build-in-public/main/install-cli.sh | sh
+```
+```powershell
+# Windows (PowerShell)
+irm https://raw.githubusercontent.com/chetanya1998/build-in-public/main/install.ps1 | iex
+```
+
+Or `uv tool install "build-in-public[full] @ git+https://github.com/chetanya1998/build-in-public"`, then `buildinpublic setup`. The CLI also installs this repo's skill into every agent it finds, so on Windows it's the easiest way to get both.
+
+`buildinpublic setup` asks eight short questions:
+
+1. When to capture: live, hourly or nightly
+2. What time your summary should arrive
+3. Notification, email or both
+4. Whether to offer localhost screenshots
+5. After how many days without a post to remind you
+6. What to do with new projects
+7. Which folders to never record
+8. Which platforms you post on
+
+Then it connects your agents and schedules the jobs.
+
+| | What you get |
+|---|---|
+| **Every session, every project** | Claude Code's `SessionEnd` hook and Codex's `Stop` hook capture each session as it ends. An hourly sweep catches Antigravity. Each session gets a summary: what you asked, what got built, files, commands, time spent and a story score. |
+| **New projects found for you** | A session in a folder it hasn't seen is a new project. It asks once: *content on*, *journal only* or *ignore*. Nothing is used for posts until you say so, and excluded folders (client work, say) are never read. |
+| **Hooks and related reading** | For your best sessions: opening lines tailored to what you did, high-engagement post titles from your space this month, and related articles from Hacker News, dev.to, Reddit and GitHub. |
+| **Screenshots, with your OK** | It notices when a localhost dev server is running or an agent opens your app in a browser, and asks before capturing framed desktop and mobile shots. It also makes code images on request. |
+| **Daily summary** | Where your time went across projects, the strongest story, hooks, screenshots and drafts written by your own agent. On weak days it says why and suggests easy posts instead. |
+
+```sh
+buildinpublic today                    # today across all projects
+buildinpublic week --project myapp     # weekly rollup
+buildinpublic search stripe webhook    # find any past session
+buildinpublic projects                 # everything it has seen
+buildinpublic project myapp content    # use this project for posts (journal | ignore)
+buildinpublic shot url http://localhost:3000
+buildinpublic shot code src/billing.ts --lines 20-48 --caption "the one-line fix"
+buildinpublic doctor --test            # check everything, send a test notification
+```
+
+<details>
+<summary><b>How it works on each OS</b></summary>
+
+<br>
+
+| | macOS | Windows | Linux |
+|---|---|---|---|
+| Schedule | launchd | Task Scheduler | systemd user timers (cron fallback) |
+| Notifications | Notification Center | toast | `notify-send` |
+| Screenshot permission | native dialog | message box | zenity / kdialog |
+| Email | Apple Mail (no password) | Gmail app password in Credential Manager | `sendmail` (no password) |
+| Sessions read from | `~/.claude`, `~/.codex`, `~/.gemini` | same under `%USERPROFILE%`, plus WSL | same |
+
+No desktop, on an SSH box say? Reminders and screenshot offers wait, and your agent asks you in the next session instead. The email address is shared with the skill, in `~/.config/buildinpublic/email.json`.
+
+</details>
+
+## 🔔 Reminders when you go quiet
+
+With the CLI installed, two days without a post (you choose the number) gets you a notification. **The next time you open Claude Code, Codex or Antigravity, your agent asks first:**
+
+> Quick one before we start: it's been 2 days since your last post. Your draft *"The one-line fix that ended $9.999 invoices"* is ready. Post it, edit it, or skip it?
+
+If nothing's worth posting, it asks what you're working on and turns your answer into a "what I'm building" post. If you're not coding at the moment, it offers a low-effort idea. Say *"not now"* and it snoozes. Mark posts with `buildinpublic posted latest` (or tell your agent "I posted it") and the timer resets.
+
 ## 🚀 Getting started
 
 ### 1. Check the requirements
 
 - **Python 3.9 or newer.** macOS already has it. Check with `python3 --version`.
 - **git**, and a project that's a git repo.
+- **macOS or Linux** for the skill's scripts. On **Windows**, use the [CLI](#-across-all-your-projects-optional), which needs only Python.
 - **At least one agent:** [Claude Code](https://claude.com/claude-code), Codex or Antigravity.
 - **Optional, for capture images:** Playwright, installed for the same `python3`:
   ```sh
@@ -199,6 +278,8 @@ You mostly just code. Here's a day:
 | "write post 2 for LinkedIn" | Drafts it; you revise and approve it |
 | "I posted it" | Marks it posted, with the link, and adds it to your story so far |
 | "weekly recap" | Offers recap angles from the week's briefs |
+| "what did I do this week?" | With the CLI: your sessions across all projects, with time spent |
+| "not now" (to a reminder) | Snoozes the reminder for a day |
 
 ### 🔄 Update or remove it
 
@@ -214,7 +295,9 @@ cd build-in-public && git pull && sh install.sh
 sh ~/.claude/skills/build-in-public/scripts/schedule.sh --remove
 ```
 
-Then delete the Build In Public lines from `.git/hooks/post-commit` and `.git/hooks/pre-commit`, and the Build In Public section from `AGENTS.md`, `CLAUDE.md` and `GEMINI.md`. Your `.buildinpublic/` folder is yours to keep or delete.
+Then delete the Build Your Product in Public lines from `.git/hooks/post-commit` and `.git/hooks/pre-commit`, and the Build Your Product in Public section from `AGENTS.md`, `CLAUDE.md` and `GEMINI.md`. Your `.buildinpublic/` folder is yours to keep or delete.
+
+**The CLI:** `buildinpublic uninstall` removes its hooks, skill copies and schedule. Your journal in `~/.buildinpublic/` stays until you delete it.
 
 **Uninstall it everywhere:** first remove it from each project as above, then delete the `build-in-public` folders from the table in step 2, and `~/.config/buildinpublic/`.
 
@@ -301,7 +384,7 @@ It checks your tools (Python, git, zstd, Playwright, your agent's CLI), the `.bu
 | 🧹 **Secrets redacted** | API keys, tokens, JWTs, private keys and emails are removed from digests and captures, plus every term you list under **Off-limits**. |
 | 🔑 **No passwords** | Email needs only your address. It's sent through the mail app you're already signed in to. |
 | 🐙 **You choose what's shared** | Only posts you approved go into commits, and only if you turned sharing on. |
-| 📁 **This repo only** | Sessions from other projects are skipped. |
+| 📁 **This repo only** | The skill skips sessions from other projects. The optional CLI journals all of them, but new projects stay journal-only until you turn content on, and excluded folders are never read. |
 | 🤖 **Your agent, your model** | When your agent writes the brief, the redacted digest goes to that agent's model, like any other prompt. |
 | 🚫 **Never posts** | It drafts. You post. |
 
@@ -309,13 +392,14 @@ It checks your tools (Python, git, zstd, Playwright, your agent's CLI), the `.bu
 
 - [x] **Easy to trust.** `doctor.py`, tests on sample sessions for every agent, CI on macOS and Linux.
 - [x] **Your day, your approval.** Captures only with your OK, trends from your stack and today's work, the scheduled gist by notification and optional email, choosing what to post, and approved posts on GitHub with your commits.
+- [x] **Every project, every OS.** The `buildinpublic` CLI: a journal across all projects, live hooks, reminders that ask inside your agent, and Windows support.
 - [ ] **Learns what works.** Log how each post did, so suggestions are ranked by what gets a response from *your* audience. Voice training from your best past posts.
 - [ ] **Better visuals.** Before/after pairs, metric cards, GIFs from browser-test recordings.
 - [ ] **More reach.** Cursor, Windsurf, Gemini CLI and Aider. Export to Typefully or Buffer (you still approve every post).
 
 ## 🤝 Contributing
 
-PRs are welcome, especially new agents (Cursor, Windsurf, Gemini CLI), new trend sources and better prompts. Tests use only the standard library:
+PRs are welcome, especially new agents (Cursor, Windsurf, Gemini CLI), new trend sources and better prompts. Tests use only the standard library, and CI runs them on macOS and Linux, plus the CLI's tests on Windows:
 
 ```sh
 python3 -m unittest discover tests

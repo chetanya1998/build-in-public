@@ -1,0 +1,43 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "build-in-public"
+version = "0.3.0"
+description = "Your build-in-public content strategist: journals every AI coding session (Claude Code, Codex, Antigravity) across all projects and turns it into posts."
+readme = "README.md"
+license = { text = "MIT" }
+authors = [{ name = "Chetanya" }]
+requires-python = ">=3.9"
+dependencies = []
+keywords = ["build-in-public", "claude-code", "codex", "antigravity", "agent-skills", "devlog"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Operating System :: MacOS",
+  "Operating System :: Microsoft :: Windows",
+  "Operating System :: POSIX :: Linux",
+  "License :: OSI Approved :: MIT License",
+]
+
+[project.optional-dependencies]
+shots = ["playwright>=1.40"]
+full = ["playwright>=1.40", "psutil>=5.9", "keyring>=24", "pygments>=2.15"]
+
+[project.scripts]
+buildinpublic = "buildinpublic.cli:main"
+
+[project.urls]
+Homepage = "https://chetanya1998.github.io/build-in-public/"
+Repository = "https://github.com/chetanya1998/build-in-public"
+
+[tool.setuptools]
+packages = ["buildinpublic", "buildinpublic.skills"]
+
+[tool.setuptools.package-dir]
+buildinpublic = "src/buildinpublic"
+"buildinpublic.skills" = "skills"
+
+[tool.setuptools.package-data]
+buildinpublic = ["templates/*"]
+"buildinpublic.skills" = ["build-in-public/*", "build-in-public/**/*"]

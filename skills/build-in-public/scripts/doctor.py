@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build In Public: check that everything the skill needs is in place for this repo.
+"""Build Your Product in Public: check that everything the skill needs is in place for this repo.
 
 Checks tools (Python, git, zstd, Playwright, agent CLI), the .buildinpublic/ setup,
 agent logging rules, the git hook, gist delivery (notification, email settings and
@@ -137,7 +137,7 @@ def check_setup(repo):
         warn("Agent logging rule", "not in AGENTS.md / CLAUDE.md / GEMINI.md, so agents won't write log entries")
 
     hook = repo / ".git" / "hooks" / "post-commit"
-    if hook.exists() and "Build In Public" in hook.read_text(errors="ignore"):
+    if hook.exists() and "Build Your Product in Public" in hook.read_text(errors="ignore"):
         ok("git hook", "post-commit logs commits")
     else:
         warn("git hook", "not installed (optional): sh <skill>/scripts/init.sh --hook")
@@ -276,7 +276,7 @@ def main():
     repo = Path(run("git", "-C", a.repo, "rev-parse", "--show-toplevel") or a.repo).resolve()
     today = (dt.datetime.now() - dt.timedelta(hours=4)).date()
 
-    print(f"Build In Public doctor · {repo} · {platform.system()} · {today}")
+    print(f"Build Your Product in Public doctor · {repo} · {platform.system()} · {today}")
     check_install()
     cfg = check_setup(repo)
     check_tools(cfg)

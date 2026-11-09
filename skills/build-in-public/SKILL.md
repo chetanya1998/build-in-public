@@ -1,11 +1,11 @@
 ---
 name: build-in-public
-description: Personal build-in-public content strategist that lives in the user's project repo. Logs what the user builds during Claude Code, Codex and Antigravity sessions, asks before capturing terminal or browser output, searches the internet for trends near the project and the day's work, sends a scheduled daily gist (notification, plus email if the user gives an address) with a list of suggested posts, drafts the one the user picks, and can add approved posts and images to the user's commits so they're on GitHub. Never posts. Use for "build in public", "log this", "capture this", "daily gist", "build in public brief", "review my posts", "write post 2", "what should I post", weekly recap.
+description: Personal build-in-public content strategist that lives in the user's project repo. Logs what the user builds during Claude Code, Codex and Antigravity sessions, asks before capturing terminal or browser output, searches the internet for trends near the project and the day's work, sends a scheduled daily gist (notification, plus email if the user gives an address) with a list of suggested posts, drafts the one the user picks, and can add approved posts and images to the user's commits so they're on GitHub. Never posts. With the optional `buildinpublic` CLI it also journals every session across all projects (macOS, Windows, Linux) and reminds the user when they haven't posted. Use for "build in public", "log this", "capture this", "daily gist", "build in public brief", "review my posts", "write post 2", "what should I post", weekly recap, "what did I do today/this week", "across my projects", and Build Your Product in Public reminders.
 ---
 
-# Build In Public
+# Build Your Product in Public
 
-Builders ship something real almost every day, then post nothing. They forget what they did, or they can't see why it would interest anyone. Build In Public is the builder's personal content strategist, living in their own project:
+Builders ship something real almost every day, then post nothing. They forget what they did, or they can't see why it would interest anyone. Build Your Product in Public is the builder's personal content strategist, living in their own project:
 
 1. **During the session** it logs what was built, and asks before capturing a terminal output or a browser screen worth showing.
 2. **At the time the user chose** it reads the day's agent sessions and git history, searches the internet for the trends nearest to the project and that day's work, and sends a **gist** (a desktop notification, plus an email if they gave an address) with a list of suggested posts.
@@ -82,7 +82,7 @@ At the end of any meaningful task, or when the user says "log this":
 4. **Keep the anecdote.** Write down the specific moment: the exact error, the wrong guess, the "oh, it's the timezone" line. Posts are built from these.
 5. Keep it short and factual, skip trivial changes, and scrub secrets and Off-limits terms.
 
-Mention it in one line ("Logged to today's Build In Public log.").
+Mention it in one line ("Logged to today's Build Your Product in Public log.").
 
 ---
 
@@ -167,6 +167,47 @@ For a **weekly recap**, read the week's `brief.md` files and posts, and offer 3 
 ### When there is no brief yet
 
 Don't refuse. Run the Gather step of Mode 4, or rebuild the day from `git log`, ask one question ("What was the hardest part today?"), and then suggest posts.
+
+
+---
+
+## Mode 6: Across all projects (optional `buildinpublic` CLI)
+
+Some users work on many projects, or want a record of every AI coding session without setting up each repo. The optional companion CLI keeps a **global journal** in `~/.buildinpublic/` (on Windows `%USERPROFILE%\.buildinpublic\`). It's separate from a project's `.buildinpublic/` folder, and works on macOS, Windows and Linux.
+
+Check whether it's installed with `buildinpublic --version`. If it isn't and the user wants it, point them to the README's "Across all your projects" section. It installs with `sh install-cli.sh` on macOS or Linux, or `irm …/install.ps1 | iex` on Windows.
+
+| The user asks | Run |
+|---|---|
+| "what did I do today / on Tuesday?" | `buildinpublic today` · `buildinpublic today 2026-11-03` |
+| "this week", "how much time on X?" | `buildinpublic week` · `buildinpublic week --project <name>` |
+| "when did I fix the webhook bug?" | `buildinpublic search stripe webhook` |
+| "which projects?" | `buildinpublic projects` |
+| "screenshot my app / this code" | `buildinpublic shot url <url>` · `buildinpublic shot code <file> --lines 20-48 --caption "…"` |
+
+Read the `summary.md` files these commands point to for detail.
+
+**New projects.** The journal finds new projects on its own. When the session-start context or the summary lists one, ask the user once: *content on* (used for posts), *journal only*, or *ignored*. Then run `buildinpublic project <name> content|journal|ignore`.
+
+A project that's also set up with Mode 1 keeps using its own `.buildinpublic/` gist and posts. The global journal is the record across everything.
+
+## Mode 7: Reminders (when the user hasn't posted)
+
+The CLI tracks drafts. When nothing has been posted for `nudge_after_days` (default 2), it sends a notification and writes `~/.buildinpublic/nudge.md`.
+
+If your session context contains a `<build-in-public>` block, or that file exists:
+
+1. Bring it up briefly at the start, before the user's task. Ask one question at a time and keep it friendly:
+   - a waiting draft: post it, edit it, or skip it?
+   - the last session: turn it into a post?
+   - "What are you working on right now?"
+   - otherwise, a low-effort idea: a lesson, a question for their audience, or a look at their setup
+2. When they answer what they're working on, run `buildinpublic nudge --reply "<their words>"` and offer to draft a "what I'm building" post. If they say not now, run `buildinpublic nudge --snooze`.
+3. When they post something, run `buildinpublic posted <id>`, or `buildinpublic posted latest`. This also resets the reminder.
+
+Don't nag: once per session at most.
+
+**Screenshot offers.** The CLI notices localhost dev servers and agent browser tests, and asks through a native dialog. If there was no desktop to ask on, the session-start context includes a **Screenshot offer**. Ask about it, and only on a yes run `buildinpublic shot url <url>`. Then run `buildinpublic shot --clear`.
 
 ---
 

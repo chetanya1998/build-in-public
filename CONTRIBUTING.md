@@ -1,4 +1,4 @@
-# Contributing to Build In Public
+# Contributing to Build Your Product in Public
 
 Thanks for helping builders share their work.
 
@@ -29,3 +29,28 @@ check capture images). The tests use sample sessions in `tests/fixtures/sessions
 agent in that agent's real format.
 When an agent changes its session format, add a sample of the new format there (with `{{REPO}}`
 and `{{DAY}}` placeholders, no real data) and a test for it in `tests/test_collect.py`.
+
+## The `buildinpublic` CLI (all projects, every OS)
+
+The optional CLI lives in `src/buildinpublic/` and is packaged with `pyproject.toml`. The repo's `skills/` folder ships inside it as `buildinpublic.skills`, so there's only one copy of the skill.
+
+| File | What |
+|---|---|
+| `readers.py` | session readers for each agent |
+| `journal.py` | capture, projects, story signals, day and week journal |
+| `research.py` | keywords, related articles, hook patterns |
+| `shots.py` | code and app images, localhost and agent-testing detection |
+| `nudge.py` / `brief.py` | reminders, daily summary |
+| `notify.py` / `scheduler.py` | notifications, dialogs, email and schedules on each OS |
+| `integrations.py` | hooks, skill install, global agent instructions |
+
+```sh
+pip install -e ".[full]"
+python -m unittest discover tests -p "test_global*.py" -v
+```
+
+These tests run on macOS, Linux and Windows in CI. They use fake home folders (`BIP_USER_HOME`, `BUILDINPUBLIC_HOME`) and `BIP_NO_GUI=1`, so they never touch your real agents.
+
+## Landing page
+
+`docs/page.html` is the page body; `python3 scripts/build_pages.py` wraps it into `docs/index.html`, which `.github/workflows/pages.yml` deploys to GitHub Pages.

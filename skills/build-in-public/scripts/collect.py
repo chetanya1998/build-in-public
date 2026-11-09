@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build In Public: collect one day of work for the current repo.
+"""Build Your Product in Public: collect one day of work for the current repo.
 
 Reads, read-only and locally:
   - Claude Code sessions   ~/.claude/projects/<encoded-cwd>/*.jsonl

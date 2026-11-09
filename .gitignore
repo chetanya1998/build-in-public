@@ -1,3 +1,7 @@
 .DS_Store
 .buildinpublic/
 __pycache__/
+*.egg-info/
+build/
+dist/
+.venv/

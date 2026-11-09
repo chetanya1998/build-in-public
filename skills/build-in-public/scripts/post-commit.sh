@@ -1,5 +1,5 @@
 #!/bin/sh
-# Build In Public: append each commit to .buildinpublic/commits.log
+# Build Your Product in Public: append each commit to .buildinpublic/commits.log
 ROOT="$(git rev-parse --show-toplevel)" || exit 0
 mkdir -p "$ROOT/.buildinpublic"
 {

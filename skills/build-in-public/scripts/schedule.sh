@@ -1,5 +1,5 @@
 #!/bin/sh
-# Build In Public: run nightly.sh every day at brief_time (default 00:00) for this repo.
+# Build Your Product in Public: run nightly.sh every day at brief_time (default 00:00) for this repo.
 # macOS: launchd (runs on wake if the Mac was asleep). Linux: crontab.
 # Usage: sh schedule.sh [--time HH:MM] [--remove]
 set -e

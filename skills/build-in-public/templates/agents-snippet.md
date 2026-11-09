@@ -1,5 +1,5 @@
 
-## Build In Public
+## Build Your Product in Public
 After finishing any meaningful task, append an entry to `.buildinpublic/log/<today YYYY-MM-DD>.md` (create the file if needed):
 
 ### HH:MM - <short title>  (agent: <your name>)

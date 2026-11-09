@@ -1,5 +1,5 @@
 #!/bin/sh
-# Build In Public: scaffold .buildinpublic/ in the current project.
+# Build Your Product in Public: scaffold .buildinpublic/ in the current project.
 # Usage: sh <skill-dir>/scripts/init.sh [--hook] [--share]
 #   --hook   post-commit hook: log each commit to .buildinpublic/commits.log
 #   --share  pre-commit hook: add approved posts and their images to each commit
@@ -14,7 +14,7 @@ install_hook() { # $1 = hook name, $2 = source script
   HOOK=".git/hooks/$1"
   BODY="$(sed "s#__SKILL_DIR__#$SKILL_DIR#g" "$2")"
   if [ -f "$HOOK" ]; then
-    grep -q "Build In Public" "$HOOK" || printf '\n%s\n' "$(echo "$BODY" | tail -n +2)" >> "$HOOK"
+    grep -q "Build Your Product in Public" "$HOOK" || printf '\n%s\n' "$(echo "$BODY" | tail -n +2)" >> "$HOOK"
   else
     echo "$BODY" > "$HOOK"
   fi
@@ -34,4 +34,4 @@ PY
              echo "Installed git pre-commit hook: approved posts are added to your commits." ;;
   esac
 done
-echo "Build In Public ready in .buildinpublic/"
+echo "Build Your Product in Public ready in .buildinpublic/"

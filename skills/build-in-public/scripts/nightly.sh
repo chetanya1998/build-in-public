@@ -1,5 +1,5 @@
 #!/bin/sh
-# Build In Public: end-of-day pipeline for one repo.
+# Build Your Product in Public: end-of-day pipeline for one repo.
 #   collect sessions + git + approved captures -> trends -> agent writes the brief -> notification + email
 # Usage: sh nightly.sh [/path/to/repo] [YYYY-MM-DD]
 REPO="${1:-$(pwd)}"
@@ -9,7 +9,7 @@ DAY="${2:-$(python3 -c 'import datetime as d;print((d.datetime.now()-d.timedelta
 OUT=".buildinpublic/daily/$DAY"
 mkdir -p "$OUT"
 LOG="$OUT/nightly.log"
-echo "== Build In Public nightly $DAY $(date)" >> "$LOG"
+echo "== Build Your Product in Public nightly $DAY $(date)" >> "$LOG"
 
 python3 "$SKILL_DIR/scripts/collect.py"  --repo "$REPO" --date "$DAY" >> "$LOG" 2>&1
 python3 "$SKILL_DIR/scripts/trends.py"   --repo "$REPO" --date "$DAY" >> "$LOG" 2>&1

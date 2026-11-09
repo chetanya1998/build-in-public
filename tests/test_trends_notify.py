@@ -88,7 +88,8 @@ Long story.
         self.email_config()
         r = self.run_script("notify.py", "--date", str(DAY), "--dry-run")
         self.assertEqual(r.returncode, 0, r.stderr)
-        self.assertIn(f"Subject: Build In Public · tinyinvoice · {DAY}: Fixed due dates", r.stdout)
+        unfolded = r.stdout.replace("\n ", " ")  # long subjects are folded onto two header lines
+        self.assertIn(f"Subject: Build Your Product in Public · tinyinvoice · {DAY}: Fixed due dates", unfolded)
         self.assertIn("To: me@example.com", r.stdout)
         self.assertIn("From: me@example.com", r.stdout)
         self.assertIn(f'filename="brief-{DAY}.md"', r.stdout)

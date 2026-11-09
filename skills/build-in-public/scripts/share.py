@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build In Public: put your approved posts and their images where GitHub can show them.
+"""Build Your Product in Public: put your approved posts and their images where GitHub can show them.
 
 Reads the post files in .buildinpublic/posts/ and, for every post with status approved or
 posted, copies its attached capture images into .buildinpublic/posts/images/ and writes
@@ -82,9 +82,9 @@ def copy_images(repo, meta):
 
 
 def render(repo, posts, images):
-    L = [f"# Build In Public · {repo.name}", "",
+    L = [f"# Build Your Product in Public · {repo.name}", "",
          "Posts you approved, ready to copy and post. Newest first.", "",
-         "<sub>Written by [Build In Public](https://github.com/chetanya1998/build-in-public). "
+         "<sub>Written by [Build Your Product in Public](https://github.com/chetanya1998/build-in-public). "
          "Edit the post files next to this page, not the page itself.</sub>", ""]
     for f, meta, title, body in posts:
         status = meta.get("status", "").lower()
@@ -136,7 +136,7 @@ def main():
         r = subprocess.run(["git", "-C", str(repo), "add", "-f", "--", *map(str, files)],
                            capture_output=True, text=True)
         if r.returncode:
-            print(f"Build In Public: couldn't add posts to the commit: {r.stderr.strip()}", file=sys.stderr)
+            print(f"Build Your Product in Public: couldn't add posts to the commit: {r.stderr.strip()}", file=sys.stderr)
 
 
 if __name__ == "__main__":
