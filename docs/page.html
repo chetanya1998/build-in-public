@@ -23,7 +23,15 @@
   --bg: #0a0b0d; --surface: #121419; --fg: #eceef2; --muted: #8e95a2; --line: #22262d;
   --ink: #93a6ff; --ink-soft: #181d33; --term: #07080a; --term-fg: #d7dbe3; --term-dim: #6a717e; --ok: #4cc584;
   color-scheme: dark }
+:root[data-theme="light"] { color-scheme: light }
 
+/* theme switch */
+.theme { flex: none; width: 36px; height: 36px; display: grid; place-items: center; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--fg); cursor: pointer; padding: 0 }
+.theme:hover { border-color: var(--fg) }
+.theme svg { width: 17px; height: 17px }
+.theme .sun { display: none }
+:root[data-theme="dark"] .theme .sun { display: block } :root[data-theme="dark"] .theme .moon { display: none }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .theme .sun { display: block } :root:not([data-theme="light"]) .theme .moon { display: none } }
 * { box-sizing: border-box }
 body { background: var(--bg); color: var(--fg); font: 400 16px/1.6 var(--display); -webkit-font-smoothing: antialiased }
 body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg) }
@@ -44,7 +52,8 @@ p { margin: 0 }
 
 /* nav */
 .nav { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: color-mix(in srgb, var(--bg) 86%, transparent); backdrop-filter: blur(12px); border-bottom: 1px solid var(--line) }
-.nav .wrap { display: flex; align-items: center; gap: 24px; height: 60px }
+.nav .wrap { display: flex; align-items: center; gap: 16px; height: 60px }
+.links { margin-right: 8px }
 .brand { display: flex; align-items: center; gap: 10px; font-weight: 600; letter-spacing: -0.02em; text-decoration: none; white-space: nowrap }
 .mark { width: 22px; height: 22px; border-radius: 6px; background: var(--fg); position: relative; flex: none }
 .mark::after { content: ""; position: absolute; left: 5px; right: 5px; top: 6px; height: 2px; background: var(--bg); box-shadow: 0 4px 0 var(--bg), 0 8px 0 var(--bg); border-radius: 2px }
@@ -53,7 +62,9 @@ p { margin: 0 }
 .pill { display: inline-flex; align-items: center; gap: 8px; border-radius: 999px; padding: 9px 16px; font: 500 14px/1 var(--display); text-decoration: none; border: 1px solid var(--line); background: var(--surface); color: var(--fg); cursor: pointer; white-space: nowrap }
 .pill.solid { background: var(--fg); color: var(--bg); border-color: var(--fg) }
 .pill:hover { border-color: var(--fg) }
-@media (max-width: 760px) { .links { display: none } .nav .pill { margin-left: auto } }
+@media (max-width: 760px) { .links { display: none } .nav .theme { margin-left: auto } }
+@media (max-width: 440px) { .nav .wrap { gap: 10px } .nav .ghl { display: none } .nav .pill { padding: 9px 12px } .brand { font-size: 15px } }
+@media (max-width: 360px) { .nav .brand { white-space: normal; line-height: 1.15; font-size: 14px; min-width: 0 } }
 
 /* hero */
 .hero { padding-block: 72px 88px; border: 0 }
@@ -67,13 +78,14 @@ p { margin: 0 }
 
 /* install */
 .install { margin-top: 30px; border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); overflow: hidden; max-width: 560px }
-.tabs { display: flex; gap: 2px; padding: 6px; border-bottom: 1px solid var(--line); overflow-x: auto }
+.tabbar { display: flex; align-items: center; gap: 8px; padding-right: 8px; border-bottom: 1px solid var(--line) }
+.tabs { display: flex; gap: 2px; padding: 6px; overflow-x: auto; min-width: 0 }
+.tabbar .copy { margin-left: auto }
 .tab { font: 500 13px/1 var(--display); padding: 8px 12px; border-radius: 8px; border: 0; background: none; color: var(--muted); cursor: pointer; white-space: nowrap }
 .tab[aria-selected="true"] { background: var(--ink-soft); color: var(--fg) }
-.cmd { display: flex; align-items: center; gap: 12px; padding: 14px 14px 14px 16px; min-width: 0 }
-.cmd pre { margin: 0; flex: 1; min-width: 0; overflow-x: auto; font: 13px/1.5 var(--mono); white-space: pre }
-.cmd pre::before { content: "$ "; color: var(--muted) }
-.cmd.ps pre::before { content: "PS> " }
+.cmd { display: flex; align-items: flex-start; gap: 12px; padding: 14px 14px 14px 16px; min-width: 0 }
+.cmd pre { margin: 0; flex: 1; min-width: 0; overflow-x: auto; font: 12.5px/1.6 var(--mono); white-space: pre }
+.cmd pre .p { color: var(--muted); user-select: none }
 .copy { flex: none; font: 500 12px/1 var(--display); padding: 8px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--fg); cursor: pointer }
 .cta-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; align-items: center }
 .note { font-size: 13px; color: var(--muted) }
@@ -173,17 +185,78 @@ footer { border-top: 1px solid var(--line); padding-block: 28px 40px; font-size:
 footer .wrap { display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: center }
 footer nav { display: flex; gap: 18px; margin-left: auto; flex-wrap: wrap }
 
+
+/* demo player: the same terminal panel as the hero */
+.demo { display: grid; grid-template-columns: 250px 1fr; gap: 20px; align-items: start }
+.demo > * { min-width: 0 }
+.scenes { list-style: none; margin: 0; padding: 6px; display: grid; gap: 2px; border: 1px solid var(--line); border-radius: var(--r); background: var(--surface) }
+.scenes button { width: 100%; text-align: left; display: grid; grid-template-columns: 26px 1fr; gap: 8px; align-items: baseline; padding: 11px 12px; border: 0; border-radius: 10px; background: none; color: var(--fg); font: inherit; cursor: pointer; position: relative; overflow: hidden }
+.scenes button:hover { background: var(--bg) }
+.scenes .n { font: 500 12px/1 var(--mono); color: var(--muted) }
+.scenes b { display: block; font-weight: 500; font-size: 15px; letter-spacing: -0.01em }
+.scenes small { display: block; color: var(--muted); font-size: 12.5px }
+.scenes button[aria-selected="true"] { background: var(--ink-soft) }
+.scenes button[aria-selected="true"] .n { color: var(--ink) }
+.scenes .prog { position: absolute; left: 0; bottom: 0; height: 2px; width: 0; background: var(--ink) }
+.stage { min-width: 0; background: var(--term); color: var(--term-fg); border-radius: 18px; overflow: hidden; box-shadow: 0 30px 70px -30px rgba(10, 14, 30, .45), 0 0 0 1px rgba(255, 255, 255, .06) inset; display: grid; grid-template-rows: auto 1fr auto; min-height: 460px }
+.stage > *, .stage .panel-bar > * { min-width: 0 }
+.panel-bar .where { margin-left: auto; font: 500 11px/1 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--term-dim); white-space: nowrap }
+.scene { padding: 18px 20px 20px; font: 13px/1.65 var(--mono); overflow-x: auto }
+.player .scene { display: none } .player .scene.on { display: block }
+.scene .ln { margin: 0 0 6px; white-space: pre-wrap; word-break: break-word }
+.scene .ln.card, .scene .ln.agent, .scene .ln.you { white-space: normal }
+.player .scene .ln { opacity: 0; transition: opacity .25s }
+.player .scene .ln.show { opacity: 1 }
+.ln.sh { color: #fff } .ln.sh::before { content: "$ "; color: var(--term-dim) }
+.ln.ok { color: #4cc584 } .ln.note, .scene .dim { color: var(--term-dim) } .scene .y { color: #f2c97d } .scene .w { color: #14161a; font-weight: 600 }
+.ln.you, .ln.agent { font: 400 14.5px/1.5 var(--display); padding: 10px 13px; border-radius: 14px; max-width: 88%; width: fit-content; margin-bottom: 10px }
+.ln.agent { background: #171a21; border: 1px solid rgba(255, 255, 255, .08); border-top-left-radius: 4px }
+.ln.agent b { color: #fff; font-weight: 600 } .ln.agent code { color: #f2c97d }
+.ln.you { margin-left: auto; background: #eceef2; color: #101216; border-top-right-radius: 4px }
+.opt { display: inline-block; margin: 6px 6px 0 0; padding: 3px 9px; border-radius: 999px; border: 1px solid rgba(255, 255, 255, .14); font-size: 12.5px; color: var(--term-fg) }
+.ln.card { font-family: var(--display); background: #f7f8fb; color: #14161a; border-radius: 12px; padding: 14px 16px; margin-bottom: 10px }
+.card .k { font: 500 11px/1 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: #5a616d; margin-bottom: 8px }
+.card h4 { margin: 0 0 4px; font-size: 15px; letter-spacing: -0.01em }
+.card p { color: #3b414c; font-size: 14px; line-height: 1.5 }
+.card code { color: #2c4bd4 }
+.card ol { margin: 6px 0 0; padding-left: 20px; font-size: 14px; display: grid; gap: 3px }
+.card .gh { display: grid; grid-template-columns: 1fr 130px; gap: 12px; align-items: center }
+.card .gh img { width: 100%; height: auto; border-radius: 8px; display: block }
+.controls { display: flex; gap: 10px; align-items: center; padding: 0 20px 16px; font: 12px var(--mono); color: var(--term-dim) }
+.controls button { font: 500 12px/1 var(--display); padding: 7px 10px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, .14); background: transparent; color: var(--term-fg); cursor: pointer }
+@media (max-width: 900px) { .demo { grid-template-columns: 1fr } .scenes { grid-template-columns: repeat(3, 1fr) } .scenes small { display: none } }
+@media (max-width: 520px) { .scenes { grid-template-columns: repeat(2, 1fr) } .stage { min-height: 520px } .scene { padding: 16px 14px; font-size: 12.5px } .card .gh { grid-template-columns: 1fr } .panel-bar .where { display: none } }
+
+/* command reference */
+.cmdtabs { display: flex; gap: 2px; padding: 6px; border: 1px solid var(--line); border-bottom: 0; border-radius: var(--r) var(--r) 0 0; background: var(--surface); overflow-x: auto }
+.reflist { border: 1px solid var(--line); border-radius: 0 0 var(--r) var(--r); background: var(--surface) }
+.reflist[hidden] { display: none }
+.ref { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr) auto; gap: 8px 22px; align-items: center; padding: 14px 16px; border-top: 1px solid var(--line) }
+.ref:first-child { border-top: 0 }
+.ref pre { margin: 0; font: 13px/1.5 var(--mono); white-space: pre-wrap; word-break: break-word }
+.ref pre .s { color: var(--ink) } .ref pre .a { color: var(--muted) }
+.ref p { color: var(--muted); font-size: 14.5px }
+.ref p code { color: var(--fg); white-space: nowrap }
+.cmdnote { margin-top: 14px }
+.cmdnote code { color: var(--fg) }
+@media (max-width: 760px) { .ref { grid-template-columns: minmax(0, 1fr) auto } .ref p { grid-column: 1 / -1; grid-row: 2 } }
+
 @media (prefers-reduced-motion: reduce) { .entry, .brief { animation: none } }
 @media (max-width: 520px) { section { padding-block: 64px } .hero { padding-block: 44px 64px } }
 </style>
+<script>try { var t = localStorage.getItem('bip-theme'); if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t } catch (e) {}</script>
 
 <header class="nav">
   <div class="wrap">
     <a class="brand" href="#top"><span class="mark" aria-hidden="true"></span>Build Your Product in Public</a>
     <nav class="links" aria-label="Sections">
-      <a href="#how">How it works</a><a href="#screenshots">Screenshots</a><a href="#privacy">Privacy</a><a href="#faq">FAQ</a>
+      <a href="#how">How it works</a><a href="#demo">Demo</a><a href="#commands">Commands</a><a href="#privacy">Privacy</a><a href="#faq">FAQ</a>
     </nav>
-    <a class="pill" href="https://github.com/chetanya1998/build-in-public">★ GitHub</a>
+    <button class="theme" type="button" aria-label="Switch to dark mode" title="Switch theme">
+      <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+      <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.5"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+    </button>
+    <a class="pill" href="https://github.com/chetanya1998/build-in-public" aria-label="GitHub">★ <span class="ghl">GitHub</span></a>
   </div>
 </header>
 
@@ -196,14 +269,15 @@ footer nav { display: flex; gap: 18px; margin-left: auto; flex-wrap: wrap }
         <p class="lede">While you code with Claude Code, Codex or Antigravity, it logs what you built and why, and asks before capturing anything worth showing. At the time you choose, it finds the conversations closest to your day's work and sends you a gist with 5 to 7 posts to pick from. You choose one, review the draft, and post it yourself.</p>
 
         <div class="install" data-tabs>
-          <div class="tabs" role="tablist" aria-label="Install command">
+          <div class="tabbar"><div class="tabs" role="tablist" aria-label="Install command">
             <button class="tab" role="tab" id="t-unix" aria-selected="true" data-os="unix">macOS · Linux</button>
             <button class="tab" role="tab" id="t-win" aria-selected="false" data-os="win">Windows</button>
-            <button class="tab" role="tab" id="t-uv" aria-selected="false" data-os="uv">All projects (CLI)</button>
-          </div>
-          <div class="cmd" data-panel="unix"><pre>git clone https://github.com/chetanya1998/build-in-public.git && cd build-in-public && sh install.sh</pre><button class="copy" type="button">Copy</button></div>
-          <div class="cmd ps" data-panel="win" hidden><pre>irm https://raw.githubusercontent.com/chetanya1998/build-in-public/main/install.ps1 | iex</pre><button class="copy" type="button">Copy</button></div>
-          <div class="cmd" data-panel="uv" hidden><pre>curl -fsSL https://raw.githubusercontent.com/chetanya1998/build-in-public/main/install-cli.sh | sh</pre><button class="copy" type="button">Copy</button></div>
+            <button class="tab" role="tab" id="t-uv" aria-selected="false" data-os="cli">All projects (CLI)</button>
+          </div><button class="copy" type="button">Copy</button></div>
+          <div class="cmd" data-panel="unix"><pre><span class="p">$ </span>git clone https://github.com/chetanya1998/build-in-public
+<span class="p">$ </span>cd build-in-public &amp;&amp; sh install.sh</pre></div>
+          <div class="cmd ps" data-panel="win" hidden><pre><span class="p">PS&gt; </span>irm https://raw.githubusercontent.com/chetanya1998/build-in-public/main/install.ps1 | iex</pre></div>
+          <div class="cmd" data-panel="cli" hidden><pre><span class="p">$ </span>curl -fsSL https://raw.githubusercontent.com/chetanya1998/build-in-public/main/install-cli.sh | sh</pre></div>
         </div>
         <div class="cta-row">
           <a class="pill solid" href="#quickstart">Get started</a>
@@ -256,6 +330,163 @@ footer nav { display: flex; gap: 18px; margin-left: auto; flex-wrap: wrap }
         <div class="step"><span class="n">3 · Gist</span><h3>At the time you choose</h3><p>It reads the day's sessions and commits, searches for the trends nearest to your work, and sends 5 to 7 suggested posts by notification and optional email.</p><code>brief_time 19:00</code></div>
         <div class="step"><span class="n">4 · Post</span><h3>You pick, it drafts</h3><p>Say "write post 2". Revise it, approve it, and it can ride along with your next commit so you can copy it from GitHub.</p><code>.buildinpublic/posts/</code></div>
       </div>
+    </div>
+  </section>
+
+  <section id="demo">
+    <div class="wrap">
+      <div class="head">
+        <div class="eyebrow">See it in action</div>
+        <h2>One day, <em>command by command.</em></h2>
+        <p class="lede">What you type and what you see back, from installing it to posting. Click any step, or let it play.</p>
+      </div>
+      <div class="demo" data-player>
+        <ul class="scenes" role="tablist" aria-label="Demo steps">
+          <li><button role="tab" data-scene="0"><span class="n">1</span><span><b>Install</b><small>Once, in your terminal</small></span><span class="prog"></span></button></li>
+          <li><button role="tab" data-scene="1"><span class="n">2</span><span><b>Set up</b><small>Once per project, in your agent</small></span><span class="prog"></span></button></li>
+          <li><button role="tab" data-scene="2"><span class="n">3</span><span><b>Code & capture</b><small>During the day</small></span><span class="prog"></span></button></li>
+          <li><button role="tab" data-scene="3"><span class="n">4</span><span><b>Get the gist</b><small>At 19:00</small></span><span class="prog"></span></button></li>
+          <li><button role="tab" data-scene="4"><span class="n">5</span><span><b>Pick a post</b><small>When you're ready</small></span><span class="prog"></span></button></li>
+          <li><button role="tab" data-scene="5"><span class="n">6</span><span><b>Commit & post</b><small>As usual</small></span><span class="prog"></span></button></li>
+        </ul>
+
+        <div class="stage">
+          <div class="panel-bar"><i></i><i></i><i></i><span data-title>Terminal</span><span class="where" data-where>terminal</span></div>
+          <div class="scenes-wrap">
+            <div class="scene" data-title="~/build-in-public" data-where="Your terminal">
+              <p class="ln sh" data-type>git clone https://github.com/chetanya1998/build-in-public.git</p>
+              <p class="ln sh" data-type>cd build-in-public &amp;&amp; sh install.sh</p>
+              <p class="ln out">Installing Build Your Product in Public (user)…</p>
+              <p class="ln ok">  ✓ Claude Code → ~/.claude/skills/build-in-public</p>
+              <p class="ln ok">  ✓ Codex → ~/.agents/skills/build-in-public</p>
+              <p class="ln ok">  ✓ Antigravity → ~/.gemini/config/skills/build-in-public</p>
+              <p class="ln out">Done. In any project, ask your agent: <span class="y">"set up build in public"</span>.</p>
+              <p class="ln note"># restart your agent so it loads the skill</p>
+            </div>
+
+            <div class="scene" data-title="Claude Code · ~/code/tinyinvoice" data-where="In your agent">
+              <p class="ln you" data-type>set up build in public</p>
+              <p class="ln agent">I read your README and package.json. A few quick questions. <b>When should the daily gist arrive?</b></p>
+              <p class="ln you" data-type>19:00</p>
+              <p class="ln agent"><b>Email it too?</b> Just an address, no password.</p>
+              <p class="ln you" data-type>me@example.com</p>
+              <p class="ln agent"><b>Add approved posts and their images to your commits</b>, so you can open them on GitHub?</p>
+              <p class="ln you" data-type>yes, the repo is private</p>
+              <p class="ln ok">  ✓ .buildinpublic/ created      ✓ logging rule added to CLAUDE.md</p>
+              <p class="ln ok">  ✓ gist scheduled daily at 19:00 (launchd)      ✓ pre-commit hook installed</p>
+              <p class="ln ok">  ✓ doctor: 0 problem(s)</p>
+            </div>
+
+            <div class="scene" data-title="Claude Code · ~/code/tinyinvoice" data-where="In your agent">
+              <p class="ln you" data-type>invoices show the due date a day early in the US. find out why</p>
+              <p class="ln agent">Found it: due dates were saved as UTC midnight and shown in local time. Stored them as calendar dates instead. <b>214 tests pass</b>, including 6 new timezone tests.</p>
+              <p class="ln note">Logged to today's Build Your Product in Public log.  <span class="dim">#war-story</span> <span class="dim">#metric</span></p>
+              <p class="ln agent">Capture this for today's story?<br><span class="opt">1) terminal output of <code>npm test</code></span><span class="opt">2) browser screenshot</span><span class="opt">3) skip</span></p>
+              <p class="ln you" data-type>1</p>
+              <p class="ln sh" data-type>python3 $SKILL/scripts/capture.py terminal --cmd "npm test" --approved</p>
+              <p class="ln ok">Captured 3ca93f: captures/3ca93f-terminal-npm-test.txt, captures/3ca93f-terminal-npm-test.png</p>
+            </div>
+
+            <div class="scene" data-title="19:00 · Notification and email" data-where="Your gist">
+              <div class="ln card"><div class="k">Build Your Product in Public · now</div><h4>2026-11-09: Fixed due dates that moved a day west of UTC</h4></div>
+              <div class="ln card">
+                <div class="k">✉ Build Your Product in Public · tinyinvoice · 2026-11-09</div>
+                <p><b class="w">WHAT YOU SHIPPED</b> · Due dates stay put (b1e8e15) · No dropped Stripe webhooks (5ce850f) · Onboarding 5 → 2 steps</p>
+                <p style="margin-top:8px"><b class="w">SUGGESTED POSTS</b></p>
+                <ol>
+                  <li>“Our tests passed because CI lives in UTC” · X thread · rides a timezone-bug thread</li>
+                  <li>“7 of 500 payments were silently lost” · LinkedIn</li>
+                  <li>“We deleted 3 onboarding steps” · X post · attach the screenshot</li>
+                  <li>Behind the scenes: one day, three agents · Threads</li>
+                  <li>“Store dates, not timestamps” · dev.to</li>
+                </ol>
+                <p style="margin-top:8px">Pick a post: open your agent and say <code class="y">"review my posts"</code>. Nothing is posted for you.</p>
+              </div>
+            </div>
+
+            <div class="scene" data-title="Claude Code · ~/code/tinyinvoice" data-where="In your agent">
+              <p class="ln you" data-type>write post 1 for X</p>
+              <p class="ln agent"><b>Our tests passed. Customers west of London still saw the wrong due date.</b><br>CI runs in UTC, so the bug never showed there. The fix: a due date is a calendar date, not a timestamp…<br><span class="dim">Attach: 3ca93f-terminal-npm-test.png</span></p>
+              <p class="ln you" data-type>shorter, and lead with the number</p>
+              <p class="ln agent"><b>214 tests passed. The bug was still there.</b> CI lives in UTC; our users don't. Store "2026-11-01", not a timestamp.</p>
+              <p class="ln you" data-type>approve it</p>
+              <p class="ln ok">  ✓ Saved posts/2026-11-09-x-ci-lives-in-utc.md  ·  status: approved</p>
+            </div>
+
+            <div class="scene" data-title="~/code/tinyinvoice" data-where="Terminal → GitHub">
+              <p class="ln sh" data-type>git commit -am "fix: due dates in US timezones"</p>
+              <p class="ln out">[main 4f2a9c1] fix: due dates in US timezones</p>
+              <p class="ln out"> 6 files changed  <span class="dim">+ .buildinpublic/posts/README.md, the post, its image</span></p>
+              <p class="ln sh" data-type>git push</p>
+              <div class="ln card"><div class="gh"><div><div class="k">github.com · .buildinpublic/posts/README.md</div><h4>214 tests passed. The bug was still there.</h4><p>X · 2026-11-09 · 📝 ready to post</p></div><img src="terminal-capture.png" alt="" width="1408" height="412" loading="lazy"></div></div>
+              <p class="ln you" data-type>I posted it: https://x.com/you/status/…</p>
+              <p class="ln agent">Marked as posted and added to your story so far. Next time I can call back to it.</p>
+            </div>
+          </div>
+          <div class="controls"><button type="button" data-pause>Pause</button><span data-hint>Step 1 of 6</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="commands">
+    <div class="wrap">
+      <div class="head">
+        <div class="eyebrow">Every command</div>
+        <h2>Mostly you just talk. <em>The scripts are there when you want them.</em></h2>
+        <p class="lede">Say these in Claude Code, Codex or Antigravity. Or run the skill's scripts yourself, or the optional CLI for every project at once.</p>
+      </div>
+      <div data-cmdtabs>
+        <div class="cmdtabs" role="tablist" aria-label="Command groups">
+          <button class="tab" role="tab" aria-selected="true" data-group="say">Say to your agent</button>
+          <button class="tab" role="tab" aria-selected="false" data-group="scripts">Skill scripts</button>
+          <button class="tab" role="tab" aria-selected="false" data-group="cli">CLI · all projects</button>
+        </div>
+
+        <div class="reflist" data-grid="say">
+          <div class="ref"><pre>set up build in public</pre><p>One-time setup in a project: your story, gist time, optional email, sharing, and the schedule.</p><button class="copy" type="button">Copy</button></div>
+          <div class="ref"><pre>log this</pre><p>Adds today's log entry now. Your agent also does this on its own after each task.</p><button class="copy" type="button">Copy</button></div>
+          <div class="ref"><pre>capture this</pre><p>Offers a terminal or browser capture of what just happened, and asks first.</p><button class="copy" type="button">Copy</button></div>
+          <div class="ref"><pre>build in public brief</pre><p>Writes today's brief with 5 to 7 suggested posts, right now.</p><button class="copy" type="button">Copy</button></div>
+          <div class="ref"><pre>review my posts</pre><p>Lists the suggested posts so you can pick one.</p><button class="copy" type="button">Copy</button></div>
+          <div class="ref"><pre>write post 2 for LinkedIn</pre><p>Drafts it with the real anecdote and capture. Revise it, then say "approve it".</p><button class="copy" type="button">Copy</button></div>
+          <div class="ref"><pre>I posted it: &lt;link&gt;</pre><p>Marks it posted and adds it to your story so far, so later posts can call back to it.</p><button class="copy" type="button">Copy</button></div>
+          <div class="ref"><pre>weekly recap</pre><p>Offers three recap angles from the week's briefs and posts.</p><button class="copy" type="button">Copy</button></div>
+        </div>
+
+        <div class="reflist" data-grid="scripts" hidden>
+          <div class="ref"><pre><span class="s">sh</span> install.sh <span class="a">[--project | --only claude]</span></pre><p>Installs the skill for Claude Code, Codex and Antigravity. Run <code>--project</code> from your project's folder.</p><button class="copy" type="button">Copy</button></div>
+          <div class="ref"><pre><span class="s">python3</span> $SKILL/scripts/doctor.py</pre><p>Checks tools, setup, hooks, email, schedule and sessions found. Read-only.</p><button class="copy" type="button">Copy</button></div>
+          <div class="ref"><pre><span class="s">python3</span> $SKILL/scripts/capture.py terminal --cmd "npm test"</pre><p>Asks y/N, then saves redacted output as text and a terminal-window image.</p><button class="copy" type="button">Copy</button></div>
+          <div class="ref"><pre><span class="s">python3</span> $SKILL/scripts/capture.py browser --url http://localhost:3000 --mobile</pre><p>Screenshots your running app on desktop and phone sizes, after a yes.</p><button class="copy" type="button">Copy</button></div>
+          <div class="ref"><pre><span class="s">python3</span> $SKILL/scripts/capture.py candidates</pre><p>Lists screenshots your agents took today. Then <code>approve &lt;id&gt;</code> or <code>reject &lt;id&gt;</code>.</p><button class="copy" type="button">Copy</button></div>
+          <div class="ref"><pre><span class="s">python3</span> $SKILL/scripts/collect.py --inspect</pre><p>Shows which Claude Code, Codex and Antigravity sessions were found for this repo.</p><button class="copy" type="button">Copy</button></div>
+          <div class="ref"><pre><span class="s">sh</span> $SKILL/scripts/nightly.sh</pre><p>Runs the whole daily pipeline now: collect, trends, brief, gist.</p><button class="copy" type="button">Copy</button></div>
+          <div class="ref"><pre><span class="s">python3</span> $SKILL/scripts/notify.py --test</pre><p>Sends a test email to your address. Use <code>--dry-run</code> to only print it.</p><button class="copy" type="button">Copy</button></div>
+          <div class="ref"><pre><span class="s">sh</span> $SKILL/scripts/schedule.sh --time 19:00</pre><p>Changes when the gist arrives. <code>--remove</code> stops it.</p><button class="copy" type="button">Copy</button></div>
+          <div class="ref"><pre><span class="s">sh</span> $SKILL/scripts/init.sh --share</pre><p>Adds approved posts and images to your commits. <code>--hook</code> logs every commit.</p><button class="copy" type="button">Copy</button></div>
+          <div class="ref"><pre><span class="s">python3</span> $SKILL/scripts/share.py</pre><p>Rebuilds <code>.buildinpublic/posts/README.md</code>, the page you open on GitHub.</p><button class="copy" type="button">Copy</button></div>
+          <div class="ref"><pre><span class="s">python3</span> $SKILL/scripts/trends.py</pre><p>Finds this week's discussions near today's work, your topics and your stack.</p><button class="copy" type="button">Copy</button></div>
+        </div>
+
+        <div class="reflist" data-grid="cli" hidden>
+          <div class="ref"><pre><span class="s">buildinpublic</span> setup</pre><p>Guided setup: capture timing, summary time, email, agent hooks and schedule.</p><button class="copy" type="button">Copy</button></div>
+          <div class="ref"><pre><span class="s">buildinpublic</span> today <span class="a">[2026-11-03]</span></pre><p>Every session across all your projects for a day, with time spent and tags.</p><button class="copy" type="button">Copy</button></div>
+          <div class="ref"><pre><span class="s">buildinpublic</span> week <span class="a">[--project name]</span></pre><p>The weekly rollup: time per project and the best story of each.</p><button class="copy" type="button">Copy</button></div>
+          <div class="ref"><pre><span class="s">buildinpublic</span> search stripe webhook</pre><p>Searches every past session: "when did I fix that?"</p><button class="copy" type="button">Copy</button></div>
+          <div class="ref"><pre><span class="s">buildinpublic</span> projects</pre><p>Lists the projects it found, and their mode.</p><button class="copy" type="button">Copy</button></div>
+          <div class="ref"><pre><span class="s">buildinpublic</span> project &lt;name&gt; content <span class="a">| journal | ignore</span></pre><p>Use a project for posts, keep it journal-only, or ignore it completely.</p><button class="copy" type="button">Copy</button></div>
+          <div class="ref"><pre><span class="s">buildinpublic</span> shot url http://localhost:3000</pre><p>Framed screenshot of your running app.</p><button class="copy" type="button">Copy</button></div>
+          <div class="ref"><pre><span class="s">buildinpublic</span> shot code billing.ts --lines 20-48</pre><p>A syntax-coloured image of the lines that mattered. Add <code>--caption</code>.</p><button class="copy" type="button">Copy</button></div>
+          <div class="ref"><pre><span class="s">buildinpublic</span> summary --send</pre><p>Builds the daily summary across projects and sends it now.</p><button class="copy" type="button">Copy</button></div>
+          <div class="ref"><pre><span class="s">buildinpublic</span> posts</pre><p>Lists your drafts and whether each one is posted.</p><button class="copy" type="button">Copy</button></div>
+          <div class="ref"><pre><span class="s">buildinpublic</span> posted latest</pre><p>Marks your latest draft as posted, which also resets the reminder.</p><button class="copy" type="button">Copy</button></div>
+          <div class="ref"><pre><span class="s">buildinpublic</span> nudge --snooze</pre><p>Snoozes the "you haven't posted" reminder. <code>--reply</code> answers it.</p><button class="copy" type="button">Copy</button></div>
+          <div class="ref"><pre><span class="s">buildinpublic</span> doctor <span class="a">[--test]</span></pre><p>Checks that everything works on this machine. <code>--test</code> sends a test notification.</p><button class="copy" type="button">Copy</button></div>
+          <div class="ref"><pre><span class="s">buildinpublic</span> uninstall</pre><p>Removes the agent hooks and schedule. Your journal stays.</p><button class="copy" type="button">Copy</button></div>
+        </div>
+      </div>
+      <p class="note cmdnote"><code>$SKILL</code> is where the skill is installed, for example <code>~/.claude/skills/build-in-public</code>. Run the scripts from your project's folder.</p>
     </div>
   </section>
 
@@ -380,14 +611,15 @@ footer nav { display: flex; gap: 18px; margin-left: auto; flex-wrap: wrap }
       </div>
       <div>
         <div class="install" data-tabs style="margin-top:0">
-          <div class="tabs" role="tablist" aria-label="Install command">
+          <div class="tabbar"><div class="tabs" role="tablist" aria-label="Install command">
             <button class="tab" role="tab" aria-selected="true" data-os="unix">macOS · Linux</button>
             <button class="tab" role="tab" aria-selected="false" data-os="win">Windows</button>
-            <button class="tab" role="tab" aria-selected="false" data-os="uv">All projects (CLI)</button>
-          </div>
-          <div class="cmd" data-panel="unix"><pre>git clone https://github.com/chetanya1998/build-in-public.git && cd build-in-public && sh install.sh</pre><button class="copy" type="button">Copy</button></div>
-          <div class="cmd ps" data-panel="win" hidden><pre>irm https://raw.githubusercontent.com/chetanya1998/build-in-public/main/install.ps1 | iex</pre><button class="copy" type="button">Copy</button></div>
-          <div class="cmd" data-panel="uv" hidden><pre>curl -fsSL https://raw.githubusercontent.com/chetanya1998/build-in-public/main/install-cli.sh | sh</pre><button class="copy" type="button">Copy</button></div>
+            <button class="tab" role="tab" aria-selected="false" data-os="cli">All projects (CLI)</button>
+          </div><button class="copy" type="button">Copy</button></div>
+          <div class="cmd" data-panel="unix"><pre><span class="p">$ </span>git clone https://github.com/chetanya1998/build-in-public
+<span class="p">$ </span>cd build-in-public &amp;&amp; sh install.sh</pre></div>
+          <div class="cmd ps" data-panel="win" hidden><pre><span class="p">PS&gt; </span>irm https://raw.githubusercontent.com/chetanya1998/build-in-public/main/install.ps1 | iex</pre></div>
+          <div class="cmd" data-panel="cli" hidden><pre><span class="p">$ </span>curl -fsSL https://raw.githubusercontent.com/chetanya1998/build-in-public/main/install-cli.sh | sh</pre></div>
         </div>
         <div class="term" style="margin-top:14px">
 <pre><span class="p">you ›</span> set up build in public
@@ -440,29 +672,139 @@ footer nav { display: flex; gap: 18px; margin-left: auto; flex-wrap: wrap }
 
 <script>
 (function () {
-  function select(group, os) {
+  // theme switch: flips whatever is showing now, and remembers it
+  var themeBtn = document.querySelector('.theme');
+  var dark = function () {
+    var t = document.documentElement.dataset.theme;
+    return t ? t === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+  };
+  var label = function () { themeBtn.setAttribute('aria-label', dark() ? 'Switch to light mode' : 'Switch to dark mode'); };
+  label();
+  themeBtn.addEventListener('click', function () {
+    var next = dark() ? 'light' : 'dark';
+    document.documentElement.dataset.theme = next;
+    try { localStorage.setItem('bip-theme', next) } catch (e) {}
+    label();
+  });
+
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // install tabs: all install boxes switch together; Windows visitors see Windows first
+  function selectOs(group, os) {
     group.querySelectorAll('.tab').forEach(function (t) { t.setAttribute('aria-selected', String(t.dataset.os === os)); });
     group.querySelectorAll('[data-panel]').forEach(function (p) { p.hidden = p.dataset.panel !== os; });
   }
   var guess = /Win/i.test(navigator.userAgent) ? 'win' : 'unix';
   document.querySelectorAll('[data-tabs]').forEach(function (g) {
-    select(g, guess);
+    selectOs(g, guess);
     g.querySelectorAll('.tab').forEach(function (t) {
       t.addEventListener('click', function () {
-        document.querySelectorAll('[data-tabs]').forEach(function (all) { select(all, t.dataset.os); });
+        document.querySelectorAll('[data-tabs]').forEach(function (all) { selectOs(all, t.dataset.os); });
       });
     });
   });
+
+  // command groups
+  document.querySelectorAll('[data-cmdtabs]').forEach(function (box) {
+    box.querySelectorAll('.tab').forEach(function (t) {
+      t.addEventListener('click', function () {
+        box.querySelectorAll('.tab').forEach(function (x) { x.setAttribute('aria-selected', String(x === t)); });
+        box.querySelectorAll('[data-grid]').forEach(function (g) { g.hidden = g.dataset.grid !== t.dataset.group; });
+      });
+    });
+  });
+
+  // copy buttons copy the command text, without prompts
   document.querySelectorAll('.copy').forEach(function (b) {
     b.addEventListener('click', function () {
-      var text = b.previousElementSibling.textContent;
+      var box = b.closest('[data-tabs]');
+      var src = box ? box.querySelector('[data-panel]:not([hidden]) pre') : b.parentElement.querySelector('pre');
+      var pre = src.cloneNode(true);
+      pre.querySelectorAll('.p, .a').forEach(function (p) { p.remove(); });  // prompts and optional args
+      var text = pre.textContent.replace(/\s+$/, '');
       var done = function () { b.textContent = 'Copied'; setTimeout(function () { b.textContent = 'Copy'; }, 1600); };
       var fallback = function () {
-        var r = document.createRange(); r.selectNodeContents(b.previousElementSibling);
+        var r = document.createRange(); r.selectNodeContents(src);
         var s = window.getSelection(); s.removeAllRanges(); s.addRange(r); b.textContent = 'Selected';
       };
       try { navigator.clipboard.writeText(text).then(done, fallback); } catch (e) { fallback(); }
     });
   });
+
+  // demo player: plays each scene line by line, typing what you type
+  var player = document.querySelector('[data-player]');
+  if (!player) return;
+  player.classList.add('player');
+  var tabs = Array.prototype.slice.call(player.querySelectorAll('[data-scene]'));
+  var scenes = Array.prototype.slice.call(player.querySelectorAll('.scene'));
+  var titleEl = player.querySelector('[data-title]'), whereEl = player.querySelector('[data-where]');
+  var hint = player.querySelector('[data-hint]'), pauseBtn = player.querySelector('[data-pause]');
+  var stage = player.querySelector('.stage');
+  scenes.forEach(function (s) { s.querySelectorAll('[data-type]').forEach(function (l) { l.dataset.full = l.innerHTML; }); });
+  var cur = 0, timers = [], paused = false, seen = false;
+
+  function clear() { timers.forEach(clearTimeout); timers = []; }
+  function later(fn, ms) { timers.push(setTimeout(fn, ms)); }
+
+  function typeLine(el, done) {
+    var full = el.dataset.full, tmp = document.createElement('div'); tmp.innerHTML = full;
+    var text = tmp.textContent, i = 0;
+    el.textContent = '';
+    (function step() {
+      i += 2; el.textContent = text.slice(0, i);
+      if (i < text.length) later(step, 22); else { el.innerHTML = full; done(); }
+    })();
+  }
+
+  function show(n, auto) {
+    clear(); cur = n;
+    tabs.forEach(function (t, i) {
+      t.setAttribute('aria-selected', String(i === n));
+      var p = t.querySelector('.prog'); p.style.transition = 'none'; p.style.width = '0';
+    });
+    scenes.forEach(function (s, i) { s.classList.toggle('on', i === n); });
+    var scene = scenes[n];
+    titleEl.textContent = scene.dataset.title; whereEl.textContent = scene.dataset.where;
+    stage.style.setProperty('--c', getComputedStyle(scene).getPropertyValue('--c'));
+    hint.textContent = 'Step ' + (n + 1) + ' of ' + scenes.length;
+    var lines = Array.prototype.slice.call(scene.querySelectorAll('.ln'));
+    lines.forEach(function (l) { l.classList.remove('show'); if (l.dataset.full) l.innerHTML = l.dataset.full; });
+    if (reduce) { lines.forEach(function (l) { l.classList.add('show'); }); return; }
+    var i = 0;
+    (function next() {
+      if (i >= lines.length) {
+        if (!paused) {
+          var p = tabs[n].querySelector('.prog');
+          requestAnimationFrame(function () { p.style.transition = 'width 3.2s linear'; p.style.width = '100%'; });
+          later(function () { show((n + 1) % scenes.length, true); }, 3400);
+        }
+        return;
+      }
+      var l = lines[i++];
+      l.classList.add('show');
+      if (l.dataset.full !== undefined && l.hasAttribute('data-type')) typeLine(l, function () { later(next, 380); });
+      else later(next, l.classList.contains('card') ? 900 : 420);
+    })();
+  }
+
+  tabs.forEach(function (t, i) { t.addEventListener('click', function () { seen = true; show(i); }); });
+  pauseBtn.addEventListener('click', function () {
+    seen = true;
+    paused = !paused;
+    pauseBtn.textContent = paused ? 'Play' : 'Pause';
+    if (paused) { clear(); scenes[cur].querySelectorAll('.ln').forEach(function (l) { l.classList.add('show'); if (l.dataset.full) l.innerHTML = l.dataset.full; }); }
+    else show(cur);
+  });
+  if (reduce) { paused = true; pauseBtn.hidden = true; }
+
+  // start when the demo scrolls into view
+  if ('IntersectionObserver' in window && !reduce) {
+    scenes.forEach(function (s, i) { s.classList.toggle('on', i === 0); });
+    tabs[0].setAttribute('aria-selected', 'true');
+    titleEl.textContent = scenes[0].dataset.title; whereEl.textContent = scenes[0].dataset.where;
+    new IntersectionObserver(function (es, o) {
+      if (es[0].isIntersecting && !seen) { seen = true; o.disconnect(); show(0); }
+    }, { threshold: 0.35 }).observe(player);
+  } else show(0);
 })();
 </script>
