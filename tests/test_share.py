@@ -111,6 +111,20 @@ class ShareTest(Fixture):
         self.assertEqual(text.count('share.py" --repo'), 1)  # not added twice
         self.assertIn(str(SCRIPTS / "share.py"), text)
 
+    def test_hooks_from_before_the_rename(self):
+        """Hooks installed as "Build In Public" are recognised: not added again, and doctor sees them."""
+        hooks = self.repo / ".git" / "hooks"
+        old = {"pre-commit": f'#!/bin/sh\n# Build In Public: add your approved posts\npython3 "{SCRIPTS}/share.py" --repo . --stage\n',
+               "post-commit": "#!/bin/sh\n# Build In Public: append each commit to .buildinpublic/commits.log\n"}
+        for name, text in old.items():
+            (hooks / name).write_text(text)
+        subprocess.run(["sh", str(SCRIPTS / "init.sh"), "--hook", "--share"], cwd=self.repo, check=True, capture_output=True)
+        for name, text in old.items():
+            self.assertEqual((hooks / name).read_text(), text)
+        r = self.run_script("doctor.py")
+        self.assertIn("✓ git hook: post-commit logs commits", r.stdout)
+        self.assertIn("✓ Share with commits", r.stdout)
+
     def test_parse_front_matter(self):
         self.post("p.md", "approved   # comment", "Title here", attach=self.attach)
         meta, title, body = share.parse(self.posts / "p.md")

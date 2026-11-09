@@ -14,7 +14,8 @@ install_hook() { # $1 = hook name, $2 = source script
   HOOK=".git/hooks/$1"
   BODY="$(sed "s#__SKILL_DIR__#$SKILL_DIR#g" "$2")"
   if [ -f "$HOOK" ]; then
-    grep -q "Build Your Product in Public" "$HOOK" || printf '\n%s\n' "$(echo "$BODY" | tail -n +2)" >> "$HOOK"
+    # hooks from before the rename say "Build In Public"
+    grep -qE "Build (In|Your Product in) Public" "$HOOK" || printf '\n%s\n' "$(echo "$BODY" | tail -n +2)" >> "$HOOK"
   else
     echo "$BODY" > "$HOOK"
   fi

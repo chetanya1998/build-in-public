@@ -1,6 +1,6 @@
 #!/bin/sh
 # Build Your Product in Public · installer for macOS and Linux
-#   curl -fsSL https://raw.githubusercontent.com/chetanya1998/build-in-public/main/install.sh | sh
+#   curl -fsSL https://raw.githubusercontent.com/chetanya1998/build-in-public/main/install-cli.sh | sh
 set -e
 REPO="git+https://github.com/chetanya1998/build-in-public.git"
 PKG="${BIP_PACKAGE:-$REPO}"

@@ -137,7 +137,7 @@ def check_setup(repo):
         warn("Agent logging rule", "not in AGENTS.md / CLAUDE.md / GEMINI.md, so agents won't write log entries")
 
     hook = repo / ".git" / "hooks" / "post-commit"
-    if hook.exists() and "Build Your Product in Public" in hook.read_text(errors="ignore"):
+    if hook.exists() and re.search(r"Build (In|Your Product in) Public", hook.read_text(errors="ignore")):  # old or new name
         ok("git hook", "post-commit logs commits")
     else:
         warn("git hook", "not installed (optional): sh <skill>/scripts/init.sh --hook")
