@@ -38,8 +38,8 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
 a { color: inherit }
 em { font-family: var(--serif); font-style: italic; font-weight: 400; letter-spacing: -0.01em }
 code, .mono { font-family: var(--mono); font-size: 0.88em }
-.wrap { max-width: 1080px; margin: 0 auto; padding-left: max(20px, env(safe-area-inset-left, 0px)); padding-right: max(20px, env(safe-area-inset-right, 0px)) }
-section { padding-block: 88px; border-top: 1px solid var(--line) }
+.wrap { max-width: 1160px; margin: 0 auto; padding-left: max(20px, env(safe-area-inset-left, 0px)); padding-right: max(20px, env(safe-area-inset-right, 0px)) }
+section { padding-block: 72px; border-top: 1px solid var(--line) }
 h1, h2, h3 { text-wrap: balance; margin: 0; letter-spacing: -0.035em; font-weight: 600 }
 h2 { font-size: clamp(30px, 4.4vw, 46px); line-height: 1.08 }
 h2 em, h1 em { font-size: 1.04em }
@@ -47,7 +47,7 @@ h3 { font-size: 18px; letter-spacing: -0.015em }
 p { margin: 0 }
 .lede { color: var(--muted); font-size: 18px; max-width: 60ch }
 .eyebrow { font: 500 12px/1 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted) }
-.head { display: grid; gap: 16px; margin-bottom: 44px; max-width: 760px }
+.head { display: grid; gap: 14px; margin-bottom: 36px; max-width: 760px }
 :focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; border-radius: 6px }
 
 /* nav */
@@ -67,12 +67,12 @@ p { margin: 0 }
 @media (max-width: 360px) { .nav .brand { white-space: normal; line-height: 1.15; font-size: 14px; min-width: 0 } }
 
 /* hero */
-.hero { padding-block: 72px 88px; border: 0 }
-.hero-grid { display: grid; grid-template-columns: 1.02fr 1fr; gap: 56px; align-items: start }
+.hero { padding-block: 56px 72px; border: 0 }
+.hero-grid { display: grid; grid-template-columns: 1.08fr 1fr; gap: 56px; align-items: center }
 .hero-grid > *, .split > *, .qs > *, .gallery > * { min-width: 0 }
-.hero h1 { font-size: clamp(42px, 6.6vw, 76px); line-height: 1.0; margin: 18px 0 22px }
-.hero .lede { font-size: 19px }
-.agents { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 26px }
+.hero h1 { font-size: clamp(40px, 5.6vw, 68px); line-height: 1.0; margin: 16px 0 18px }
+.hero .lede { font-size: 18px }
+.agents { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px }
 .chip { font: 500 12.5px/1 var(--mono); padding: 7px 10px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); background: var(--surface) }
 @media (max-width: 900px) { .hero-grid { grid-template-columns: 1fr; gap: 40px } }
 
@@ -84,7 +84,7 @@ p { margin: 0 }
 .tab { font: 500 13px/1 var(--display); padding: 8px 12px; border-radius: 8px; border: 0; background: none; color: var(--muted); cursor: pointer; white-space: nowrap }
 .tab[aria-selected="true"] { background: var(--ink-soft); color: var(--fg) }
 .cmd { display: flex; align-items: flex-start; gap: 12px; padding: 14px 14px 14px 16px; min-width: 0 }
-.cmd pre { margin: 0; flex: 1; min-width: 0; overflow-x: auto; font: 12.5px/1.6 var(--mono); white-space: pre }
+.cmd pre { margin: 0; flex: 1; min-width: 0; overflow-x: auto; font: 12.5px/1.6 var(--mono); white-space: pre; padding-bottom: 8px }
 .cmd pre .p { color: var(--muted); user-select: none }
 .copy { flex: none; font: 500 12px/1 var(--display); padding: 8px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--fg); cursor: pointer }
 .cta-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; align-items: center }
@@ -126,13 +126,16 @@ p { margin: 0 }
 @media (max-width: 520px) { .steps { grid-template-columns: 1fr } .step { border-right: 0; border-bottom: 1px solid var(--line) } .step:last-child { border-bottom: 0 } }
 
 /* gallery */
-.gallery { display: grid; grid-template-columns: 2.2fr 1fr; gap: 18px; align-items: start }
+.gallery { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 18px; align-items: start }
+.gallery figure:nth-child(1) { grid-column: span 4 } .gallery .phone { grid-column: span 2 }
+.gallery .phone img { width: auto; max-width: 100%; max-height: 360px; margin-inline: auto }
+.gallery .phone figcaption { text-align: center }
 .gallery figure { margin: 0; display: grid; gap: 10px; min-width: 0 }
 .gallery img { width: 100%; height: auto; border-radius: 12px; display: block; border: 1px solid var(--line) }
-.gallery .wide { grid-column: 1 / -1 }
+.gallery .wide { grid-column: span 3 }
 figcaption { font-size: 13.5px; color: var(--muted) }
 figcaption code { color: var(--fg) }
-@media (max-width: 760px) { .gallery { grid-template-columns: 1fr } .gallery .phone { max-width: 320px } }
+@media (max-width: 760px) { .gallery { grid-template-columns: 1fr } .gallery figure, .gallery figure:nth-child(1), .gallery .phone, .gallery .wide { grid-column: 1 / -1 } }
 
 /* chat */
 .chat { border: 1px solid var(--line); border-radius: 18px; background: var(--surface); padding: 20px; display: grid; gap: 14px; max-width: 560px; justify-self: end; width: 100% }
@@ -179,7 +182,7 @@ summary::after { content: "+"; font: 400 20px/1 var(--mono); color: var(--muted)
 details[open] summary::after { content: "–" }
 details p { color: var(--muted); margin-top: 10px; max-width: 64ch }
 
-.closing { text-align: left; padding-block: 96px }
+.closing { text-align: left; padding-block: 80px }
 .closing h2 { font-size: clamp(34px, 5.4vw, 60px); max-width: 16ch }
 footer { border-top: 1px solid var(--line); padding-block: 28px 40px; font-size: 13.5px; color: var(--muted) }
 footer .wrap { display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: center }
@@ -242,7 +245,7 @@ footer nav { display: flex; gap: 18px; margin-left: auto; flex-wrap: wrap }
 @media (max-width: 760px) { .ref { grid-template-columns: minmax(0, 1fr) auto } .ref p { grid-column: 1 / -1; grid-row: 2 } }
 
 @media (prefers-reduced-motion: reduce) { .entry, .brief { animation: none } }
-@media (max-width: 520px) { section { padding-block: 64px } .hero { padding-block: 44px 64px } }
+@media (max-width: 520px) { section { padding-block: 56px } .hero { padding-block: 40px 56px } }
 </style>
 <script>try { var t = localStorage.getItem('bip-theme'); if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t } catch (e) {}</script>
 
