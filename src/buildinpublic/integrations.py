@@ -25,13 +25,20 @@ BLOCK_START, BLOCK_END = "<!-- buildinpublic:start -->", "<!-- buildinpublic:end
 def skill_source() -> Path:
     """The repo's skills/build-in-public folder: packaged as buildinpublic.skills when
     installed with pip/pipx/uv, or read straight from a git checkout."""
+    here = Path(__file__).resolve().parent
+    # Installed: <site-packages>/buildinpublic/skills/build-in-public. Checked by path first,
+    # because Python 3.9's resources.files() raises TypeError for this namespace package.
+    candidates = [here / "skills" / SKILL_NAME]
     try:
-        p = Path(str(resources.files("buildinpublic.skills") / SKILL_NAME))
-        if (p / "SKILL.md").exists():
-            return p
+        candidates.append(Path(str(resources.files("buildinpublic.skills") / SKILL_NAME)))
     except (ModuleNotFoundError, TypeError):
         pass
-    return Path(__file__).resolve().parents[2] / "skills" / SKILL_NAME
+    candidates.append(here.parents[1] / "skills" / SKILL_NAME)  # git checkout: src/buildinpublic -> repo
+    for p in candidates:
+        if (p / "SKILL.md").exists():
+            return p
+    raise FileNotFoundError("The build-in-public skill files are missing from this install. "
+                            "Reinstall with: python3 -m pip install --user --upgrade --force-reinstall build-in-public")
 
 
 def skill_targets() -> dict[str, Path]:

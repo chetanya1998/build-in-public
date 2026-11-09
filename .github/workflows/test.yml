@@ -34,6 +34,38 @@ jobs:
       - run: buildinpublic --version
       - run: python -m unittest discover tests -p "test_global*.py" -v
 
+  install:
+    # The real install-cli.sh with the system Python and pip, the way a new user runs it:
+    # macOS ships Python 3.9 with an old pip; Ubuntu 24.04's Python refuses `pip install --user`.
+    # Then setup must install the skill and hooks from the installed package (not the checkout).
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            shell: /bin/zsh
+            new_terminal: -lc   # Terminal.app opens login shells: ~/.zprofile
+          - os: ubuntu-24.04
+            shell: /bin/bash
+            new_terminal: -ic   # Linux terminals open interactive shells: ~/.bashrc
+    runs-on: ${{ matrix.os }}
+    env:
+      HOME: ${{ github.workspace }}/../fakehome
+      SHELL: ${{ matrix.shell }}
+      BIP_PYTHON: /usr/bin/python3
+      BIP_INSTALLER: pip
+      BIP_SKIP_EXTRAS: "1"
+    steps:
+      - uses: actions/checkout@v5
+      - run: mkdir -p "$HOME/.claude" && /usr/bin/python3 --version && /usr/bin/python3 -m pip --version
+      - run: BIP_PACKAGE="$GITHUB_WORKSPACE" sh install-cli.sh
+      - name: command works from a new login shell
+        run: ${{ matrix.shell }} ${{ matrix.new_terminal }} 'cd /tmp && buildinpublic --version'
+      - name: setup installed the skill and the Claude Code hooks
+        run: |
+          test -f "$HOME/.claude/skills/build-in-public/SKILL.md"
+          grep -q "buildinpublic hook claude-end" "$HOME/.claude/settings.json"
+
   captures:
     # Same tests with Playwright installed, so capture images are really rendered.
     runs-on: ubuntu-24.04
