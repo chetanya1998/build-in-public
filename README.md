@@ -396,6 +396,8 @@ It checks your tools (Python, git, zstd, Playwright, your agent's CLI), the `.bu
 - [ ] **Learns what works.** Log how each post did, so suggestions are ranked by what gets a response from *your* audience. Voice training from your best past posts.
 - [ ] **Better visuals.** Before/after pairs, metric cards, GIFs from browser-test recordings.
 - [ ] **More reach.** Cursor, Windsurf, Gemini CLI and Aider. Export to Typefully or Buffer (you still approve every post).
+- [ ] **Video posts.** Connect the MCP server or API of a video tool you already use (HeyGen, Higgsfield, Seedance or any other) with your own key. Record yourself, or use an avatar you made, and turn an approved post into a video. You review the video before it goes anywhere.
+- [ ] **A dashboard for all your projects.** One local content hub that lives globally (`~/.buildinpublic`), not in one repo. See every post per project: suggested, approved, scheduled and posted. Edit drafts, change their status and schedule, and open the logs, research, articles and screenshots behind each one, by date and time. ([design](design/dashboard.md))
 
 ## 🤝 Contributing
 

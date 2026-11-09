@@ -1,0 +1,818 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Build in Public Dashboard</title>
+<style>
+:root {
+  --bg: #f6f7f9; --surface: #ffffff; --surface-2: #f0f2f5; --fg: #101216; --muted: #5a616d; --line: #e2e5ea;
+  --ink: #2c4bd4; --ink-soft: #e9edfc; --ok: #1f8a4c; --ok-soft: #e4f4ea; --warn: #a15c00; --warn-soft: #fbefdc;
+  --bad: #b42318; --bad-soft: #fde8e6; --term: #0d0f13;
+  --display: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --serif: "Newsreader", Georgia, "Times New Roman", serif;
+  --mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --r: 12px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0a0b0d; --surface: #121419; --surface-2: #181b21; --fg: #eceef2; --muted: #8e95a2; --line: #22262d;
+  --ink: #93a6ff; --ink-soft: #181d33; --ok: #4cc584; --ok-soft: #10261a; --warn: #f0b45a; --warn-soft: #2a1f0e;
+  --bad: #ff8a80; --bad-soft: #2c1312; --term: #07080a; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #0a0b0d; --surface: #121419; --surface-2: #181b21; --fg: #eceef2; --muted: #8e95a2; --line: #22262d;
+  --ink: #93a6ff; --ink-soft: #181d33; --ok: #4cc584; --ok-soft: #10261a; --warn: #f0b45a; --warn-soft: #2a1f0e;
+  --bad: #ff8a80; --bad-soft: #2c1312; --term: #07080a; color-scheme: dark }
+:root[data-theme="light"] { color-scheme: light }
+
+* { box-sizing: border-box }
+html, body { margin: 0; height: 100% }
+body { background: var(--bg); color: var(--fg); font: 400 14px/1.5 var(--display); -webkit-font-smoothing: antialiased }
+button, input, select, textarea { font: inherit; color: inherit }
+a { color: inherit }
+em { font-family: var(--serif); font-style: italic; font-weight: 400 }
+.mono, code { font-family: var(--mono); font-size: 0.9em }
+:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; border-radius: 6px }
+h1, h2, h3 { margin: 0; letter-spacing: -0.025em; font-weight: 600; text-wrap: balance }
+p { margin: 0 }
+
+/* shell */
+.app { display: grid; grid-template-columns: 224px minmax(0, 1fr); min-height: 100vh }
+.rail { position: sticky; top: 0; height: 100vh; border-right: 1px solid var(--line); background: var(--surface); padding: 16px 12px; display: flex; flex-direction: column; gap: 4px }
+.brand { display: flex; align-items: center; gap: 10px; font-weight: 600; letter-spacing: -0.02em; padding: 4px 8px 16px }
+.mark { width: 22px; height: 22px; border-radius: 6px; background: var(--fg); position: relative; flex: none }
+.mark::after { content: ""; position: absolute; left: 5px; right: 5px; top: 6px; height: 2px; background: var(--bg); box-shadow: 0 4px 0 var(--bg), 0 8px 0 var(--bg); border-radius: 2px }
+.nav-i { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 8px; text-decoration: none; color: var(--muted); font-weight: 500 }
+.nav-i svg { width: 17px; height: 17px; flex: none }
+.nav-i:hover { color: var(--fg); background: var(--surface-2) }
+.nav-i[aria-current="page"] { color: var(--fg); background: var(--ink-soft) }
+.nav-i .count { margin-left: auto; font: 500 11px/1 var(--mono); background: var(--fg); color: var(--bg); border-radius: 999px; padding: 3px 6px }
+.rail-foot { margin-top: auto; font-size: 12px; color: var(--muted); padding: 8px 10px; border-top: 1px solid var(--line) }
+.rail-foot b { color: var(--fg); font-weight: 600 }
+
+.main { min-width: 0; display: flex; flex-direction: column }
+.top { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; gap: 10px; padding: 12px 24px; border-bottom: 1px solid var(--line); background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(10px) }
+.top h1 { font-size: 18px; margin-right: auto; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0 }
+.mock { font: 500 11px/1 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--warn); background: var(--warn-soft); padding: 5px 8px; border-radius: 6px; white-space: nowrap }
+.ctl { height: 34px; border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 0 10px }
+.ctl:hover { border-color: var(--muted) }
+select.ctl { padding-right: 6px }
+.search { width: 200px }
+.icon-btn { width: 34px; height: 34px; display: grid; place-items: center; padding: 0; cursor: pointer; flex: none }
+.icon-btn svg { width: 16px; height: 16px }
+.icon-btn .sun { display: none }
+:root[data-theme="dark"] .icon-btn .sun { display: block } :root[data-theme="dark"] .icon-btn .moon { display: none }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .icon-btn .sun { display: block } :root:not([data-theme="light"]) .icon-btn .moon { display: none } }
+
+.view { padding: 24px; display: grid; gap: 24px; align-content: start; max-width: 1400px; width: 100% }
+
+/* building blocks */
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r) }
+.sec-h { display: flex; align-items: baseline; gap: 4px 10px; margin-bottom: 10px; flex-wrap: wrap }
+.today-grid > *, .editor > *, .view > *, section, .list > * { min-width: 0 }
+.sec-h h2 { font-size: 15px }
+.sec-h .sub { color: var(--muted); font-size: 13px }
+.sec-h .right { margin-left: auto }
+.btn { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); cursor: pointer; font-weight: 500; font-size: 13px; white-space: nowrap; text-decoration: none }
+.btn:hover { border-color: var(--fg) }
+.btn.solid { background: var(--fg); color: var(--bg); border-color: var(--fg) }
+.btn.ghost { border-color: transparent; background: transparent; color: var(--muted) }
+.btn.ghost:hover { color: var(--fg); border-color: var(--line) }
+.btn svg { width: 14px; height: 14px }
+.tag { display: inline-flex; align-items: center; gap: 5px; font: 500 11px/1 var(--mono); padding: 4px 7px; border-radius: 6px; background: var(--surface-2); color: var(--muted); white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis }
+.behind .blk > *, .sess-body > div > * { min-width: 0 }
+.st { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 500; white-space: nowrap }
+.st::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor }
+.st-suggested { color: var(--muted) } .st-draft { color: var(--warn) } .st-approved { color: var(--ink) }
+.st-scheduled { color: #8a4fd8 } .st-posted { color: var(--ok) } .st-skipped { color: var(--muted); opacity: .7 }
+:root[data-theme="dark"] .st-scheduled { color: #c3a1ff }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .st-scheduled { color: #c3a1ff } }
+.muted { color: var(--muted) }
+.row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap }
+.empty { padding: 20px; color: var(--muted); text-align: center; font-size: 13px }
+
+/* today */
+.today-head { display: flex; align-items: flex-end; gap: 24px; flex-wrap: wrap }
+.today-head h2 { font-size: clamp(24px, 3vw, 32px); line-height: 1.1 }
+.stats { display: flex; gap: 10px; margin-left: auto; flex-wrap: wrap }
+.stat { padding: 10px 14px; min-width: 110px }
+.stat b { display: block; font-size: 20px; letter-spacing: -0.02em }
+.stat span { font-size: 12px; color: var(--muted) }
+.stat.alert b { color: var(--warn) }
+.today-grid { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 24px; align-items: start }
+.list { display: grid }
+.li { display: flex; gap: 12px; padding: 12px 14px; border-top: 1px solid var(--line); align-items: center }
+.li:first-child { border-top: 0 }
+.li .body { min-width: 0; flex: 1 }
+.li .t { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
+.li .t a { text-decoration: none } .li .t a:hover { text-decoration: underline }
+.li .meta { font-size: 12px; color: var(--muted); display: flex; gap: 8px; flex-wrap: wrap; margin-top: 2px }
+.li .acts { display: flex; gap: 6px; flex: none }
+.due { border-left: 3px solid #8a4fd8 }
+.num { font: 500 12px/1 var(--mono); width: 22px; height: 22px; border-radius: 6px; display: grid; place-items: center; background: var(--surface-2); color: var(--muted); flex: none }
+.shot-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; padding: 12px }
+
+/* thumbs */
+.thumb { border-radius: 8px; overflow: hidden; border: 1px solid var(--line); background: var(--surface-2); aspect-ratio: 16/10; display: block; width: 100% }
+.thumb svg { display: block; width: 100%; height: 100% }
+.shot { display: grid; gap: 6px; font-size: 12px }
+.shot .cap { color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
+.shot .row { gap: 4px }
+
+/* board */
+.toolbar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--surface) }
+.seg button { border: 0; background: transparent; padding: 0 12px; height: 30px; cursor: pointer; color: var(--muted); font-weight: 500; font-size: 13px }
+.seg button[aria-pressed="true"] { background: var(--fg); color: var(--bg) }
+.board { display: grid; grid-template-columns: repeat(5, minmax(220px, 1fr)); gap: 12px; overflow-x: auto; padding-bottom: 6px }
+.col { background: var(--surface-2); border-radius: var(--r); padding: 10px; display: grid; gap: 8px; align-content: start; min-height: 240px; border: 1px dashed transparent }
+.col.over { border-color: var(--ink); background: var(--ink-soft) }
+.col-h { display: flex; align-items: center; gap: 8px; padding: 2px 4px 4px; font-size: 13px }
+.col-h .n { margin-left: auto; font: 500 11px/1 var(--mono); color: var(--muted) }
+.pc { padding: 10px; display: grid; gap: 6px; cursor: grab; text-decoration: none }
+.pc:hover { border-color: var(--muted) }
+.pc.dragging { opacity: .4 }
+.pc .t { font-weight: 500; line-height: 1.3 }
+.pc .x { font-size: 12px; color: var(--muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden }
+.pc .thumb { aspect-ratio: 16/7 }
+.tbl { width: 100%; border-collapse: collapse; font-size: 13px }
+.tbl th { text-align: left; font-weight: 500; color: var(--muted); font-size: 12px; padding: 10px 14px; border-bottom: 1px solid var(--line); white-space: nowrap }
+.tbl td { padding: 10px 14px; border-top: 1px solid var(--line); vertical-align: middle }
+.tbl tr:first-child td { border-top: 0 }
+.tbl a { text-decoration: none; font-weight: 500 } .tbl a:hover { text-decoration: underline }
+.tbl-wrap { overflow-x: auto }
+
+/* post editor */
+.crumbs { display: flex; gap: 6px; align-items: center; color: var(--muted); font-size: 13px }
+.crumbs a { text-decoration: none } .crumbs a:hover { color: var(--fg) }
+.editor { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr) 300px; gap: 16px; align-items: start }
+.pane { padding: 16px; display: grid; gap: 12px }
+.pane h3 { font-size: 13px; color: var(--muted); font-weight: 500; letter-spacing: 0 }
+.fields { display: grid; grid-template-columns: 1fr 1fr; gap: 10px }
+.field { display: grid; gap: 4px; font-size: 12px; color: var(--muted) }
+.field .ctl { width: 100%; color: var(--fg); font-size: 13px }
+.title-in { font-size: 18px; font-weight: 600; letter-spacing: -0.02em; border: 0; background: transparent; padding: 0; width: 100% }
+.title-in:focus { outline: none }
+textarea.md { width: 100%; min-height: 300px; resize: vertical; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); padding: 12px; font: 13px/1.6 var(--mono) }
+.savebar { display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--muted) }
+.savebar .btn { margin-left: auto }
+.dirty { color: var(--warn) }
+.pv-tabs { display: flex; gap: 4px }
+.pv { display: grid; gap: 10px }
+.tweet { border: 1px solid var(--line); border-radius: 10px; padding: 12px; display: grid; gap: 8px; background: var(--bg) }
+.tweet .who { display: flex; gap: 8px; align-items: center; font-size: 13px }
+.av { width: 30px; height: 30px; border-radius: 50%; background: linear-gradient(135deg, var(--ink), #8a4fd8); flex: none }
+.tweet .txt { white-space: pre-wrap; font-size: 14px; line-height: 1.45; overflow-wrap: anywhere }
+.tweet .cc { font: 500 11px/1 var(--mono); color: var(--muted); text-align: right }
+.tweet .cc.over { color: var(--bad) }
+.li-post .txt { white-space: pre-wrap; overflow-wrap: anywhere }
+.see-more { color: var(--muted); font-weight: 500 }
+.cut { border-top: 1px dashed var(--line); margin: 6px 0; font: 500 10px/1 var(--mono); color: var(--muted); padding-top: 4px; letter-spacing: .05em; text-transform: uppercase }
+.behind { display: grid; gap: 0 }
+.behind .blk { padding: 14px 16px; border-top: 1px solid var(--line); display: grid; gap: 8px; align-content: start; min-width: 0 }
+.behind .blk:first-child { border-top: 0 }
+.behind h3 { font-size: 12px; color: var(--muted); font-weight: 500; text-transform: uppercase; letter-spacing: .06em; font-family: var(--mono) }
+.art { display: grid; gap: 2px; font-size: 13px; text-decoration: none }
+.art:hover .at { text-decoration: underline }
+.art .src { font: 500 11px/1 var(--mono); color: var(--muted) }
+.hook { font-size: 13px; padding: 8px 10px; background: var(--surface-2); border-radius: 8px; cursor: pointer; border: 1px solid transparent; text-align: left; width: 100% }
+.hook:hover { border-color: var(--line) }
+.mini-shots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px }
+.mini-shots button { padding: 0; border: 0; background: none; cursor: pointer; position: relative }
+.mini-shots .on .thumb { outline: 2px solid var(--ink); outline-offset: 1px }
+.mini-shots .pend { opacity: .45; cursor: not-allowed }
+.hist { display: grid; gap: 0; font-size: 12px }
+.hist button { display: flex; gap: 8px; align-items: center; padding: 6px 4px; border: 0; background: none; cursor: pointer; text-align: left; border-radius: 6px; width: 100% }
+.hist button:hover, .hist button[aria-pressed="true"] { background: var(--surface-2) }
+.hist .by { font: 500 10px/1 var(--mono); color: var(--muted); margin-left: auto }
+.diff { font-size: 13px; line-height: 1.6; white-space: pre-wrap; padding: 10px; background: var(--bg); border: 1px solid var(--line); border-radius: 8px; max-height: 220px; overflow: auto; overflow-wrap: anywhere }
+.diff del { background: var(--bad-soft); color: var(--bad); text-decoration: line-through }
+.diff ins { background: var(--ok-soft); color: var(--ok); text-decoration: none }
+
+/* calendar */
+.cal-h { display: flex; gap: 8px; align-items: center; flex-wrap: wrap }
+.cal-h h2 { font-size: 18px; margin-right: auto }
+.cal { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); border-left: 1px solid var(--line); border-top: 1px solid var(--line); border-radius: var(--r); overflow: hidden; background: var(--surface) }
+.cal .dow { font: 500 11px/1 var(--mono); color: var(--muted); padding: 8px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); text-transform: uppercase; letter-spacing: .05em }
+.day { min-height: 116px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 6px; display: grid; gap: 4px; align-content: start; min-width: 0 }
+.day.out { background: var(--surface-2); color: var(--muted) }
+.day.over { background: var(--ink-soft) }
+.day .dn { display: flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 500 }
+.day.today .dn b { background: var(--fg); color: var(--bg); border-radius: 999px; padding: 1px 7px }
+.work { display: flex; gap: 2px; margin-left: auto }
+.work i { width: 6px; height: 6px; border-radius: 2px; background: var(--line) }
+.work i.p0 { background: color-mix(in srgb, var(--ink) 55%, transparent) }
+.work i.p1 { background: color-mix(in srgb, #e0742a 60%, transparent) }
+.chip { font-size: 11px; padding: 3px 6px; border-radius: 5px; background: var(--surface-2); border-left: 3px solid var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-decoration: none; cursor: grab; display: block }
+.chip.scheduled { border-color: #8a4fd8 } .chip.posted { border-color: var(--ok) }
+.legend { display: flex; gap: 14px; font-size: 12px; color: var(--muted); flex-wrap: wrap; align-items: center }
+.legend .work { margin: 0 }
+
+/* timeline */
+.tl-day { display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 16px }
+.tl-date { position: sticky; top: 70px; align-self: start; padding-top: 12px }
+.tl-date b { display: block; font-size: 15px }
+.tl-date span { font-size: 12px; color: var(--muted) }
+.sess { overflow: hidden }
+.sess + .sess { margin-top: 10px }
+.sess summary { list-style: none; display: grid; grid-template-columns: 54px minmax(0, 1fr) auto; gap: 12px; padding: 12px 14px; cursor: pointer; align-items: start }
+.sess summary::-webkit-details-marker { display: none }
+.sess .time { font: 500 12px/1.6 var(--mono); color: var(--muted) }
+.sess .t { font-weight: 500 }
+.sess .meta { font-size: 12px; color: var(--muted); display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; align-items: center }
+.pdot { width: 8px; height: 8px; border-radius: 2px; display: inline-block }
+.sess-body { border-top: 1px solid var(--line); display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); }
+.sess-body > div { padding: 14px; display: grid; gap: 10px; align-content: start; min-width: 0 }
+.sess-body > div + div { border-left: 1px solid var(--line) }
+.sess-body h3 { font: 500 11px/1 var(--mono); color: var(--muted); text-transform: uppercase; letter-spacing: .06em }
+.files { font: 12px/1.7 var(--mono); color: var(--muted); overflow-wrap: anywhere }
+.cmd { font: 12px/1.6 var(--mono); background: var(--term); color: #d7dbe3; border-radius: 8px; padding: 8px 10px; overflow-x: auto; white-space: pre }
+.linked { display: flex; gap: 6px; flex-wrap: wrap }
+
+/* media */
+.media { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px }
+.mcard { padding: 10px; display: grid; gap: 8px }
+.mcard .cap { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
+.mcard .meta { font-size: 12px; color: var(--muted) }
+.badge-pend { color: var(--warn); background: var(--warn-soft) }
+.badge-ok { color: var(--ok); background: var(--ok-soft) }
+
+/* toast */
+.toast { position: fixed; left: 50%; bottom: 24px; transform: translate(-50%, 20px); opacity: 0; background: var(--fg); color: var(--bg); padding: 10px 16px; border-radius: 10px; font-size: 13px; transition: .2s; pointer-events: none; z-index: 50; max-width: calc(100vw - 32px) }
+.toast.on { opacity: 1; transform: translate(-50%, 0) }
+
+/* responsive */
+@media (max-width: 1180px) {
+  .editor { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) }
+  .editor .behind-card { grid-column: 1 / -1 }
+  .behind { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)) }
+  .behind .blk { border-top: 0; border-left: 1px solid var(--line) }
+}
+@media (max-width: 1120px) { .today-grid { grid-template-columns: minmax(0, 1fr) } }
+@media (max-width: 960px) {
+  .sess-body { grid-template-columns: minmax(0, 1fr) }
+  .sess-body > div + div { border-left: 0; border-top: 1px solid var(--line) }
+}
+@media (max-width: 820px) {
+  .app { grid-template-columns: minmax(0, 1fr) }
+  .rail { position: fixed; top: auto; bottom: 0; left: 0; right: 0; height: auto; z-index: 20; flex-direction: row; padding: 6px 8px calc(6px + env(safe-area-inset-bottom, 0px)); border-right: 0; border-top: 1px solid var(--line); overflow-x: auto; gap: 2px }
+  .rail .brand, .rail-foot { display: none }
+  .nav-i { flex-direction: column; gap: 3px; font-size: 11px; padding: 6px 10px; flex: 1 0 auto; position: relative }
+  .nav-i .count { position: absolute; top: 2px; right: 6px; margin: 0; padding: 2px 4px; font-size: 9px }
+  .main { padding-bottom: 72px }
+  .top { padding: 10px 16px; flex-wrap: wrap }
+  .search { display: none }
+  .view { padding: 16px }
+  .editor { grid-template-columns: minmax(0, 1fr) }
+  .behind .blk { border-left: 0; border-top: 1px solid var(--line) }
+  .tl-day { grid-template-columns: minmax(0, 1fr); gap: 8px }
+  .tl-date { position: static; padding: 0 }
+  .tl-date b, .tl-date span { display: inline; margin-right: 8px }
+  .day { min-height: 64px; padding: 4px }
+  .chip { font-size: 0; padding: 0; height: 6px; border-left-width: 0; background: #8a4fd8 }
+  .chip.posted { background: var(--ok) } .chip.draft, .chip.approved { background: var(--muted) }
+  .work i { width: 4px; height: 4px }
+  .stats { margin-left: 0 }
+  .fields { grid-template-columns: 1fr }
+}
+@media (max-width: 520px) {
+  .li { flex-wrap: wrap }
+  .li .acts { width: 100%; padding-left: 34px }
+  .sess summary { grid-template-columns: 44px minmax(0, 1fr) }
+  .sess summary > :last-child { display: none }
+  .mock { display: none }
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <nav class="rail" aria-label="Sections">
+    <div class="brand"><span class="mark"></span>Build in Public</div>
+    <div id="nav"></div>
+    <div class="rail-foot">Local · 127.0.0.1:4817<br><b>Never posts.</b> You do.</div>
+  </nav>
+  <div class="main">
+    <header class="top">
+      <h1 id="title">Today</h1>
+      <span class="mock">Mockup · sample data</span>
+      <select class="ctl" id="proj" aria-label="Project"></select>
+      <input class="ctl search" id="q" type="search" placeholder="Search sessions…" aria-label="Search sessions">
+      <button class="ctl icon-btn" id="theme" aria-label="Switch light and dark">
+        <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+        <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+      </button>
+    </header>
+    <main class="view" id="view"></main>
+  </div>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+/* ------------------------------------------------------------------ sample data
+   Shapes follow design/dashboard.md: posts mirror front matter, sessions mirror
+   meta.json, shots mirror pending_shots + session shots/. "Now" is fixed. */
+const NOW = new Date("2026-11-09T21:30");
+const TODAY = "2026-11-09";
+
+const PROJECTS = [
+  { key: "build-in-public", name: "build-in-public", path: "~/Projects/build-in-public", mode: "content", color: 0 },
+  { key: "invoice-ai", name: "invoice-ai", path: "~/Projects/invoice-ai", mode: "content", color: 1 },
+  { key: "dotfiles", name: "dotfiles", path: "~/dotfiles", mode: "journal", color: 2 },
+  { key: "scratch", name: "scratch", path: "~/tmp/scratch", mode: "ignore", color: 3 },
+];
+const PCOL = ["var(--ink)", "#e0742a", "#1f8a4c", "#8e95a2"];
+
+const SESSIONS = [
+  { id: "2026-11-09-claude-3f2a91c0", project: "build-in-public", agent: "claude", start: "2026-11-09T19:02", minutes: 47,
+    title: "Unify post statuses and scan repo post folders", tags: ["refactor", "data"],
+    files: ["src/buildinpublic/nudge.py", "src/buildinpublic/index.py", "tests/test_index.py", "skills/build-in-public/SKILL.md"],
+    commands: ["python -m unittest tests.test_index", "buildinpublic posts"],
+    summary: "Found posts used two status lists (skill vs CLI) and that repo-local posts were never indexed. Made front matter the source of truth; posts.json is now a cache rebuilt from every post folder.",
+    articles: [
+      { src: "HN", t: "Plain text files beat databases for personal tools", u: "#" },
+      { src: "dev.to", t: "Front matter as a schema: lessons from static site generators", u: "#" },
+      { src: "Reddit", t: "r/SideProject: how do you track what you've posted?", u: "#" } ],
+    hooks: ["My tool had two opinions about whether a post was published. Both were wrong.", "I deleted a database today and the app got more reliable."],
+    shots: ["s1", "s2"] },
+  { id: "2026-11-09-codex-a81be2d4", project: "invoice-ai", agent: "codex", start: "2026-11-09T14:10", minutes: 92,
+    title: "Stripe webhook retries were double-charging", tags: ["bugfix", "war story"],
+    files: ["api/webhooks/stripe.ts", "api/lib/idempotency.ts", "api/webhooks/stripe.test.ts"],
+    commands: ["pnpm test webhooks", "stripe trigger invoice.paid"],
+    summary: "Webhook handler wasn't idempotent; Stripe's retry after a 504 created a second charge record. Added idempotency keys on event id and a unique index.",
+    articles: [
+      { src: "HN", t: "Idempotency keys: the most underrated API feature", u: "#" },
+      { src: "GitHub", t: "stripe-samples/webhook-idempotency", u: "#" } ],
+    hooks: ["A 504 cost one of my users $49 twice.", "Stripe retried. My code believed it."],
+    shots: ["s3", "s4"] },
+  { id: "2026-11-08-claude-77c01e9a", project: "build-in-public", agent: "claude", start: "2026-11-08T22:40", minutes: 35,
+    title: "Landing page: hero fits a laptop screen", tags: ["ui"],
+    files: ["docs/page.html", "scripts/build_pages.py"], commands: ["python scripts/build_pages.py"],
+    summary: "Tightened spacing so the hero and demo fit at 1366×768 without scrolling.",
+    articles: [{ src: "dev.to", t: "Designing landing pages for developer tools", u: "#" }],
+    hooks: ["Most people never scroll. So I made the whole pitch fit one laptop screen."], shots: ["s5"] },
+  { id: "2026-11-07-antigravity-1c9e", project: "invoice-ai", agent: "antigravity", start: "2026-11-07T11:15", minutes: 128,
+    title: "PDF invoice parser: line items from scanned receipts", tags: ["feature", "demo"],
+    files: ["parser/ocr.py", "parser/line_items.py", "web/app/upload/page.tsx"], commands: ["pytest parser", "pnpm dev"],
+    summary: "OCR + layout heuristics pull line items from scanned PDFs; upload page shows extracted rows live.",
+    articles: [{ src: "HN", t: "Show HN: Table extraction from scanned PDFs", u: "#" }],
+    hooks: ["I fed it a coffee-stained receipt. It got 11 of 12 line items."], shots: ["s6", "s7"] },
+  { id: "2026-11-06-claude-0b44", project: "dotfiles", agent: "claude", start: "2026-11-06T09:05", minutes: 18,
+    title: "zsh startup from 900ms to 120ms", tags: ["perf"], files: [".zshrc", ".zsh/lazy.zsh"], commands: ["hyperfine 'zsh -i -c exit'"],
+    summary: "Lazy-loaded nvm and pyenv.", articles: [], hooks: [], shots: [] },
+  { id: "2026-11-05-codex-9d2f", project: "build-in-public", agent: "codex", start: "2026-11-05T16:30", minutes: 64,
+    title: "Windows support: Task Scheduler jobs", tags: ["feature"], files: ["src/buildinpublic/scheduler.py", "install.ps1"], commands: ["buildinpublic schedule status"],
+    summary: "Background jobs now install via schtasks on Windows.", articles: [{ src: "Reddit", t: "Scheduling Python scripts on Windows without admin", u: "#" }],
+    hooks: ["Supporting Windows took 64 minutes. Testing it took three days."], shots: ["s8"] },
+  { id: "2026-11-04-claude-55aa", project: "invoice-ai", agent: "claude", start: "2026-11-04T20:00", minutes: 41,
+    title: "Pricing page and Stripe checkout", tags: ["feature"], files: ["web/app/pricing/page.tsx"], commands: [],
+    summary: "Three tiers, checkout session.", articles: [], hooks: [], shots: [] },
+  { id: "2026-11-03-claude-12ef", project: "build-in-public", agent: "claude", start: "2026-11-03T10:20", minutes: 55,
+    title: "All-projects CLI and reminders", tags: ["feature"], files: ["src/buildinpublic/cli.py", "src/buildinpublic/nudge.py"], commands: [],
+    summary: "Global journal across projects, nudge after 2 quiet days.", articles: [], hooks: [], shots: [] },
+];
+
+const SHOTS = {
+  s1: { kind: "code", cap: "index.py · normalize_status", project: "build-in-public", day: "2026-11-09", state: "approved" },
+  s2: { kind: "term", cap: "buildinpublic posts (all folders)", project: "build-in-public", day: "2026-11-09", state: "pending" },
+  s3: { kind: "code", cap: "stripe.ts · idempotency key", project: "invoice-ai", day: "2026-11-09", state: "approved" },
+  s4: { kind: "app", cap: "localhost:3000/billing", project: "invoice-ai", day: "2026-11-09", state: "pending" },
+  s5: { kind: "app", cap: "Landing page at 1366×768", project: "build-in-public", day: "2026-11-08", state: "approved" },
+  s6: { kind: "app", cap: "Upload → extracted line items", project: "invoice-ai", day: "2026-11-07", state: "approved" },
+  s7: { kind: "code", cap: "line_items.py · row grouping", project: "invoice-ai", day: "2026-11-07", state: "approved" },
+  s8: { kind: "term", cap: "schtasks /query", project: "build-in-public", day: "2026-11-05", state: "approved" },
+};
+
+let POSTS = [
+  { id: "1109-two-status-lists", title: "My tool had two opinions about one post", project: "build-in-public", platform: "x", status: "draft",
+    date: "2026-11-09", session: "2026-11-09-claude-3f2a91c0", attach: ["s1"], trend: "HN: Plain text files beat databases",
+    body: "My build-in-public tool had two opinions about whether a post was published.\n\nThe skill wrote status in each post's file. The CLI kept its own list in posts.json. Nothing kept them in sync.\n\nFix: the .md file is the truth. posts.json is just a cache I can rebuild any time.\n\nIf you can delete it and lose nothing, it's not a database. It's an index.\n\nWhat's the worst \"two sources of truth\" bug you've shipped?",
+    history: [
+      { at: "2026-11-09T20:41", by: "agent", change: "created", text: "My build-in-public tool had two opinions about whether a post was published.\n\nThe skill and the CLI each tracked status. They disagreed.\n\nNow the file is the truth." },
+      { at: "2026-11-09T21:02", by: "dashboard", change: "edit", text: "My build-in-public tool had two opinions about whether a post was published.\n\nThe skill wrote status in each post's file. The CLI kept its own list in posts.json. Nothing kept them in sync.\n\nFix: the .md file is the truth. posts.json is just a cache.\n\nWhat's the worst \"two sources of truth\" bug you've shipped?" } ] },
+  { id: "1109-stripe-504", title: "A 504 cost one user $49 twice", project: "invoice-ai", platform: "x", status: "scheduled", scheduled_for: "2026-11-09T18:00",
+    date: "2026-11-09", session: "2026-11-09-codex-a81be2d4", attach: ["s3"], trend: "HN: Idempotency keys",
+    body: "A 504 cost one of my users $49. Twice.\n\nStripe sent invoice.paid, my server timed out, Stripe retried. My handler happily recorded a second charge.\n\nThe fix was 6 lines: key every write on the Stripe event id, plus a unique index.\n\nIf you handle webhooks, assume every one arrives at least twice.",
+    history: [{ at: "2026-11-09T16:30", by: "agent", change: "created", text: "A 504 cost one of my users $49 twice. Stripe retried and my handler wasn't idempotent." }] },
+  { id: "1109-webhooks-li", title: "Webhooks arrive at least twice", project: "invoice-ai", platform: "linkedin", status: "approved",
+    date: "2026-11-09", session: "2026-11-09-codex-a81be2d4", attach: ["s3"], trend: "none",
+    body: "A customer paid $49 once and we recorded it twice.\nThe cause was one line we never wrote.\n\nStripe retries a webhook when your server doesn't answer in time. Ours timed out after a slow database call, so Stripe tried again, and our handler treated the retry as a new payment.\n\nThe fix: every write is keyed on the event id, with a unique index so the database refuses a duplicate.\n\nLesson: any message you don't control will eventually arrive twice. Design for it on day one.\n\nI'm building invoice-ai in public. Follow along if you like seeing the bugs too.",
+    history: [] },
+  { id: "1110-one-screen", title: "Make the whole pitch fit one laptop screen", project: "build-in-public", platform: "x", status: "scheduled", scheduled_for: "2026-11-10T09:30",
+    date: "2026-11-08", session: "2026-11-08-claude-77c01e9a", attach: ["s5"], trend: "none",
+    body: "Most visitors never scroll.\n\nSo I rebuilt my landing page until the headline, the demo and the install command all fit on a 1366×768 laptop.\n\nBefore → after 👇", history: [] },
+  { id: "1107-coffee-receipt", title: "Coffee-stained receipt, 11 of 12 line items", project: "invoice-ai", platform: "x", status: "posted", posted_at: "2026-11-07T18:20", link: "https://x.com/…",
+    date: "2026-11-07", session: "2026-11-07-antigravity-1c9e", attach: ["s6"], trend: "Show HN: Table extraction",
+    body: "I fed my invoice parser a coffee-stained, crumpled receipt.\n\nIt got 11 of 12 line items.\n\nThe one it missed? \"Misc.\" Fair.", history: [] },
+  { id: "1105-windows", title: "Windows took 64 minutes. Testing took 3 days.", project: "build-in-public", platform: "linkedin", status: "posted", posted_at: "2026-11-05T19:00", link: "https://linkedin.com/…",
+    date: "2026-11-05", session: "2026-11-05-codex-9d2f", attach: ["s8"], trend: "none",
+    body: "Adding Windows support took 64 minutes.\nTesting it took three days.\n\nScheduling a background job is one line on macOS and Linux. On Windows it's Task Scheduler, pythonw.exe, and a lot of quoting.", history: [] },
+  { id: "1103-all-projects", title: "One journal for every project", project: "build-in-public", platform: "x", status: "posted", posted_at: "2026-11-03T21:00", link: "https://x.com/…",
+    date: "2026-11-03", session: "2026-11-03-claude-12ef", attach: [], trend: "none",
+    body: "I work on 4 projects. My build log only knew about one.\n\nNow every AI coding session, in any repo, lands in one journal.", history: [] },
+  { id: "1104-pricing", title: "Three tiers, one afternoon", project: "invoice-ai", platform: "x", status: "skipped",
+    date: "2026-11-04", session: "2026-11-04-claude-55aa", attach: [], trend: "none", body: "Shipped a pricing page today.", history: [] },
+];
+
+// Today's brief suggestions (status: suggested), numbered as in brief.md
+const SUGGESTED = [
+  { n: 1, title: "Deleting posts.json made the app more reliable", project: "build-in-public", platform: "x", angle: "lesson", session: "2026-11-09-claude-3f2a91c0", hook: "I deleted a database today and the app got more reliable." },
+  { n: 2, title: "Stripe retried. My code believed it.", project: "invoice-ai", platform: "x", angle: "war story", session: "2026-11-09-codex-a81be2d4", hook: "Stripe retried. My code believed it." },
+  { n: 3, title: "Behind the scenes: how I review my agent's commits", project: "build-in-public", platform: "linkedin", angle: "behind the scenes", session: null, hook: "I let an AI write most of my code. Here's what I still read line by line." },
+  { n: 4, title: "Idempotency in 6 lines (code card)", project: "invoice-ai", platform: "x", angle: "demo", session: "2026-11-09-codex-a81be2d4", hook: "The whole fix fits in one screenshot." },
+];
+SUGGESTED.forEach(s => POSTS.push({ id: "sugg-" + s.n, title: s.title, project: s.project, platform: s.platform, status: "suggested",
+  date: TODAY, session: s.session, attach: [], trend: "", body: s.hook, history: [], n: s.n }));
+
+/* ------------------------------------------------------------------ helpers */
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const STATUSES = ["suggested", "draft", "approved", "scheduled", "posted", "skipped"];
+const BOARD = ["suggested", "draft", "approved", "scheduled", "posted"];
+const LABEL = { suggested: "Suggested", draft: "Draft", approved: "Approved", scheduled: "Scheduled", posted: "Posted", skipped: "Skipped" };
+const PLAT = { x: "X", linkedin: "LinkedIn", threads: "Threads", reddit: "Reddit", devto: "dev.to" };
+const proj = k => PROJECTS.find(p => p.key === k) || { name: k, color: 3 };
+const sess = id => SESSIONS.find(s => s.id === id);
+const fmtDay = d => new Date(d + (d.length === 10 ? "T12:00" : "")).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+const fmtTime = d => new Date(d).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false });
+const fmtWhen = d => fmtDay(d.slice(0, 10)) + " · " + fmtTime(d);
+const st = s => `<span class="st st-${s}">${LABEL[s]}</span>`;
+const pTag = k => `<span class="tag"><span class="pdot" style="background:${PCOL[proj(k).color]}"></span>${esc(proj(k).name)}</span>`;
+let filter = { project: "all" };
+const inFilter = k => filter.project === "all" || k === filter.project;
+function toast(msg) { const t = $("#toast"); t.textContent = msg; t.classList.add("on"); clearTimeout(toast.h); toast.h = setTimeout(() => t.classList.remove("on"), 2200); }
+function copy(text, msg) { try { navigator.clipboard?.writeText(text); } catch (e) {} toast(msg || "Copied"); }
+
+function thumb(id) {
+  const s = SHOTS[id]; if (!s) return "";
+  const hue = proj(s.project).color === 1 ? "#e0742a" : "#5b7bff";
+  let inner;
+  if (s.kind === "code") {
+    const ws = [60, 110, 80, 140, 70, 120, 95, 50];
+    inner = `<rect width="320" height="200" fill="#0f1218"/><rect x="0" y="0" width="320" height="22" fill="#171b23"/>
+      <circle cx="14" cy="11" r="4" fill="#ff5f57"/><circle cx="28" cy="11" r="4" fill="#febc2e"/><circle cx="42" cy="11" r="4" fill="#28c840"/>` +
+      ws.map((w, i) => `<rect x="${24 + (i % 3) * 14}" y="${36 + i * 19}" width="${w}" height="7" rx="3" fill="${["#c792ea", hue, "#9aa3b2", "#7fd1a6"][i % 4]}" opacity=".85"/>
+      <rect x="${30 + w + (i % 3) * 14}" y="${36 + i * 19}" width="${w / 2}" height="7" rx="3" fill="#56606f"/>`).join("");
+  } else if (s.kind === "term") {
+    inner = `<rect width="320" height="200" fill="#07080a"/>` + [0,1,2,3,4,5,6].map(i =>
+      `<rect x="16" y="${20 + i * 24}" width="8" height="8" rx="2" fill="${i % 3 ? "#56606f" : "#4cc584"}"/><rect x="30" y="${20 + i * 24}" width="${90 + (i * 37) % 150}" height="8" rx="3" fill="#d7dbe3" opacity="${i % 3 ? .4 : .8}"/>`).join("");
+  } else {
+    inner = `<rect width="320" height="200" fill="#eef1f6"/><rect width="320" height="24" fill="#dfe3ea"/><rect x="60" y="7" width="200" height="10" rx="5" fill="#fff"/>
+      <rect x="20" y="40" width="120" height="14" rx="4" fill="#101216"/><rect x="20" y="62" width="180" height="8" rx="4" fill="#9aa3b2"/>
+      <rect x="20" y="88" width="280" height="96" rx="8" fill="#fff"/>` + [0,1,2,3].map(i =>
+      `<rect x="32" y="${100 + i * 20}" width="150" height="8" rx="4" fill="#cdd3dc"/><rect x="250" y="${100 + i * 20}" width="36" height="8" rx="4" fill="${hue}"/>`).join("");
+  }
+  return `<span class="thumb"><svg viewBox="0 0 320 200" preserveAspectRatio="xMidYMid slice" role="img" aria-label="${esc(s.cap)}">${inner}</svg></span>`;
+}
+
+/* ------------------------------------------------------------------ nav */
+const ICON = {
+  today: '<path d="M12 3v2M12 19v2M5 12H3M21 12h-2M6.3 6.3 4.9 4.9M19.1 19.1l-1.4-1.4M6.3 17.7l-1.4 1.4M19.1 4.9l-1.4 1.4"/><circle cx="12" cy="12" r="4"/>',
+  posts: '<rect x="3" y="4" width="5" height="16" rx="1.5"/><rect x="10" y="4" width="5" height="11" rx="1.5"/><rect x="17" y="4" width="4" height="7" rx="1.5"/>',
+  calendar: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
+  timeline: '<path d="M6 3v18"/><circle cx="6" cy="7" r="2"/><circle cx="6" cy="16" r="2"/><path d="M11 7h10M11 16h7"/>',
+  media: '<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m21 17-5-5-9 8"/>',
+  projects: '<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
+};
+const ROUTES = [["today", "Today"], ["posts", "Posts"], ["calendar", "Calendar"], ["timeline", "Timeline"], ["media", "Media"], ["projects", "Projects"]];
+function renderNav(active) {
+  const counts = {
+    today: dueNow().length + POSTS.filter(p => p.status === "draft" && inFilter(p.project)).length,
+    media: Object.values(SHOTS).filter(s => s.state === "pending" && inFilter(s.project)).length,
+  };
+  $("#nav").innerHTML = ROUTES.map(([k, l]) =>
+    `<a class="nav-i" href="#/${k}" ${active === k ? 'aria-current="page"' : ""}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ICON[k]}</svg>${l}${counts[k] ? `<span class="count">${counts[k]}</span>` : ""}</a>`).join("");
+  $("#nav").style.display = "contents";
+}
+$("#proj").innerHTML = `<option value="all">All projects</option>` + PROJECTS.filter(p => p.mode !== "ignore").map(p => `<option value="${p.key}">${esc(p.name)}</option>`).join("");
+$("#proj").onchange = e => { filter.project = e.target.value; route(); };
+$("#q").onkeydown = e => { if (e.key === "Enter") { location.hash = "#/timeline?q=" + encodeURIComponent(e.target.value); } };
+$("#theme").onclick = () => {
+  const r = document.documentElement, dark = r.dataset.theme ? r.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+  r.dataset.theme = dark ? "light" : "dark";
+  try { localStorage.setItem("bip-theme", r.dataset.theme); } catch (e) {}
+};
+try { const t = localStorage.getItem("bip-theme"); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
+
+/* ------------------------------------------------------------------ Today */
+const dueNow = () => POSTS.filter(p => p.status === "scheduled" && new Date(p.scheduled_for) <= NOW && inFilter(p.project));
+function daysSincePost() {
+  const last = POSTS.filter(p => p.status === "posted").map(p => p.posted_at).sort().pop();
+  return last ? Math.floor((NOW - new Date(last)) / 864e5) : "—";
+}
+function viewToday() {
+  const due = dueNow();
+  const drafts = POSTS.filter(p => p.status === "draft" && inFilter(p.project));
+  const approved = POSTS.filter(p => p.status === "approved" && inFilter(p.project));
+  const sugg = SUGGESTED.filter(s => inFilter(s.project) && POSTS.find(p => p.id === "sugg-" + s.n)?.status === "suggested");
+  const pend = Object.entries(SHOTS).filter(([, s]) => s.state === "pending" && inFilter(s.project));
+  const todays = SESSIONS.filter(s => s.start.startsWith(TODAY) && inFilter(s.project));
+  const mins = todays.reduce((a, s) => a + s.minutes, 0);
+  const days = daysSincePost();
+  const postRow = (p, extra = "") => `<div class="li ${extra}">
+      <div class="body"><div class="t"><a href="#/post/${p.id}">${esc(p.title)}</a></div>
+      <div class="meta">${pTag(p.project)}<span>${PLAT[p.platform]}</span>${p.scheduled_for ? `<span>${fmtWhen(p.scheduled_for)}</span>` : ""}${p.attach.length ? "<span>🖼 1</span>" : ""}</div></div>
+      <div class="acts">${p.status === "scheduled"
+        ? `<button class="btn solid" data-copy="${p.id}">Copy</button><button class="btn" data-posted="${p.id}">Mark posted</button>`
+        : p.status === "draft" ? `<a class="btn" href="#/post/${p.id}">Review</a><button class="btn solid" data-approve="${p.id}">Approve</button>`
+        : `<a class="btn" href="#/post/${p.id}">Schedule</a>`}</div></div>`;
+  return `
+  <div class="today-head">
+    <div><p class="muted">${fmtDay(TODAY)}</p><h2>${(() => { const n = due.length + drafts.length; const w = ["Nothing", "One thing", "Two things", "Three things", "Four things"][n] || n + " things"; return n ? `${w} need${n === 1 ? "s" : ""} you. <em>The rest can wait.</em>` : `Nothing needs you. <em>Go build.</em>`; })()}</h2></div>
+    <div class="stats">
+      <div class="card stat ${days >= 2 ? "alert" : ""}"><b>${days}d</b><span>since last post</span></div>
+      <div class="card stat"><b>${todays.length}</b><span>sessions today</span></div>
+      <div class="card stat"><b>${Math.floor(mins / 60)}h ${mins % 60}m</b><span>building today</span></div>
+    </div>
+  </div>
+  <div class="today-grid">
+    <div style="display:grid;gap:24px">
+      <section><div class="sec-h"><h2>Due now</h2><span class="sub">Reminders whose time has come</span></div>
+        <div class="card list">${due.length ? due.map(p => postRow(p, "due")).join("") : `<div class="empty">Nothing due. Your next reminder is ${(() => { const n = POSTS.filter(p => p.status === "scheduled" && new Date(p.scheduled_for) > NOW).sort((a, b) => a.scheduled_for.localeCompare(b.scheduled_for))[0]; return n ? fmtWhen(n.scheduled_for) : "not set"; })()}.</div>`}</div></section>
+      <section><div class="sec-h"><h2>Waiting for you</h2><span class="sub">Drafts to approve, approved posts to schedule</span></div>
+        <div class="card list">${[...drafts, ...approved].map(p => postRow(p)).join("") || '<div class="empty">No drafts waiting.</div>'}</div></section>
+      <section><div class="sec-h"><h2>Today's suggestions</h2><span class="sub">From tonight's gist · your agent writes the draft</span></div>
+        <div class="card list">${sugg.map(s => `<div class="li"><span class="num">${s.n}</span>
+          <div class="body"><div class="t">${esc(s.title)}</div><div class="meta">${pTag(s.project)}<span>${PLAT[s.platform]}</span><span>${s.angle}</span></div></div>
+          <div class="acts"><button class="btn" data-prompt="${s.n}" data-proj="${s.project}" title="Copies a prompt for your agent">Draft this</button><button class="btn ghost" data-skip="sugg-${s.n}">Skip</button></div></div>`).join("") || '<div class="empty">No suggestions left for today.</div>'}</div></section>
+    </div>
+    <div style="display:grid;gap:24px">
+      <section><div class="sec-h"><h2>Screenshots to review</h2><span class="sub">Only approved ones can go in posts</span></div>
+        <div class="card">${pend.length ? `<div class="shot-row">${pend.map(([id, s]) => `<div class="shot">${thumb(id)}<span class="cap">${esc(s.cap)}</span>
+          <div class="row"><button class="btn" data-shot-ok="${id}">Approve</button><button class="btn ghost" data-shot-no="${id}">Discard</button></div></div>`).join("")}</div>` : '<div class="empty">All caught up.</div>'}</div></section>
+      <section><div class="sec-h"><h2>Built today</h2><a class="right btn ghost" href="#/timeline">Timeline →</a></div>
+        <div class="card list">${todays.map(s => `<div class="li"><span class="mono muted" style="font-size:12px">${fmtTime(s.start)}</span>
+          <div class="body"><div class="t">${esc(s.title)}</div><div class="meta">${pTag(s.project)}<span>${s.agent}</span><span>${s.minutes} min</span></div></div></div>`).join("") || '<div class="empty">No sessions yet today.</div>'}</div></section>
+    </div>
+  </div>`;
+}
+
+/* ------------------------------------------------------------------ Posts */
+let postsMode = "board";
+function viewPosts() {
+  const ps = POSTS.filter(p => inFilter(p.project));
+  const card = p => `<a class="card pc" draggable="true" data-id="${p.id}" href="#/post/${p.id}">
+      ${p.attach[0] ? thumb(p.attach[0]) : ""}
+      <span class="t">${esc(p.title)}</span><span class="x">${esc(p.body)}</span>
+      <span class="row">${pTag(p.project)}<span class="tag">${PLAT[p.platform]}</span>${p.scheduled_for && p.status === "scheduled" ? `<span class="tag">${fmtWhen(p.scheduled_for)}</span>` : ""}</span></a>`;
+  const board = `<div class="board">${BOARD.map(s => { const c = ps.filter(p => p.status === s);
+      return `<div class="col" data-status="${s}"><div class="col-h">${st(s)}<span class="n">${c.length}</span></div>${c.map(card).join("")}</div>`; }).join("")}</div>`;
+  const list = `<div class="card tbl-wrap"><table class="tbl"><thead><tr><th>Post</th><th>Status</th><th>Project</th><th>Platform</th><th>About work on</th><th>Scheduled / posted</th></tr></thead><tbody>
+      ${ps.sort((a, b) => b.date.localeCompare(a.date)).map(p => `<tr><td><a href="#/post/${p.id}">${esc(p.title)}</a></td><td>${st(p.status)}</td><td>${pTag(p.project)}</td><td>${PLAT[p.platform]}</td><td class="muted">${fmtDay(p.date)}</td>
+      <td class="muted">${p.posted_at ? fmtWhen(p.posted_at) : p.scheduled_for ? fmtWhen(p.scheduled_for) : "—"}</td></tr>`).join("")}</tbody></table></div>`;
+  const skipped = ps.filter(p => p.status === "skipped").length;
+  return `<div class="toolbar"><div class="seg" role="group" aria-label="View"><button data-mode="board" aria-pressed="${postsMode === "board"}">Board</button><button data-mode="list" aria-pressed="${postsMode === "list"}">List</button></div>
+    <span class="muted" style="font-size:12px">${postsMode === "board" ? "Drag a card to change its status." : ""} ${skipped ? `${skipped} skipped (in list view)` : ""}</span></div>
+    ${postsMode === "board" ? board : list}`;
+}
+function wireBoard() {
+  document.querySelectorAll(".pc").forEach(c => {
+    c.ondragstart = e => { e.dataTransfer.setData("text/plain", c.dataset.id); c.classList.add("dragging"); };
+    c.ondragend = () => c.classList.remove("dragging");
+  });
+  document.querySelectorAll(".col").forEach(col => {
+    col.ondragover = e => { e.preventDefault(); col.classList.add("over"); };
+    col.ondragleave = () => col.classList.remove("over");
+    col.ondrop = e => { e.preventDefault(); col.classList.remove("over");
+      const p = POSTS.find(x => x.id === e.dataTransfer.getData("text/plain")); if (!p) return;
+      setStatus(p, col.dataset.status); route(); };
+  });
+}
+function setStatus(p, to) {
+  if (p.status === to) return;
+  if (to === "scheduled" && !p.scheduled_for) p.scheduled_for = "2026-11-10T09:30";
+  if (to === "posted") p.posted_at = NOW.toISOString().slice(0, 16);
+  p.history.push({ at: NOW.toISOString().slice(0, 16), by: "dashboard", change: `status ${p.status} → ${to}` });
+  toast(`${p.title.slice(0, 40)} → ${LABEL[to]}`); p.status = to;
+}
+
+/* ------------------------------------------------------------------ Post */
+let pv = "x", histSel = null, savedBody = null;
+function splitThread(t) { return t.split(/\n\s*\n/).map(s => s.trim()).filter(Boolean); }
+function preview(p, body) {
+  if (pv === "x") {
+    const parts = splitThread(body);
+    return parts.map((t, i) => `<div class="tweet"><div class="who"><span class="av"></span><b>You</b><span class="muted">@you · ${i + 1}/${parts.length}</span></div>
+      <div class="txt">${esc(t)}</div>${i === 0 && p.attach[0] ? thumb(p.attach[0]) : ""}<div class="cc ${t.length > 280 ? "over" : ""}">${t.length}/280</div></div>`).join("");
+  }
+  const lines = body.split("\n"); const head = lines.slice(0, 2).join("\n"), rest = lines.slice(2).join("\n");
+  return `<div class="tweet li-post"><div class="who"><span class="av"></span><b>You</b><span class="muted">· now</span></div>
+    <div class="txt">${esc(head)}${rest.trim() ? ` <span class="see-more">…see more</span>` : ""}</div>
+    ${rest.trim() ? `<div class="cut">Hidden until "see more"</div><div class="txt muted">${esc(rest.trim())}</div>` : ""}
+    ${p.attach[0] ? thumb(p.attach[0]) : ""}<div class="cc">${body.length} chars</div></div>`;
+}
+function wordDiff(a, b) {
+  const A = a.split(/(\s+)/), B = b.split(/(\s+)/), n = A.length, m = B.length;
+  const L = Array.from({ length: n + 1 }, () => new Uint16Array(m + 1));
+  for (let i = n - 1; i >= 0; i--) for (let j = m - 1; j >= 0; j--) L[i][j] = A[i] === B[j] ? L[i + 1][j + 1] + 1 : Math.max(L[i + 1][j], L[i][j + 1]);
+  let i = 0, j = 0, out = "";
+  while (i < n && j < m) { if (A[i] === B[j]) { out += esc(A[i]); i++; j++; } else if (L[i + 1][j] >= L[i][j + 1]) out += `<del>${esc(A[i++])}</del>`; else out += `<ins>${esc(B[j++])}</ins>`; }
+  while (i < n) out += `<del>${esc(A[i++])}</del>`; while (j < m) out += `<ins>${esc(B[j++])}</ins>`;
+  return out;
+}
+function viewPost(id) {
+  const p = POSTS.find(x => x.id === id);
+  if (!p) return `<div class="empty">No post called ${esc(id)}.</div>`;
+  if (savedBody === null || viewPost.last !== id) { savedBody = p.body; histSel = null; pv = p.platform === "linkedin" ? "li" : "x"; }
+  viewPost.last = id;
+  const s = sess(p.session);
+  const shots = s ? s.shots : [];
+  const versions = p.history.filter(h => h.text);
+  return `
+  <div class="crumbs"><a href="#/posts">Posts</a><span>/</span>${pTag(p.project)}<span>/</span><span class="mono">${esc(p.id)}.md</span></div>
+  <div class="editor">
+    <div class="card pane">
+      <input class="title-in" id="e-title" value="${esc(p.title)}" aria-label="Title">
+      <div class="fields">
+        <label class="field">Status<select class="ctl" id="e-status">${STATUSES.map(x => `<option value="${x}" ${x === p.status ? "selected" : ""}>${LABEL[x]}</option>`).join("")}</select></label>
+        <label class="field">Platform<select class="ctl" id="e-plat">${Object.entries(PLAT).map(([k, v]) => `<option value="${k}" ${k === p.platform ? "selected" : ""}>${v}</option>`).join("")}</select></label>
+        <label class="field">Remind me at<input class="ctl" id="e-when" type="datetime-local" value="${p.scheduled_for || ""}"></label>
+        <label class="field">Project<select class="ctl" id="e-proj">${PROJECTS.filter(x => x.mode === "content").map(x => `<option ${x.key === p.project ? "selected" : ""}>${x.name}</option>`).join("")}</select></label>
+      </div>
+      <textarea class="md" id="e-body" spellcheck="true" aria-label="Post text">${esc(p.body)}</textarea>
+      <div class="savebar"><span id="e-state">Saved · ${p.history.length ? fmtWhen(p.history[p.history.length - 1].at) : "from agent"}</span>
+        <button class="btn solid" id="e-save">Save <span class="mono" style="opacity:.6">⌘S</span></button></div>
+      ${p.status === "posted" ? `<div class="savebar">Posted ${fmtWhen(p.posted_at)} · <a href="${esc(p.link)}">${esc(p.link)}</a></div>` : ""}
+    </div>
+    <div class="card pane">
+      <div class="row"><h3 style="margin-right:auto">Preview</h3>
+        <div class="seg pv-tabs"><button data-pv="x" aria-pressed="${pv === "x"}">X thread</button><button data-pv="li" aria-pressed="${pv === "li"}">LinkedIn</button></div></div>
+      <div class="pv" id="pv">${preview(p, p.body)}</div>
+      <div class="row"><button class="btn solid" data-copy="${p.id}">Copy</button>${pv === "x" ? `<button class="btn" data-copy-thread="${p.id}">Copy as thread</button>` : ""}
+        ${p.status !== "posted" ? `<button class="btn" data-posted="${p.id}" style="margin-left:auto">Mark posted</button>` : ""}</div>
+    </div>
+    <div class="card behind-card"><div class="behind">
+      <div class="blk"><h3>Session</h3>${s ? `<a href="#/timeline" class="art"><span class="at"><b>${esc(s.title)}</b></span><span class="src">${fmtWhen(s.start)} · ${s.agent} · ${s.minutes} min · ${s.files.length} files</span></a>
+        <p class="muted" style="font-size:13px">${esc(s.summary)}</p>` : '<p class="muted">Not linked to a session.</p>'}
+        ${p.trend && p.trend !== "none" ? `<span class="tag">Trend · ${esc(p.trend)}</span>` : ""}</div>
+      ${s && s.articles.length ? `<div class="blk"><h3>Research · articles.md</h3>${s.articles.map(a => `<a class="art" href="${a.u}"><span class="src">${a.src}</span><span class="at">${esc(a.t)}</span></a>`).join("")}</div>` : ""}
+      ${s && s.hooks.length ? `<div class="blk"><h3>Hooks · click to use</h3>${s.hooks.map(h => `<button class="hook" data-hook="${esc(h)}">${esc(h)}</button>`).join("")}</div>` : ""}
+      ${shots.length ? `<div class="blk"><h3>Screenshots · attach one</h3><div class="mini-shots">${shots.map(id => `<button class="${p.attach.includes(id) ? "on" : ""} ${SHOTS[id].state === "pending" ? "pend" : ""}" data-attach="${id}" title="${esc(SHOTS[id].cap)}${SHOTS[id].state === "pending" ? " (approve it in Media first)" : ""}">${thumb(id)}</button>`).join("")}</div></div>` : ""}
+      <div class="blk"><h3>History · ${p.history.length} change${p.history.length === 1 ? "" : "s"}</h3>
+        ${p.history.length ? `<div class="hist">${p.history.slice().reverse().map((h, i) => { const k = p.history.length - 1 - i;
+          return `<button ${h.text ? `data-hist="${k}"` : "disabled"} aria-pressed="${histSel === k}"><span>${fmtWhen(h.at)}</span><span class="muted">${esc(h.change)}</span><span class="by">${h.by}</span></button>`; }).join("")}</div>` : '<p class="muted" style="font-size:13px">No changes yet.</p>'}
+        ${histSel !== null && p.history[histSel]?.text ? `<div class="diff">${wordDiff(p.history[histSel].text, p.body)}</div>
+          <div class="row"><span class="muted" style="font-size:12px">That version → now</span><button class="btn" data-restore="${histSel}" style="margin-left:auto">Restore this version</button></div>` : versions.length ? '<p class="muted" style="font-size:12px">Pick a version to compare it with now.</p>' : ""}
+      </div>
+    </div></div>
+  </div>`;
+}
+function wirePost(id) {
+  const p = POSTS.find(x => x.id === id); if (!p) return;
+  const body = $("#e-body"), state = $("#e-state");
+  const markDirty = () => { const d = body.value !== savedBody || $("#e-title").value !== p.title; state.textContent = d ? "Unsaved changes" : "Saved"; state.className = d ? "dirty" : ""; $("#pv").innerHTML = preview(p, body.value); };
+  body.oninput = markDirty; $("#e-title").oninput = markDirty;
+  const save = () => {
+    if (body.value === savedBody && $("#e-title").value === p.title) return toast("Nothing to save");
+    p.history.push({ at: NOW.toISOString().slice(0, 16), by: "dashboard", change: "edit", text: savedBody });
+    p.body = savedBody = body.value; p.title = $("#e-title").value; toast("Saved · previous version kept in history"); route();
+  };
+  $("#e-save").onclick = save;
+  document.onkeydown = e => { if ((e.metaKey || e.ctrlKey) && e.key === "s" && location.hash.startsWith("#/post/")) { e.preventDefault(); save(); } };
+  $("#e-status").onchange = e => { setStatus(p, e.target.value); route(); };
+  $("#e-plat").onchange = e => { p.platform = e.target.value; pv = p.platform === "linkedin" ? "li" : "x"; route(); };
+  $("#e-when").onchange = e => { p.scheduled_for = e.target.value; if (p.status === "approved" || p.status === "draft") setStatus(p, "scheduled"); else toast("Reminder moved to " + fmtWhen(e.target.value)); route(); };
+  document.querySelectorAll("[data-pv]").forEach(b => b.onclick = () => { pv = b.dataset.pv; route(); });
+  document.querySelectorAll("[data-hook]").forEach(b => b.onclick = () => { const lines = body.value.split("\n"); lines[0] = b.dataset.hook; body.value = lines.join("\n"); markDirty(); toast("Hook swapped in as the first line"); });
+  document.querySelectorAll("[data-attach]").forEach(b => b.onclick = () => {
+    const sid = b.dataset.attach; if (SHOTS[sid].state === "pending") return toast("Approve this screenshot in Media first");
+    p.attach = p.attach.includes(sid) ? [] : [sid]; route(); });
+  document.querySelectorAll("[data-hist]").forEach(b => b.onclick = () => { histSel = histSel === +b.dataset.hist ? null : +b.dataset.hist; route(); });
+  document.querySelectorAll("[data-restore]").forEach(b => b.onclick = () => {
+    const old = p.history[+b.dataset.restore].text;
+    p.history.push({ at: NOW.toISOString().slice(0, 16), by: "dashboard", change: "restore", text: p.body });
+    p.body = savedBody = old; histSel = null; toast("Restored. The replaced text is in history too."); route(); });
+}
+
+/* ------------------------------------------------------------------ Calendar */
+let calMonth = new Date(2026, 10, 1);
+function viewCalendar() {
+  const y = calMonth.getFullYear(), m = calMonth.getMonth();
+  const first = new Date(y, m, 1), start = new Date(first); start.setDate(1 - ((first.getDay() + 6) % 7));
+  const key = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  let cells = "";
+  for (let i = 0; i < 42; i++) {
+    const d = new Date(start); d.setDate(start.getDate() + i); const k = key(d);
+    if (i >= 35 && d.getMonth() !== m) break;
+    const ss = SESSIONS.filter(s => s.start.startsWith(k) && inFilter(s.project));
+    const ps = POSTS.filter(p => inFilter(p.project) && ((p.status === "scheduled" && p.scheduled_for?.startsWith(k)) || (p.status === "posted" && p.posted_at?.startsWith(k))));
+    cells += `<div class="day ${d.getMonth() !== m ? "out" : ""} ${k === TODAY ? "today" : ""}" data-day="${k}">
+      <div class="dn"><b>${d.getDate()}</b><span class="work" title="${ss.length} session(s)">${ss.map(s => `<i class="p${proj(s.project).color}"></i>`).join("")}</span></div>
+      ${ps.map(p => `<a class="chip ${p.status}" draggable="${p.status === "scheduled"}" data-id="${p.id}" href="#/post/${p.id}" title="${esc(p.title)}">${fmtTime(p.scheduled_for || p.posted_at)} ${esc(p.title)}</a>`).join("")}</div>`;
+  }
+  const busyNoPost = SESSIONS.filter(s => inFilter(s.project) && s.start.slice(0, 10) <= TODAY && s.start.slice(0, 10) >= "2026-11-03")
+    .map(s => s.start.slice(0, 10)).filter((d, i, a) => a.indexOf(d) === i)
+    .filter(d => !POSTS.some(p => p.posted_at?.startsWith(d)));
+  return `<div class="cal-h"><h2>${first.toLocaleDateString("en-US", { month: "long", year: "numeric" })}</h2>
+      <button class="btn" data-cal="-1" aria-label="Previous month">←</button><button class="btn" data-cal="0">Today</button><button class="btn" data-cal="1" aria-label="Next month">→</button></div>
+    <div class="legend"><span class="row"><span class="work"><i class="p0"></i><i class="p1"></i></span> a session you worked</span>
+      <span class="chip scheduled" style="cursor:default">reminder</span><span class="chip posted" style="cursor:default">posted</span>
+      <span>Drag a reminder to another day to move it.</span></div>
+    ${busyNoPost.length ? `<div class="card" style="padding:10px 14px;font-size:13px">In the last 7 days you built on <b>${busyNoPost.length} days</b> without posting (${busyNoPost.sort().map(d => fmtDay(d).split(",")[0]).join(", ")}). <a href="#/timeline">See what you did →</a></div>` : ""}
+    <div class="cal">${["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map(d => `<div class="dow">${d}</div>`).join("")}${cells}</div>`;
+}
+function wireCalendar() {
+  document.querySelectorAll("[data-cal]").forEach(b => b.onclick = () => { const v = +b.dataset.cal; calMonth = v ? new Date(calMonth.getFullYear(), calMonth.getMonth() + v, 1) : new Date(2026, 10, 1); route(); });
+  document.querySelectorAll(".chip[draggable=true]").forEach(c => c.ondragstart = e => e.dataTransfer.setData("text/plain", c.dataset.id));
+  document.querySelectorAll(".day").forEach(d => {
+    d.ondragover = e => { e.preventDefault(); d.classList.add("over"); };
+    d.ondragleave = () => d.classList.remove("over");
+    d.ondrop = e => { e.preventDefault(); const p = POSTS.find(x => x.id === e.dataTransfer.getData("text/plain")); if (!p) return;
+      p.scheduled_for = d.dataset.day + p.scheduled_for.slice(10); p.history.push({ at: NOW.toISOString().slice(0, 16), by: "dashboard", change: "rescheduled" });
+      toast("Reminder moved to " + fmtWhen(p.scheduled_for)); route(); };
+  });
+}
+
+/* ------------------------------------------------------------------ Timeline */
+function viewTimeline(q) {
+  q = (q || "").toLowerCase();
+  const ss = SESSIONS.filter(s => inFilter(s.project) && proj(s.project).mode !== "ignore" && (!q || (s.title + s.summary + s.files.join(" ")).toLowerCase().includes(q)));
+  const days = [...new Set(ss.map(s => s.start.slice(0, 10)))];
+  if (!ss.length) return `<div class="empty">No sessions match “${esc(q)}”.</div>`;
+  return (q ? `<div class="row"><span class="muted">${ss.length} session(s) matching “${esc(q)}”</span><a class="btn ghost" href="#/timeline">Clear</a></div>` : "") +
+    days.map(d => { const list = ss.filter(s => s.start.startsWith(d)); const mins = list.reduce((a, s) => a + s.minutes, 0);
+    return `<div class="tl-day"><div class="tl-date"><b>${fmtDay(d)}</b><span>${list.length} session${list.length > 1 ? "s" : ""} · ${Math.floor(mins / 60)}h ${mins % 60}m</span></div><div>
+      ${list.map((s, i) => { const posts = POSTS.filter(p => p.session === s.id && p.status !== "suggested");
+        return `<details class="card sess" ${d === TODAY && i === 0 && !q ? "open" : ""}><summary>
+          <span class="time">${fmtTime(s.start)}</span>
+          <div><div class="t">${esc(s.title)}</div><div class="meta">${pTag(s.project)}<span>${s.agent}</span><span>${s.minutes} min</span><span>${s.files.length} files</span>${s.tags.map(t => `<span class="tag">${t}</span>`).join("")}</div></div>
+          <div class="row">${posts.length ? posts.map(p => st(p.status)).join("") : proj(s.project).mode === "content" ? '<span class="muted" style="font-size:12px">no post yet</span>' : '<span class="tag">journal only</span>'}</div></summary>
+          <div class="sess-body"><div>
+            <h3>Summary</h3><p>${esc(s.summary)}</p>
+            <h3>Files</h3><div class="files">${s.files.map(esc).join("<br>")}</div>
+            ${s.commands.length ? `<h3>Commands</h3><div class="cmd">${s.commands.map(c => "$ " + esc(c)).join("\n")}</div>` : ""}
+          </div><div>
+            ${s.articles.length ? `<h3>Research</h3>${s.articles.map(a => `<a class="art" href="${a.u}"><span class="src">${a.src}</span><span class="at">${esc(a.t)}</span></a>`).join("")}` : ""}
+            ${s.shots.length ? `<h3>Screenshots</h3><div class="mini-shots">${s.shots.map(id => `<a href="#/media" title="${esc(SHOTS[id].cap)}">${thumb(id)}</a>`).join("")}</div>` : ""}
+            <h3>Posts from this</h3><div class="linked">${posts.map(p => `<a class="btn" href="#/post/${p.id}">${esc(p.title.slice(0, 32))}${p.title.length > 32 ? "…" : ""}</a>`).join("")}
+              ${proj(s.project).mode === "content" ? `<button class="btn ghost" data-suggest="${s.id}">Suggest a post from this</button>` : ""}</div>
+          </div></div></details>`; }).join("")}</div></div>`; }).join("");
+}
+
+/* ------------------------------------------------------------------ Media */
+let mediaFilter = "all";
+function viewMedia() {
+  const items = Object.entries(SHOTS).filter(([, s]) => inFilter(s.project) && (mediaFilter === "all" || s.state === mediaFilter))
+    .sort((a, b) => (a[1].state === "pending" ? -1 : 0) - (b[1].state === "pending" ? -1 : 0) || b[1].day.localeCompare(a[1].day));
+  return `<div class="toolbar"><div class="seg" role="group" aria-label="Filter">${["all", "pending", "approved"].map(f => `<button data-mf="${f}" aria-pressed="${mediaFilter === f}">${f[0].toUpperCase() + f.slice(1)}</button>`).join("")}</div>
+    <span class="muted" style="font-size:12px">Screenshots your agent took stay pending until you approve them.</span></div>
+    <div class="media">${items.map(([id, s]) => { const used = POSTS.filter(p => p.attach.includes(id));
+      return `<div class="card mcard">${thumb(id)}<div class="cap">${esc(s.cap)}</div>
+        <div class="row">${pTag(s.project)}<span class="tag ${s.state === "pending" ? "badge-pend" : "badge-ok"}">${s.state}</span><span class="meta">${fmtDay(s.day)}</span></div>
+        <div class="meta">${used.length ? "Used in " + used.map(p => `<a href="#/post/${p.id}">${esc(p.title.slice(0, 28))}…</a>`).join(", ") : "Not in a post"}</div>
+        ${s.state === "pending" ? `<div class="row"><button class="btn solid" data-shot-ok="${id}">Approve</button><button class="btn ghost" data-shot-no="${id}">Discard</button></div>` : ""}</div>`; }).join("") || '<div class="empty">Nothing here.</div>'}</div>`;
+}
+
+/* ------------------------------------------------------------------ Projects */
+function viewProjects() {
+  return `<p class="muted">Only <b>content</b> projects get suggestions and posts. <b>Journal only</b> projects are logged but never used in posts. <b>Ignored</b> folders are never read.</p>
+  <div class="card tbl-wrap"><table class="tbl"><thead><tr><th>Project</th><th>Mode</th><th>Last session</th><th>Sessions</th><th>Posts</th><th>Last post</th></tr></thead><tbody>
+  ${PROJECTS.map(p => { const ss = SESSIONS.filter(s => s.project === p.key), ps = POSTS.filter(x => x.project === p.key && x.status !== "suggested");
+    const last = ps.filter(x => x.posted_at).map(x => x.posted_at).sort().pop();
+    return `<tr><td><b>${esc(p.name)}</b><div class="mono muted" style="font-size:11px">${esc(p.path)}</div></td>
+      <td><select class="ctl" data-mode-proj="${p.key}" aria-label="Mode for ${esc(p.name)}">${["content", "journal", "ignore"].map(m => `<option value="${m}" ${m === p.mode ? "selected" : ""}>${{ content: "Content", journal: "Journal only", ignore: "Ignored" }[m]}</option>`).join("")}</select></td>
+      <td class="muted">${ss[0] ? fmtWhen(ss[0].start) : "—"}</td><td>${ss.length}</td><td>${ps.length}</td><td class="muted">${last ? fmtDay(last.slice(0, 10)) : "—"}</td></tr>`; }).join("")}
+  </tbody></table></div>`;
+}
+
+/* ------------------------------------------------------------------ router + global actions */
+function route() {
+  const [path, qs] = (location.hash.slice(2) || "today").split("?");
+  const [name, arg] = path.split("/");
+  const q = new URLSearchParams(qs || "").get("q");
+  const titles = { today: "Today", posts: "Posts", post: "Post", calendar: "Calendar", timeline: "Timeline", media: "Media", projects: "Projects" };
+  $("#title").textContent = name === "post" ? (POSTS.find(p => p.id === arg)?.title || "Post") : titles[name] || "Today";
+  document.title = (titles[name] || "Today") + " · Build in Public";
+  renderNav(name === "post" ? "posts" : name);
+  if (name !== "post") savedBody = null;
+  const v = $("#view");
+  v.innerHTML = name === "posts" ? viewPosts() : name === "post" ? viewPost(arg) : name === "calendar" ? viewCalendar()
+    : name === "timeline" ? viewTimeline(q) : name === "media" ? viewMedia() : name === "projects" ? viewProjects() : viewToday();
+  if (name === "posts" && postsMode === "board") wireBoard();
+  if (name === "post") wirePost(arg);
+  if (name === "calendar") wireCalendar();
+}
+window.addEventListener("hashchange", () => { if (!location.hash.startsWith("#/post/")) savedBody = null; route(); window.scrollTo(0, 0); });
+
+document.addEventListener("click", e => {
+  const t = e.target.closest("button"); if (!t) return;
+  const d = t.dataset, P = id => POSTS.find(p => p.id === id);
+  if (d.mode) { postsMode = d.mode; route(); }
+  else if (d.mf) { mediaFilter = d.mf; route(); }
+  else if (d.copy) copy(P(d.copy).body, "Post copied. Paste it, then mark it posted.");
+  else if (d.copyThread) copy(splitThread(P(d.copyThread).body).map((s, i, a) => `${s} ${i + 1}/${a.length}`).join("\n\n"), "Thread copied with 1/n numbering");
+  else if (d.posted) { const p = P(d.posted); setStatus(p, "posted"); p.link = "https://x.com/…"; route(); }
+  else if (d.approve) { setStatus(P(d.approve), "approved"); route(); }
+  else if (d.skip) { setStatus(P(d.skip), "skipped"); route(); }
+  else if (d.prompt) copy(`write post ${d.prompt} for ${d.proj}`, `Copied “write post ${d.prompt} for ${d.proj}”. Paste it to your agent.`);
+  else if (d.suggest) copy(`suggest a post from session ${d.suggest}`, "Prompt copied. Paste it to your agent.");
+  else if (d.shotOk) { SHOTS[d.shotOk].state = "approved"; toast("Approved. It can now be attached to posts."); route(); }
+  else if (d.shotNo) { delete SHOTS[d.shotNo]; toast("Discarded"); route(); }
+});
+document.addEventListener("change", e => {
+  const k = e.target.dataset.modeProj; if (!k) return;
+  proj(k).mode = e.target.value; toast(`${k} → ${e.target.selectedOptions[0].text}`);
+  $("#proj").innerHTML = `<option value="all">All projects</option>` + PROJECTS.filter(p => p.mode !== "ignore").map(p => `<option value="${p.key}">${esc(p.name)}</option>`).join("");
+});
+route();
+</script>
+</body>
+</html>
