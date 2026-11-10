@@ -1,6 +1,8 @@
 <div align="center">
 
-# 🛠️ Build Your Product in Public
+<img src="docs/favicon.svg" width="64" height="64" alt="">
+
+# Build Your Product in Public
 
 ### Your personal build-in-public content strategist, living in your repo.
 

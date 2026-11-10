@@ -8,7 +8,8 @@
 <meta property="og:description" content="Journals every Claude Code, Codex and Antigravity session across all your projects and turns it into build-in-public posts.">
 <meta property="og:image" content="https://chetanya1998.github.io/build-in-public/assets/shot-code.webp">
 <meta name="twitter:card" content="summary_large_image">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23101216'/%3E%3Cpath d='M8 11h16M8 16h16M8 21h10' stroke='white' stroke-width='2.5' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
 
 <meta name="claude:viewport-fit-sides" content="cover">
@@ -67,8 +68,17 @@ p { margin: 0 }
 .nav .wrap { display: flex; align-items: center; gap: 16px; height: 60px }
 .links { margin-right: 8px }
 .brand { display: flex; align-items: center; gap: 10px; font-weight: 600; letter-spacing: -0.02em; text-decoration: none; white-space: nowrap }
-.mark { width: 22px; height: 22px; border-radius: 6px; background: var(--fg); position: relative; flex: none }
-.mark::after { content: ""; position: absolute; left: 5px; right: 5px; top: 6px; height: 2px; background: var(--bg); box-shadow: 0 4px 0 var(--bg), 0 8px 0 var(--bg); border-radius: 2px }
+/* logo: the same mark as the favicon, a line rising to launch */
+.mark { width: 26px; height: 26px; flex: none; display: block }
+.mk-bg { fill: #101216 }
+.mk-base { stroke: #3a3f4b; stroke-width: 1.6; stroke-linecap: round; stroke-dasharray: 2 2.4 }
+.mk-line { fill: none; stroke: #93a6ff; stroke-width: 3; stroke-linecap: round }
+.mk-dot { fill: #fff }
+:root[data-theme="dark"] .mk-bg { stroke: rgba(255, 255, 255, .16); stroke-width: 1 }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .mk-bg { stroke: rgba(255, 255, 255, .16); stroke-width: 1 } }
+.brand:hover .mk-line { stroke-dasharray: 30; animation: mkdraw .8s ease-out }
+@keyframes mkdraw { from { stroke-dashoffset: 30 } to { stroke-dashoffset: 0 } }
+@media (prefers-reduced-motion: reduce) { .brand:hover .mk-line { animation: none } }
 .links { display: flex; gap: 22px; margin-left: auto; font-size: 14px; color: var(--muted) }
 .links a { text-decoration: none } .links a:hover { color: var(--fg) }
 .pill { display: inline-flex; align-items: center; gap: 8px; border-radius: 999px; padding: 9px 16px; font: 500 14px/1 var(--display); text-decoration: none; border: 1px solid var(--line); background: var(--surface); color: var(--fg); cursor: pointer; white-space: nowrap }
@@ -82,8 +92,8 @@ p { margin: 0 }
 .hero { padding-block: 56px 72px; border: 0 }
 .hero-grid { display: grid; grid-template-columns: 1.08fr 1fr; gap: 56px; align-items: center }
 .hero-grid > *, .split > *, .qs > *, .gallery > * { min-width: 0 }
-.hero h1 { font-size: clamp(40px, 5.6vw, 68px); line-height: 1.0; margin: 16px 0 18px }
-.hero .lede { font-size: 18px }
+.hero h1 { font-size: clamp(38px, 5vw, 62px); line-height: 1.02; margin: 16px 0 18px }
+.hero .lede { font-size: 19px; color: var(--fg) }
 .agents { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px }
 .chip { font: 500 12.5px/1 var(--mono); padding: 7px 10px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); background: var(--surface) }
 @media (max-width: 900px) { .hero-grid { grid-template-columns: 1fr; gap: 40px } }
@@ -256,16 +266,103 @@ footer nav { display: flex; gap: 18px; margin-left: auto; flex-wrap: wrap }
 .cmdnote code { color: var(--fg) }
 @media (max-width: 760px) { .ref { grid-template-columns: minmax(0, 1fr) auto } .ref p { grid-column: 1 / -1; grid-row: 2 } }
 
+
+/* header: words rise in, Thiel quote, journey graphic */
+/* the headline types itself; letters are laid out from the start so nothing below moves */
+.js .type .ch { opacity: 0 }
+.js .type .ch.on { opacity: 1 }
+.type > span, .type > em { white-space: nowrap }  /* keep each phrase on one line, as before */
+.caret { display: inline-block; width: 0; height: .8em; position: relative; vertical-align: baseline }
+.caret::after { content: ""; position: absolute; left: .04em; top: -.04em; bottom: -.1em; border-left: .07em solid var(--ink); animation: blink 1s steps(1) infinite }
+.caret.typing::after { animation: none }
+.caret.gone::after { opacity: 0; transition: opacity .6s }
+@keyframes blink { 50% { opacity: 0 } }
+.thiel { margin: 22px 0 0; padding: 2px 0 2px 16px; border-left: 2px solid var(--ink); max-width: 46ch }
+.thiel p { font-family: var(--serif); font-style: italic; font-size: 18px; line-height: 1.4 }
+.thiel cite { display: block; margin-top: 6px; font: 500 12px/1 var(--mono); letter-spacing: .04em; color: var(--muted); font-style: normal }
+.journey { margin: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 18px 18px 8px; min-width: 0; box-shadow: 0 30px 70px -40px rgba(10, 14, 30, .35) }
+.journey-top { display: flex; flex-wrap: wrap; gap: 8px 16px; justify-content: space-between; align-items: center }
+.legend { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--muted) }
+.legend i { width: 18px; height: 0; border-top: 2.5px solid var(--ink); display: inline-block; margin-left: 8px }
+.legend .lg-sil { border-top: 2px dashed var(--muted) }
+.journey-svg { width: 100%; height: auto; display: block; margin-top: 6px; overflow: visible }
+.j-axis { stroke: var(--line); stroke-width: 1.5 }
+.j-launch { stroke: var(--line); stroke-width: 1.5; stroke-dasharray: 4 5 }
+.j-tick { font: 500 11px var(--mono); fill: var(--muted) }
+.j-note { font: 500 12px var(--display); fill: var(--muted) }
+.j-end-note { fill: var(--fg); font-weight: 600 }
+.j-sil { fill: none; stroke: var(--muted); stroke-width: 2; stroke-dasharray: 5 6; opacity: .8 }
+.j-pub { fill: none; stroke: var(--ink); stroke-width: 3; stroke-linecap: round }
+.j-pub-area { fill: var(--ink); opacity: .07 }
+.j-dot { fill: var(--surface); stroke: var(--ink); stroke-width: 2.5 }
+.j-chip rect { fill: var(--bg); stroke: var(--line) }
+.j-chip text { font: 500 11.5px var(--display); fill: var(--fg) }
+.j-chip .d { fill: var(--ink); font-family: var(--mono); font-size: 10.5px }
+.j-dot-end { fill: var(--ink) }
+.j-pulse { fill: var(--ink); opacity: 0 }
+/* the animation plays when .play is added, and replays on a loop */
+.journey-svg.play .j-axes { animation: fade .5s both }
+.journey-svg.play .j-sil { stroke-dasharray: 1 1; stroke-dashoffset: 1; animation: draw 1.6s .3s ease-out forwards, dashes 0s 1.9s forwards }
+.journey-svg.play .j-sil-note { animation: fade .5s 1.8s both }
+.journey-svg.play .j-pub { stroke-dasharray: 1 1; stroke-dashoffset: 1; animation: draw 3.4s .7s cubic-bezier(.45, 0, .25, 1) forwards }
+.journey-svg.play .j-pub-area { animation: area .9s 3.9s both }
+.journey-svg.play .j-dot, .journey-svg.play .j-chip { opacity: 0; animation: pop .45s var(--d) cubic-bezier(.2, .9, .3, 1.4) forwards }
+.journey-svg.play .j-end { opacity: 0; animation: fade .3s 4.1s forwards }
+.journey-svg.play .j-pulse { animation: pulse 1.8s 4.2s ease-out 3 }
+.journey-svg.play .j-end-note { animation: fade .5s 4.3s both }
+@keyframes draw { to { stroke-dashoffset: 0 } }
+@keyframes dashes { to { stroke-dasharray: 5 6 } }
+@keyframes fade { from { opacity: 0 } to { opacity: 1 } }
+@keyframes area { from { opacity: 0 } to { opacity: .07 } }
+@keyframes pop { from { opacity: 0; transform: translateY(6px) scale(.85) } to { opacity: 1; transform: none } }
+@keyframes pulse { 0% { opacity: .35; r: 6 } 100% { opacity: 0; r: 22 } }
+.j-dot, .j-chip { transform-box: fill-box; transform-origin: center }
+@media (max-width: 520px) { .journey { padding: 14px 8px 4px } .journey-top { padding: 0 6px }
+  .j-chip text { font-size: 16px } .j-chip .d { font-size: 15px } .j-note { font-size: 16px } .j-tick { font-size: 15px } .j-y { display: none } }
+
+/* show your journey: problem / solution */
+.ps { display: grid; grid-template-columns: 1fr 1.25fr; gap: 18px; align-items: stretch }
+.ps > * { min-width: 0 }
+.ps-card { border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); padding: 26px 24px; display: grid; gap: 12px; align-content: start }
+.ps-tag { font: 500 12px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted) }
+.solution .ps-tag { color: var(--ink) }
+.ps-card h3 { font-size: 21px }
+.ps-card ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px }
+.ps-card li { display: grid; grid-template-columns: 22px 1fr; color: var(--muted); font-size: 15.5px }
+.problem li::before { content: "×"; color: var(--muted); font: 500 16px/1.4 var(--mono) }
+.solution li::before { content: "✓"; color: var(--ok); font: 600 15px/1.5 var(--mono) }
+.solution li { color: var(--fg) }
+.ps-panel { margin-top: 8px }
+.problem { background: transparent; border-style: dashed }
+@media (max-width: 860px) { .ps { grid-template-columns: 1fr } }
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); margin-top: 18px; border: 1px solid var(--line); border-radius: var(--r); background: var(--surface) }
+.stat { padding: 24px; display: grid; gap: 6px; align-content: start; border-left: 1px solid var(--line) }
+.stat:first-child { border-left: 0 }
+.stat .num { font: 600 clamp(36px, 4.4vw, 52px)/1 var(--display); letter-spacing: -0.04em; font-variant-numeric: tabular-nums }
+.stat:first-child .num { color: var(--ink) }
+.stat p { font-size: 15.5px }
+.stat small { color: var(--muted); font-size: 12.5px }
+@media (max-width: 760px) { .stats { grid-template-columns: 1fr } .stat { border-left: 0; border-top: 1px solid var(--line) } .stat:first-child { border-top: 0 } }
+
+/* sections fade up as they scroll in */
+.js [data-reveal] { opacity: 0; transform: translateY(16px); transition: opacity .7s ease, transform .7s cubic-bezier(.2, .7, .2, 1) }
+.js [data-reveal].in { opacity: 1; transform: none }
+.js .ps [data-reveal]:nth-child(2) { transition-delay: .12s }
+
+@media (prefers-reduced-motion: reduce) {
+  .js .type .ch, .js [data-reveal] { opacity: 1; transform: none; animation: none; transition: none }
+  .caret { display: none }
+}
 @media (prefers-reduced-motion: reduce) { .entry, .brief { animation: none } }
 @media (max-width: 520px) { section { padding-block: 56px } .hero { padding-block: 40px 56px } }
 </style>
 </head>
 <body>
-<script>try { var t = localStorage.getItem('bip-theme'); if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t } catch (e) {}</script>
+<script>document.documentElement.classList.add('js'); try { var t = localStorage.getItem('bip-theme'); if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t } catch (e) {}</script>
 
 <header class="nav">
   <div class="wrap">
-    <a class="brand" href="#top"><span class="mark" aria-hidden="true"></span>Build Your Product in Public</a>
+    <a class="brand" href="#top"><svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" class="mk-bg"/><path d="M6.5 24.5h19" class="mk-base"/><path d="M7 23.5C13 22.6 16.5 19 19.2 15.2S23.2 9.4 24.6 8.3" class="mk-line"/><circle cx="24.8" cy="8.2" r="3.4" class="mk-dot"/></svg>Build Your Product in Public</a>
     <nav class="links" aria-label="Sections">
       <a href="#how">How it works</a><a href="#demo">Demo</a><a href="#commands">Commands</a><a href="#privacy">Privacy</a><a href="#faq">FAQ</a>
     </nav>
@@ -282,8 +379,9 @@ footer nav { display: flex; gap: 18px; margin-left: auto; flex-wrap: wrap }
     <div class="wrap hero-grid">
       <div>
         <div class="eyebrow">Open-source agent skill · MIT</div>
-        <h1>You already built it. <em>Now tell the story.</em></h1>
-        <p class="lede">While you code with Claude Code, Codex or Antigravity, it logs what you built and why, and asks before capturing anything worth showing. At the time you choose, it finds the conversations closest to your day's work and sends you a gist with 5 to 7 posts to pick from. You choose one, review the draft, and post it yourself.</p>
+        <h1 class="type" aria-label="The best product nobody heard of still loses."><span aria-hidden="true">The best product</span> <span aria-hidden="true">nobody heard of</span> <em aria-hidden="true">still loses.</em></h1>
+        <p class="lede">Distribution starts with telling people. Your agent drafts it.</p>
+        <blockquote class="thiel"><p>“Poor sales rather than bad product is the most common cause of failure.”</p><cite>Peter Thiel, <i>Zero to One</i></cite></blockquote>
 
         <div class="install" data-tabs>
           <div class="tabbar"><div class="tabs" role="tablist" aria-label="Install command">
@@ -306,31 +404,77 @@ footer nav { display: flex; gap: 18px; margin-left: auto; flex-wrap: wrap }
         </div>
       </div>
 
-      <div class="panel" aria-label="Example of a day's journal and summary">
-        <div class="panel-bar"><i></i><i></i><i></i><span>.buildinpublic/log/2026-11-09.md</span></div>
-        <div class="log">
-          <div class="entry"><span class="t">09:42</span><div><span class="who">claude-code</span> · <span class="proj">saas-cost-estimator</span><br>Fix pricing rounding bug <span class="dim">· 46m</span> <span class="tag">#war-story #metric</span></div></div>
-          <div class="entry"><span class="t">11:15</span><div><span class="who">codex</span> · <span class="proj">saas-cost-estimator</span><br>Add usage-based Stripe metering <span class="dim">· 1h 12m</span> <span class="tag">#decision</span></div></div>
-          <div class="entry"><span class="t">14:03</span><div><span class="who">antigravity</span> · <span class="proj">landing-page</span><br>Verified signup flow in the browser <span class="dim">· 38m</span> <span class="tag">#visual</span></div></div>
-          <div class="entry"><span class="t">16:30</span><div><span class="who">codex</span> · <span class="proj">client-portal</span> <span class="dim">· journal only, never used for posts</span></div></div>
-        </div>
-        <div class="brief">
-          <div class="eyebrow">19:00 · Your daily gist</div>
-          <h3>Fixed invoice totals that drifted by fractions of a cent</h3>
-          <p class="hook">1. “I lost 46 minutes to a bug in our invoices. The fix was one line.”</p>
-          <div class="row"><span>6 suggested posts</span><span>1 approved capture</span><span>nearest trend linked</span></div>
-        </div>
-        <div class="example">Example day</div>
-      </div>
+      <figure class="journey" aria-label="Two ways to reach launch day: built in silence stays flat at zero, built in public grows with every post">
+        <figcaption class="journey-top">
+          <span class="eyebrow">Two ways to reach launch day</span>
+          <span class="legend"><i class="lg-pub"></i>Built in public <i class="lg-sil"></i>Built in silence</span>
+        </figcaption>
+        <svg class="journey-svg" viewBox="0 0 520 330" role="img" aria-hidden="true">
+          <g class="j-axes">
+            <line x1="40" y1="290" x2="490" y2="290" class="j-axis"/>
+            <line x1="470" y1="34" x2="470" y2="290" class="j-launch"/>
+            <text x="40" y="312" class="j-tick">Day 1</text>
+            <text x="470" y="312" class="j-tick" text-anchor="middle">Launch</text>
+            <text x="30" y="160" class="j-tick j-y" transform="rotate(-90 30 160)" text-anchor="middle">People who know you</text>
+          </g>
+          <path class="j-sil" pathLength="1" d="M40,284 C200,284 330,283 470,281"/>
+          <text x="462" y="272" class="j-note j-sil-note" text-anchor="end">in silence: launch to nobody</text>
+          <path class="j-pub-area" d="M40,284 C120,278 165,252 220,226 S340,150 400,108 S455,66 470,58 L470,290 L40,290 Z"/>
+          <path class="j-pub" pathLength="1" d="M40,284 C120,278 165,252 220,226 S340,150 400,108 S455,66 470,58"/>
+          <g class="j-dots"></g>
+          <g class="j-end" transform="translate(470 58)">
+            <circle r="14" class="j-pulse"/>
+            <circle r="5.5" class="j-dot-end"/>
+          </g>
+          <text x="458" y="40" class="j-note j-end-note" text-anchor="end">people already waiting</text>
+        </svg>
+      </figure>
     </div>
   </section>
 
-  <section>
-    <div class="wrap split">
-      <p class="quote">You ship something real almost every day. Your feed says you haven't shipped in weeks.</p>
-      <div>
-        <p class="lede">The work happens inside agent sessions, spread across three tools and five repos. By evening you can't remember what was hard, what moved, or why anyone would care.</p>
-        <p class="lede">Build Your Product in Public keeps the record for you, keeps the exact anecdote (the error, the wrong guess, the fix), and turns it into posts in your voice. Your story builds up long before you start marketing.</p>
+  <section id="journey">
+    <div class="wrap">
+      <div class="head" data-reveal>
+        <div class="eyebrow">Show your journey</div>
+        <h2>Build rapport <em>before you launch.</em></h2>
+        <p class="lede">People don't follow launches. They follow journeys. Share yours while you build, and launch to people who already care.</p>
+      </div>
+      <div class="ps">
+        <div class="ps-card problem" data-reveal>
+          <div class="ps-tag">The problem</div>
+          <h3>Building in silence</h3>
+          <ul>
+            <li>Months of real work that nobody sees.</li>
+            <li>The story behind it, the bugs, the decisions, is forgotten by launch.</li>
+            <li>Launch day starts from zero: no audience, no trust, no feedback.</li>
+          </ul>
+        </div>
+        <div class="ps-card solution" data-reveal>
+          <div class="ps-tag">The solution</div>
+          <h3>Building in public, without the extra work</h3>
+          <ul>
+            <li>Your agent logs what you built and why, while you build it.</li>
+            <li>Every evening you get 5 to 7 posts drawn from your real day.</li>
+            <li>You pick one and post it. By launch, people are already waiting.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="stats" data-reveal>
+        <div class="stat">
+          <div class="num"><span data-count="35">35</span>–<span data-count="42">42</span>%</div>
+          <p>of failed startups said nobody needed what they built.</p>
+          <small>CB Insights post-mortems: 42% of 101 (2019), 35% of 111 (2021)</small>
+        </div>
+        <div class="stat">
+          <div class="num"><span data-count="5">5</span>–<span data-count="7">7</span></div>
+          <p>post ideas every evening, drawn from work you already did.</p>
+          <small>Each with the anecdote, the trend it rides and an image to attach</small>
+        </div>
+        <div class="stat">
+          <div class="num"><span data-count="0">0</span></div>
+          <p>extra hours. It reads the sessions your agents already save.</p>
+          <small>Claude Code, Codex and Antigravity</small>
+        </div>
       </div>
     </div>
   </section>
@@ -341,7 +485,7 @@ footer nav { display: flex; gap: 18px; margin-left: auto; flex-wrap: wrap }
         <div class="eyebrow">How it works</div>
         <h2>From session to post, <em>without changing how you work.</em></h2>
       </div>
-      <div class="steps">
+      <div class="steps" data-reveal>
         <div class="step"><span class="n">1 · Log</span><h3>While you code</h3><p>After each meaningful task your agent adds a short entry to today's log: what, why, the struggle, the result, and the exact anecdote.</p><code>.buildinpublic/log/</code></div>
         <div class="step"><span class="n">2 · Capture</span><h3>Only with your OK</h3><p>Tests green after a fight, a benchmark, a new screen: your agent asks before saving terminal output or a browser screenshot.</p><code>1) terminal 2) browser 3) skip</code></div>
         <div class="step"><span class="n">3 · Gist</span><h3>At the time you choose</h3><p>It reads the day's sessions and commits, searches for the trends nearest to your work, and sends 5 to 7 suggested posts by notification and optional email.</p><code>brief_time 19:00</code></div>
@@ -357,7 +501,7 @@ footer nav { display: flex; gap: 18px; margin-left: auto; flex-wrap: wrap }
         <h2>One day, <em>command by command.</em></h2>
         <p class="lede">What you type and what you see back, from installing it to posting. Click any step, or let it play.</p>
       </div>
-      <div class="demo" data-player>
+      <div class="demo" data-player data-reveal>
         <ul class="scenes" role="tablist" aria-label="Demo steps">
           <li><button role="tab" data-scene="0"><span class="n">1</span><span><b>Install</b><small>Once, in your terminal</small></span><span class="prog"></span></button></li>
           <li><button role="tab" data-scene="1"><span class="n">2</span><span><b>Set up</b><small>Once per project, in your agent</small></span><span class="prog"></span></button></li>
@@ -514,7 +658,7 @@ footer nav { display: flex; gap: 18px; margin-left: auto; flex-wrap: wrap }
         <h2>Images that look <em>worth posting.</em></h2>
         <p class="lede">Terminal captures of the moment it went green, framed browser and phone shots of your running app, and code images of the lines that mattered. All of it is unedited output, and nothing is captured without a yes.</p>
       </div>
-      <div class="gallery">
+      <div class="gallery" data-reveal>
         <figure><img src="assets/shot-app-desktop.webp" width="1328" height="647" alt="Framed desktop screenshot of a SaaS cost estimator app running on localhost" loading="lazy"><figcaption><code>capture.py browser --url http://localhost:4321 --mobile</code> · desktop</figcaption></figure>
         <figure class="phone"><img src="assets/shot-app-mobile.webp" width="546" height="981" alt="The same app framed as a phone screenshot" loading="lazy"><figcaption>Same capture, mobile</figcaption></figure>
         <figure class="wide"><img src="terminal-capture.png" width="1408" height="412" alt="Terminal capture of a benchmark: p95 latency 840ms to 120ms, errors 7 of 500 to 0" loading="lazy"><figcaption><code>capture.py terminal --cmd "npm run bench"</code> · redacted text for the story, an image for the post</figcaption></figure>
@@ -580,7 +724,7 @@ footer nav { display: flex; gap: 18px; margin-left: auto; flex-wrap: wrap }
         <div class="eyebrow">Privacy</div>
         <h2>Private by default. <em>Yours to share.</em></h2>
       </div>
-      <div class="cards">
+      <div class="cards" data-reveal>
         <div><h3>Stays on your machine</h3><p>Sessions are read where your agents already save them. Nothing is uploaded. Optional related-reading searches send only short keywords.</p></div>
         <div><h3>Redacted before writing</h3><p>API keys, tokens, private keys, database URLs and emails are removed, plus any term you list as off-limits.</p></div>
         <div><h3>Journal only until you say</h3><p>New projects are logged privately. Content is switched on per project, and client folders can be excluded entirely.</p></div>
@@ -676,7 +820,7 @@ footer nav { display: flex; gap: 18px; margin-left: auto; flex-wrap: wrap }
 
 <footer>
   <div class="wrap">
-    <span class="brand"><span class="mark" aria-hidden="true"></span>Build Your Product in Public</span>
+    <span class="brand"><svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" class="mk-bg"/><path d="M6.5 24.5h19" class="mk-base"/><path d="M7 23.5C13 22.6 16.5 19 19.2 15.2S23.2 9.4 24.6 8.3" class="mk-line"/><circle cx="24.8" cy="8.2" r="3.4" class="mk-dot"/></svg>Build Your Product in Public</span>
     <span>v0.3.0 · MIT License · made by Chetanya</span>
     <nav aria-label="Footer">
       <a href="https://github.com/chetanya1998/build-in-public">GitHub</a>
@@ -703,6 +847,101 @@ footer nav { display: flex; gap: 18px; margin-left: auto; flex-wrap: wrap }
     try { localStorage.setItem('bip-theme', next) } catch (e) {}
     label();
   });
+
+  // headline types itself: every letter is wrapped and hidden, then shown in order behind a caret
+  var h1 = document.querySelector('h1.type');
+  if (h1) {
+    var letters = [];
+    h1.querySelectorAll('[aria-hidden]').forEach(function (part) {
+      var words = part.textContent.split(' ');
+      part.textContent = '';
+      words.forEach(function (word, wi) {
+        var w = document.createElement('span'); w.className = 'w';
+        word.split('').forEach(function (c) {
+          var ch = document.createElement('span'); ch.className = 'ch'; ch.textContent = c;
+          w.appendChild(ch); letters.push(ch);
+        });
+        part.appendChild(w);
+        if (wi < words.length - 1) { part.appendChild(document.createTextNode(' ')); letters.push(null); }
+      });
+      letters.push('pause');
+    });
+    var caret = document.createElement('span'); caret.className = 'caret'; caret.setAttribute('aria-hidden', 'true');
+    var still = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (still) {
+      letters.forEach(function (ch) { if (ch && ch.classList) ch.classList.add('on'); });
+    } else {
+      var i = 0, last = null;
+      caret.classList.add('typing');
+      var tick = function () {
+        if (i >= letters.length) {
+          caret.classList.remove('typing');
+          setTimeout(function () { caret.classList.add('gone'); }, 2600);
+          return;
+        }
+        var item = letters[i++];
+        if (item === 'pause') return setTimeout(tick, 260);
+        if (item) { item.classList.add('on'); last = item; item.after(caret); }
+        setTimeout(tick, item ? 42 + Math.random() * 38 : 70);
+      };
+      h1.querySelector('[aria-hidden]').prepend(caret);
+      setTimeout(tick, 350);
+    }
+  }
+
+  // header graphic: milestone chips along the "built in public" line, replayed on a loop
+  var svg = document.querySelector('.journey-svg');
+  if (svg) {
+    var NS = 'http://www.w3.org/2000/svg', path = svg.querySelector('.j-pub'), dots = svg.querySelector('.j-dots');
+    var len = path.getTotalLength();
+    [[.2, 'Day 3', 'first bug story'], [.42, 'Day 12', 'demo clip'], [.64, 'Day 27', 'a lesson learned'], [.84, 'Day 41', 'milestone']].forEach(function (m, i) {
+      var pt = path.getPointAtLength(len * m[0]), delay = (0.7 + 3.4 * m[0]) + 's';
+      var c = document.createElementNS(NS, 'circle');
+      c.setAttribute('cx', pt.x); c.setAttribute('cy', pt.y); c.setAttribute('r', 5); c.setAttribute('class', 'j-dot'); c.style.setProperty('--d', delay);
+      var g = document.createElementNS(NS, 'g'); g.setAttribute('class', 'j-chip'); g.style.setProperty('--d', delay);
+      var t = document.createElementNS(NS, 'text');
+      t.innerHTML = '<tspan class="d">' + m[1] + '</tspan><tspan dx="6">' + m[2] + '</tspan>';
+      g.appendChild(t); dots.appendChild(c); dots.appendChild(g);
+      // labels sit above-left of their dot, in the empty space over the rising line
+      var bb = t.getBBox(), w = bb.width + 16, h = Math.round(bb.height) + 8;
+      var x = Math.max(pt.x - w - 12, 20), y = pt.y - h - 8;
+      t.setAttribute('x', x + 8); t.setAttribute('y', y + h / 2); t.setAttribute('dominant-baseline', 'central');
+      var r = document.createElementNS(NS, 'rect');
+      r.setAttribute('x', x); r.setAttribute('y', y); r.setAttribute('width', w); r.setAttribute('height', h); r.setAttribute('rx', h / 2);
+      g.insertBefore(r, t);
+    });
+    var still = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var play = function () { svg.classList.remove('play'); void svg.getBoundingClientRect(); svg.classList.add('play'); };
+    if (!still) {
+      play();
+      setInterval(function () { if (!document.hidden) play(); }, 11000);
+    }
+  }
+
+  // sections fade up as they come into view; stats count up once
+  var countUp = function (el) {
+    el.querySelectorAll('[data-count]').forEach(function (n) {
+      var to = +n.dataset.count, t0 = null;
+      if (!to) return;
+      (function step(ts) {
+        t0 = t0 || ts; var k = Math.min((ts - t0) / 900, 1);
+        n.textContent = Math.round(to * (1 - Math.pow(1 - k, 3)));
+        if (k < 1) requestAnimationFrame(step);
+      })(performance.now());
+      n.textContent = '0';
+    });
+  };
+  var reveal = document.querySelectorAll('[data-reveal]');
+  if ('IntersectionObserver' in window) {
+    var io = new IntersectionObserver(function (es) {
+      es.forEach(function (e) {
+        if (!e.isIntersecting) return;
+        e.target.classList.add('in'); io.unobserve(e.target);
+        if (e.target.classList.contains('stats')) countUp(e.target);
+      });
+    }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
+    reveal.forEach(function (el) { io.observe(el); });
+  } else reveal.forEach(function (el) { el.classList.add('in'); });
 
   var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
