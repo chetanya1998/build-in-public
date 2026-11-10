@@ -13,4 +13,6 @@ After finishing any meaningful task, append an entry to `.buildinpublic/log/<tod
 
 When a moment is worth showing (tests going green after a long fight, a benchmark, a deploy, a new screen in a browser test), ask the user first: "Capture this for today's story? 1) terminal output 2) browser screenshot 3) skip". Only if they say yes, run the build-in-public skill's `scripts/capture.py` with `--approved`. Never capture without asking, and skip this if `.buildinpublic/config.json` has `"capture": "off"`.
 
+If the user says just "help?" or "build in public help", list what they can say and run for Build Your Product in Public, numbered (run the skill's `scripts/menu.py`, which prints it all), ask which one, then do it.
+
 Skip trivial changes. Never include secrets, keys, customer data or anything listed under Off-limits in `.buildinpublic/narrative.md`.

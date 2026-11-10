@@ -291,6 +291,11 @@ def cmd_doctor(a):
 
 # ---------------------------------------------------------------- parser
 
+def cmd_menu(a) -> None:
+    from . import menu
+    menu.run(main)
+
+
 def utf8_output() -> None:
     """Windows writes to pipes (agents, hooks, redirects) in cp1252, which can't encode the
     check marks and dots this CLI prints, so setup crashed when an agent ran it."""
@@ -305,10 +310,15 @@ def utf8_output() -> None:
 
 def main(argv=None):
     utf8_output()
+    if argv is None:
+        argv = sys.argv[1:]
+    if not argv or argv[0] in ("?", "help?", "-?", "-h", "--help"):  # show every command, not usage text
+        argv = ["menu"]
     p = argparse.ArgumentParser(prog="buildinpublic", description="Build Your Product in Public: journal every AI coding session and turn it into posts.")
     p.add_argument("--version", action="version", version=__version__)
     sub = p.add_subparsers(dest="cmd", required=True)
 
+    sub.add_parser("menu", aliases=["help"], help="every command in one list: pick a number to run it").set_defaults(fn=cmd_menu)
     s = sub.add_parser("setup", help="guided setup: capture timing, summary time, Gmail, hooks, schedule")
     s.add_argument("--yes", action="store_true", help="accept defaults, no questions")
     s.set_defaults(fn=cmd_setup)

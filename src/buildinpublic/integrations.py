@@ -159,7 +159,8 @@ At the start of a session, if the file `{{nudge}}` exists and is not empty, read
 ask the user its questions conversationally before starting other work (one at a time,
 keep it short). When the user answers, run `buildinpublic nudge --reply "<their answer>"`,
 or `buildinpublic nudge --snooze` if they say not now. When the user asks to capture a
-screenshot or log work for posting, use the build-in-public skill.
+screenshot or log work for posting, use the build-in-public skill. When the user says
+"build in public help", run `buildinpublic menu` and show its numbered list.
 {BLOCK_END}
 """
 

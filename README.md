@@ -142,6 +142,7 @@ Then it connects your agents and schedules the jobs.
 | **Daily summary** | Where your time went across projects, the strongest story, hooks, screenshots and drafts written by your own agent. On weak days it says why and suggests easy posts instead. |
 
 ```sh
+buildinpublic                          # every command in one list: pick a number to run it (also: help, --help)
 buildinpublic today                    # today across all projects
 buildinpublic week --project myapp     # weekly rollup
 buildinpublic search stripe webhook    # find any past session
@@ -151,6 +152,8 @@ buildinpublic shot url http://localhost:3000
 buildinpublic shot code src/billing.ts --lines 20-48 --caption "the one-line fix"
 buildinpublic doctor --test            # check everything, send a test notification
 ```
+
+In zsh (the default Mac shell), type `buildinpublic` or `buildinpublic help`: an unquoted `?` is a file wildcard there, so `buildinpublic help?` is stopped by the shell before it runs.
 
 <details>
 <summary><b>How it works on each OS</b></summary>
@@ -304,6 +307,7 @@ You mostly just code. Here's a day:
 | "write post 2 for LinkedIn" | Drafts it; you revise and approve it |
 | "I posted it" | Marks it posted, with the link, and adds it to your story so far |
 | "weekly recap" | Offers recap angles from the week's briefs |
+| "build in public help" (or just "help?") | Lists everything you can say and run, numbered; pick one and it does it. "help?" alone works in projects you've set up. |
 | "what did I do this week?" | With the CLI: your sessions across all projects, with time spent |
 | "not now" (to a reminder) | Snoozes the reminder for a day |
 
@@ -334,6 +338,7 @@ Then delete the Build Your Product in Public lines from `.git/hooks/post-commit`
 
 ```sh
 SKILL=~/.claude/skills/build-in-public
+python3 $SKILL/scripts/menu.py                                # every script in one list: pick one to run it
 python3 $SKILL/scripts/capture.py terminal --cmd "npm test"   # asks y/N, then captures
 python3 $SKILL/scripts/capture.py browser --url http://localhost:3000 --mobile
 python3 $SKILL/scripts/capture.py candidates                  # agent screenshots awaiting a yes or no

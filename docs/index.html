@@ -704,6 +704,7 @@ Then tell me to restart you, so I can say "set up build in public" in my project
         </div>
 
         <div class="reflist" data-grid="say">
+          <div class="ref"><pre>build in public help</pre><p>Lists everything you can say and run, numbered. Pick one and your agent does it. In a project you've set up, just <code>help?</code> works too.</p><button class="copy" type="button">Copy</button></div>
           <div class="ref"><pre>set up build in public</pre><p>One-time setup in a project: your story, gist time, optional email, sharing, and the schedule.</p><button class="copy" type="button">Copy</button></div>
           <div class="ref"><pre>log this</pre><p>Adds today's log entry now. Your agent also does this on its own after each task.</p><button class="copy" type="button">Copy</button></div>
           <div class="ref"><pre>capture this</pre><p>Offers a terminal or browser capture of what just happened, and asks first.</p><button class="copy" type="button">Copy</button></div>
@@ -715,6 +716,7 @@ Then tell me to restart you, so I can say "set up build in public" in my project
         </div>
 
         <div class="reflist" data-grid="scripts" hidden>
+          <div class="ref"><pre><span class="s">python3</span> $SKILL/scripts/menu.py</pre><p>Every script in one list. Pick a number; it asks only what that script needs, then runs it.</p><button class="copy" type="button">Copy</button></div>
           <div class="ref"><pre><span class="s">sh</span> install.sh <span class="a">[--project | --only claude]</span></pre><p>Installs the skill for Claude Code, Codex and Antigravity. Run <code>--project</code> from your project's folder.</p><button class="copy" type="button">Copy</button></div>
           <div class="ref"><pre><span class="s">python3</span> $SKILL/scripts/doctor.py</pre><p>Checks tools, setup, hooks, email, schedule and sessions found. Read-only.</p><button class="copy" type="button">Copy</button></div>
           <div class="ref"><pre><span class="s">python3</span> $SKILL/scripts/capture.py terminal --cmd "npm test"</pre><p>Asks y/N, then saves redacted output as text and a terminal-window image.</p><button class="copy" type="button">Copy</button></div>
@@ -730,6 +732,7 @@ Then tell me to restart you, so I can say "set up build in public" in my project
         </div>
 
         <div class="reflist" data-grid="cli" hidden>
+          <div class="ref"><pre><span class="s">buildinpublic</span> menu</pre><p>Every command in one list. Plain <code>buildinpublic</code>, <code>help</code> and <code>--help</code> open it too. Pick a number to run it.</p><button class="copy" type="button">Copy</button></div>
           <div class="ref"><pre><span class="s">buildinpublic</span> setup</pre><p>Guided setup: capture timing, summary time, email, agent hooks and schedule.</p><button class="copy" type="button">Copy</button></div>
           <div class="ref"><pre><span class="s">buildinpublic</span> today <span class="a">[2026-11-03]</span></pre><p>Every session across all your projects for a day, with time spent and tags.</p><button class="copy" type="button">Copy</button></div>
           <div class="ref"><pre><span class="s">buildinpublic</span> week <span class="a">[--project name]</span></pre><p>The weekly rollup: time per project and the best story of each.</p><button class="copy" type="button">Copy</button></div>

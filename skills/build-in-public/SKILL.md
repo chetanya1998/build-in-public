@@ -1,6 +1,6 @@
 ---
 name: build-in-public
-description: Personal build-in-public content strategist that lives in the user's project repo. Logs what the user builds during Claude Code, Codex and Antigravity sessions, asks before capturing terminal or browser output, searches the internet for trends near the project and the day's work, sends a scheduled daily gist (notification, plus email if the user gives an address) with a list of suggested posts, drafts the one the user picks, and can add approved posts and images to the user's commits so they're on GitHub. Never posts. With the optional `buildinpublic` CLI it also journals every session across all projects (macOS, Windows, Linux) and reminds the user when they haven't posted. Use for "build in public", "log this", "capture this", "daily gist", "build in public brief", "review my posts", "write post 2", "what should I post", weekly recap, "what did I do today/this week", "across my projects", and Build Your Product in Public reminders.
+description: Personal build-in-public content strategist that lives in the user's project repo. Logs what the user builds during Claude Code, Codex and Antigravity sessions, asks before capturing terminal or browser output, searches the internet for trends near the project and the day's work, sends a scheduled daily gist (notification, plus email if the user gives an address) with a list of suggested posts, drafts the one the user picks, and can add approved posts and images to the user's commits so they're on GitHub. Never posts. With the optional `buildinpublic` CLI it also journals every session across all projects (macOS, Windows, Linux) and reminds the user when they haven't posted. Use for "build in public", "log this", "capture this", "daily gist", "build in public brief", "review my posts", "write post 2", "what should I post", "build in public help", "help?", weekly recap, "what did I do today/this week", "across my projects", and Build Your Product in Public reminders.
 ---
 
 # Build Your Product in Public
@@ -40,6 +40,11 @@ Templates are in `templates/` and scripts in `scripts/`, next to this file (`<sk
 - **Only approved captures go into posts.** Screenshots agents took on their own are candidates until the user approves them.
 - **Never ask for, read out or store a password.** Email needs only the user's address.
 - Leave out secrets, customer details and anything under Off-limits in `narrative.md`.
+
+**Help.** When the user says "build in public help", "help?", "help", "menu", "what can you do" or "what are the commands", show one numbered list and ask which one to do, then do it:
+1. What they can say to you: set up build in public, log this, capture this, build in public brief, review my posts, write post 2 for LinkedIn, I posted it, weekly recap.
+2. If `buildinpublic --version` works, the CLI commands too (run `buildinpublic menu`, which prints them all when it isn't in a terminal), grouped as journal, posts and reminders, screenshots, projects, setup.
+Keep each line to the command and what it's for. Point terminal users to `python3 <skill-dir>/scripts/menu.py` and `buildinpublic menu`, which list everything and run the one they pick.
 
 Choose the mode from what the user says. At the end of a task, use **Log**. When something worth showing just happened, use **Capture**. When the scheduled run fires, or the user asks for the brief, use **Daily gist**. When they want to see or choose posts, use **Review and choose**.
 
