@@ -56,12 +56,19 @@ def show_suggestion(post, day):
     L = [f"Suggested post {post['n']} · {day}", "", post["title"]]
     if post["platform"]:
         L.append(post["platform"])
-    if f.get("Hook"):
+    if f.get("Post"):
+        stats = brieflib.post_stats(post["platform"], f["Post"])
+        L += ["", f"Ready to post ({stats['chars']:,} characters, {stats['words']:,} words):", "", f["Post"]]
+        L += [f"! {e}" for e in stats["errors"]]
+    elif f.get("Hook"):
         L += ["", "Hook (ready to post):", "  " + brieflib.to_text(f["Hook"])]
-    for name in ("Angle", "Anecdote", "Trend", "Capture", "Why it works", "Notes"):
-        if f.get(name):
-            L += ["", f"{name}:", "  " + brieflib.to_text(f[name])]
-    L += ["", f'To draft it, tell your agent: "write post {post["n"]}".']
+    shot = brieflib.to_text(f.get("Screenshot") or f.get("Capture") or "")
+    L += ["", f"Screenshot: {shot}" if shot and shot.lower().strip('".') not in ("none", "no screenshot") else "No screenshot"]
+    details = [n for n in brieflib.DETAIL_FIELDS if f.get(n) and not (n == "Hook" and not f.get("Post"))]
+    if details:
+        L += ["", "How this post was made:"]
+        L += ["  " + f"{n}: " + brieflib.to_text(f[n]) for n in details]
+    L += ["", f'To change it, tell your agent: "write post {post["n"]}".']
     return "\n".join(L)
 
 

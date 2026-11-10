@@ -80,7 +80,25 @@ At the time you set (`brief_time`, for example 19:00), you get:
 - **A desktop notification** with the day's headline.
 - **An email (optional)** with the day in one line, what you shipped and the numbered list of suggested posts, with the full brief attached. **All it needs is your address:** no password, no mail server. On macOS it's sent through Apple Mail from the account you already use there. On Linux it goes through your system's `sendmail`.
 
-Each suggested post has a title, platform, angle and hook line, the anecdote it uses, the trend it rides (with a link, or "no trend" when nothing truly fits), the capture to attach, and why it should work.
+**Each suggested post is written out, ready to post.** In the email it comes first, in a box you can select, with a **Copy post** button and its length against the platform's limit:
+
+```text
+<Hook: a first line that works on its own>
+
+<Anecdote: the real moment, from your sessions, commits or research>
+
+<Context: the problem and what you built, from your commits or README>
+
+<A question for readers>
+
+#hashtag #hashtag #hashtag
+```
+
+Under it: the screenshot to attach (or "No screenshot"), then **how the post was made**: the angle, which anecdote it uses and where it came from, where the context came from, the trend it rides (with a link, or "no trend" when nothing truly fits), and why it should work.
+
+Before the email goes out, `brief_check.py` holds every post to its platform's limit (X: 280 characters a post; LinkedIn: 3,000 characters, 300 words, and a hook short enough to show above "...see more"), and opens every link. A link that doesn't load is flagged at the top of the email. Change the limits with `"post_limits"` in `.buildinpublic/config.json`, for example `{"linkedin": {"chars": 3000, "words": 250}}`.
+
+The Copy post button opens a small page on this project's site that copies the post. The post travels in the link's `#` part, which browsers never send to the server. Set `"copy_page": ""` in `config.json` to leave the button out.
 
 **The trends come from your project and your day.** Searches are built from three places: today's log entries and commits, the topics you gave during setup, and your stack (read from `package.json`, `requirements.txt`, `pyproject.toml`, `go.mod`, `Cargo.toml` or `Gemfile`). The script checks Hacker News, Reddit, GitHub and dev.to. Then your agent searches the web for what people are discussing on X, LinkedIn and in the news this week. A strong story with no trend beats a forced tie-in.
 

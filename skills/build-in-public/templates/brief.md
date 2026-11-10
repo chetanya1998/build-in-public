@@ -9,16 +9,32 @@
 ## Suggested posts
 
 ### 1. <Title of the post>
-**Platform:** <X thread | X post | LinkedIn | Threads | Reddit | dev.to | short video>
-**Hook:** "<The opening line, ready to post as written>"
-**Angle:** <What the post is about, in one or two sentences>
-**Anecdote:** <One specific moment from the day: the error, the wrong guess, the number that moved. Not a summary.>
-**Trend:** [<Article or thread title>](<link you opened and checked>) <and how today's work connects>, or "no trend"
-**Capture:** <approved capture id and file, or "none">
+**Platform:** <LinkedIn | X post | X thread | Threads | Reddit | dev.to | short video>
+**Post:**
+```text
+<Hook: a first line that works on its own>
+
+<Anecdote: the real moment from today or your research>
+
+<Context: the problem and what was built, from commits or the README>
+
+<A question for readers?>
+
+#<hashtag> #<hashtag> #<hashtag>
+```
+**Screenshot:** <approved capture to attach: daily/<date>/captures/<file>.png, or "No screenshot">
+**Angle:** <What the post is about, and why this angle, in one or two sentences>
+**Anecdote:** <Which moment the post uses, and where it came from: session, commit hash, log entry or a link you opened>
+**Context:** <Where the background came from: README, commit hash, git log>
+**Trend:** [<Article or thread title>](<link you opened and that loaded>) <and how today's work connects>, or "no trend"
 **Why it works:** <One sentence>
 
 ### 2. <Title>
 **Platform:** ...
+**Post:**
+```text
+...
+```
 
 ## The story
 <One short paragraph: where today moves the product.>

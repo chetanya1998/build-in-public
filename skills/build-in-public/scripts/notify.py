@@ -19,7 +19,7 @@ method that needs a password, read from BIP_SMTP_PASSWORD, the macOS Keychain
 
 Usage: python3 notify.py [--repo PATH] [--date YYYY-MM-DD] [--dry-run] [--test] [--no-desktop]
 """
-import argparse, datetime as dt, html, json, os, platform, re, shutil, smtplib, ssl, stat, subprocess, sys
+import argparse, base64, datetime as dt, html, json, os, platform, re, shutil, smtplib, ssl, stat, subprocess, sys, urllib.parse
 from email.message import EmailMessage
 from pathlib import Path
 
@@ -63,6 +63,27 @@ def posts_url(repo):
     return f"https://github.com/{m.group(1)}/blob/{branch}/.buildinpublic/posts/README.md"
 
 
+# A page with a Copy button for one post. The post travels in the link's #fragment, which the
+# browser never sends to the server. Set "copy_page" in config.json to your own page, or "" for none.
+COPY_PAGE = "https://chetanya1998.github.io/build-in-public/copy.html"
+MAX_LINK = 8000  # longer links break in some mail apps; the post is still in the email to select
+
+
+def copy_link(page, post):
+    if not page or not post["fields"].get("Post"):
+        return ""
+    data = base64.urlsafe_b64encode(post["fields"]["Post"].encode()).decode().rstrip("=")
+    url = f"{page}#p={urllib.parse.quote(post['platform'] or '')}&t={data}"
+    return url if len(url) <= MAX_LINK else ""
+
+
+def project_config(repo):
+    try:
+        return json.loads((repo / ".buildinpublic" / "config.json").read_text())
+    except (OSError, ValueError):
+        return {}
+
+
 PICK = ('In your agent, say "show post 2" or "write post 2 for LinkedIn". In a terminal: '
         'python3 <skill>/scripts/posts.py --today. Nothing is posted for you.')
 
@@ -78,6 +99,12 @@ def gist(repo, day):
         g["headline"] = brieflib.to_text(today.splitlines()[0]).strip() if today else "Your brief is ready"
         g["shipped"] = brieflib.block_lines(brieflib.section(text, "What you shipped"))
         g["posts"] = brieflib.suggested_posts(text) or []
+        cfg = project_config(repo)
+        page = cfg.get("copy_page", COPY_PAGE)
+        for p in g["posts"]:
+            if p["fields"].get("Post"):
+                p["stats"] = brieflib.post_stats(p["platform"], p["fields"]["Post"], cfg.get("post_limits"))
+                p["copy"] = copy_link(page, p)
         if not g["posts"] and brieflib.section(text, "Post ideas"):  # very old briefs
             g["shipped"] += brieflib.block_lines(brieflib.section(text, "Post ideas"))
         g["pick"] = PICK
@@ -85,7 +112,9 @@ def gist(repo, day):
         check = out / "brief-check.json"
         if check.exists():
             try:
-                g["dead_links"] = json.loads(check.read_text()).get("dead_links", [])
+                result = json.loads(check.read_text())
+                g["dead_links"] = result.get("dead_links", [])
+                g["unchecked_links"] = result.get("unchecked_links", [])
             except ValueError:
                 pass
         return g
@@ -105,12 +134,33 @@ def gist(repo, day):
     return g
 
 
+def length_line(p):
+    """'1,234 / 3,000 characters · 210 / 300 words', with ✓ or OVER."""
+    s = p.get("stats")
+    if not s:
+        return ""
+    lim = s["limit"]
+    parts = [f"{s['chars']:,}" + (f" / {lim['chars']:,}" if lim.get("chars") else "") + " characters"
+             + (" a post" if s["key"] == "x" and "thread" in p["platform"].lower() else "")]
+    if lim.get("words"):
+        parts.append(f"{s['words']:,} / {lim['words']:,} words")
+    return " · ".join(parts) + (" · OVER THE LIMIT" if s["errors"] else (" ✓" if lim else ""))
+
+
+def screenshot_line(f):
+    shot = brieflib.to_text(f.get("Screenshot") or f.get("Capture") or "").strip()
+    return f"Screenshot: {shot}" if shot and shot.lower().strip('".') not in ("none", "no screenshot") else "No screenshot"
+
+
 def render_text(g):
     """Plain text with no Markdown symbols, for every mail app (Apple Mail sends only this)."""
     L = []
     if g.get("dead_links"):
         L += [f"CHECK BEFORE POSTING: {len(g['dead_links'])} link(s) in this brief don't load:"]
         L += [f"  {u}" for u in g["dead_links"]] + [""]
+    if g.get("unchecked_links"):
+        L += [f"OPEN BEFORE POSTING: {len(g['unchecked_links'])} link(s) couldn't be checked:"]
+        L += [f"  {u}" for u in g["unchecked_links"]] + [""]
     L += ["TODAY", g["headline"], ""]
     if g["shipped"]:
         L.append("WHAT YOU SHIPPED")
@@ -119,16 +169,22 @@ def render_text(g):
     if g["posts"]:
         L += ["SUGGESTED POSTS", ""]
         for p in g["posts"]:
-            L.append(f"{p['n']}. {p['title']}")
-            if p["platform"]:
-                L.append(f"   {p['platform']}")
             f = p["fields"]
-            if f.get("Hook"):
-                L.append(f"   Hook: {brieflib.to_text(f['Hook'])}")
-            for name in ("Angle", "Anecdote", "Trend", "Capture", "Why it works", "Notes"):
-                if f.get(name):
-                    L.append(f"   {name}: {brieflib.to_text(f[name])}")
-            L.append("")
+            L.append(" · ".join(x for x in (str(p["n"]), p["platform"], length_line(p)) if x))
+            L.append(p["title"])
+            if f.get("Post"):
+                L += ["", "----- copy from here -----", f["Post"], "----- to here -----"]
+                L += [f"  ! {e}" for e in p["stats"]["errors"]]
+                if p.get("copy"):
+                    L.append(f"Copy it in one click: {p['copy']}")
+            elif f.get("Hook"):  # older briefs
+                L.append(f"Hook: {brieflib.to_text(f['Hook'])}")
+            L.append(screenshot_line(f))
+            details = [n for n in brieflib.DETAIL_FIELDS if f.get(n) and not (n == "Hook" and not f.get("Post"))]
+            if details:
+                L += ["", "How this post was made"]
+                L += [f"   {n}: {brieflib.to_text(f[n])}" for n in details]
+            L += ["", ""]
     L += g["notes"] + ([""] if g["notes"] else [])
     if g.get("pick"):
         L += ["PICK ONE", g["pick"]]
@@ -146,6 +202,10 @@ def render_html(g):
     out = ['<div style="font:15px/1.55 -apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif;color:#14161a;max-width:640px;margin:0 auto">',
            f'<p {H2.replace("26px", "0")}>Your daily gist · {e(g["repo"])} · {g["day"]:%d %b %Y}</p>',
            f'<h1 style="font-size:22px;line-height:1.3;margin:0 0 6px">{e(g["headline"])}</h1>']
+    if g.get("unchecked_links"):
+        out.insert(1, '<div style="margin:0 0 16px;padding:10px 14px;border-radius:10px;background:#f4f6fb;border:1px solid #e2e5ea">'
+                      f'<strong>Open before posting:</strong> {len(g["unchecked_links"])} link(s) couldn\'t be checked:'
+                      + "".join(f'<br><span style="font-size:13px;word-break:break-all">{e(u)}</span>' for u in g["unchecked_links"]) + "</div>")
     if g.get("dead_links"):
         out.insert(1, '<div style="margin:0 0 16px;padding:10px 14px;border-radius:10px;background:#fff4e5;border:1px solid #f2c97d">'
                       f'<strong>Check before posting:</strong> {len(g["dead_links"])} link(s) in this brief don\'t load:'
@@ -161,15 +221,30 @@ def render_html(g):
         for p in g["posts"]:
             f = p["fields"]
             out.append('<div style="border:1px solid #e2e5ea;border-radius:12px;padding:14px 16px;margin:0 0 12px">')
-            out.append(f'<div style="font:600 12px/1 ui-monospace,Menlo,monospace;color:#2c4bd4;letter-spacing:.04em">{p["n"]}'
-                       + (f' · {e(p["platform"])}' if p["platform"] else "") + "</div>")
+            over = bool(p.get("stats") and p["stats"]["errors"])
+            out.append(f'<div style="font:600 12px/1.4 ui-monospace,Menlo,monospace;color:#2c4bd4;letter-spacing:.04em">{p["n"]}'
+                       + (f' · {e(p["platform"])}' if p["platform"] else "")
+                       + (f' <span style="color:{"#b42318" if over else "#5a616d"};font-weight:500">· {e(length_line(p))}</span>' if p.get("stats") else "")
+                       + "</div>")
             out.append(f'<div style="font-weight:600;font-size:16px;margin:6px 0 10px">{e(p["title"])}</div>')
-            if f.get("Hook"):
+            if f.get("Post"):
+                out.append('<div style="margin:0 0 10px;padding:14px 16px;background:#f4f6fb;border:1px solid #e2e5ea;border-radius:10px;'
+                           f'white-space:pre-wrap;word-wrap:break-word;font-size:15px;line-height:1.55">{e(f["Post"])}</div>')
+                out += [f'<p style="margin:4px 0;color:#b42318;font-size:14px">⚠ {e(x)}</p>' for x in p["stats"]["errors"]]
+                if p.get("copy"):
+                    out.append(f'<p style="margin:0 0 10px"><a href="{e(p["copy"], quote=True)}" style="display:inline-block;padding:8px 14px;'
+                               'border-radius:999px;background:#14161a;color:#ffffff;text-decoration:none;font-weight:600;font-size:14px">Copy post</a>'
+                               '<span style="color:#5a616d;font-size:13px">&nbsp; or select the text above</span></p>')
+            elif f.get("Hook"):  # older briefs
                 out.append('<div style="margin:0 0 10px;padding:9px 12px;border-left:3px solid #2c4bd4;background:#f4f6fb;'
                            f'border-radius:0 8px 8px 0">{brieflib.to_html(f["Hook"])}</div>')
-            for name in ("Angle", "Anecdote", "Trend", "Capture", "Why it works", "Notes"):
-                if f.get(name):
-                    out.append(f'<p style="margin:5px 0"><strong>{name}:</strong> {brieflib.to_html(f[name])}</p>')
+            out.append(f'<p style="margin:0 0 10px;font-size:14px">{"📎 " if screenshot_line(f) != "No screenshot" else ""}{brieflib.to_html(screenshot_line(f))}</p>')
+            details = [n for n in brieflib.DETAIL_FIELDS if f.get(n) and n != "Screenshot" and not (n == "Hook" and not f.get("Post"))]
+            if details:
+                out.append('<div style="border-top:1px dashed #e2e5ea;padding-top:8px;color:#5a616d;font-size:13.5px">'
+                           '<div style="font:600 11px/1.6 ui-monospace,Menlo,monospace;letter-spacing:.06em;text-transform:uppercase">How this post was made</div>'
+                           + "".join(f'<p style="margin:4px 0"><strong style="color:#14161a">{n}:</strong> {brieflib.to_html(f[n])}</p>' for n in details)
+                           + "</div>")
             out.append("</div>")
     out += [f'<p style="margin:12px 0">{e(n)}</p>' for n in g["notes"]]
     if g.get("pick"):

@@ -121,22 +121,27 @@ The default day is today, or yesterday if it's before 4am.
    ```
 2. **Understand the day.** Read `narrative.md`, `digest.md`, `trends.md` and `captures/captures.json`. Work out what was really accomplished, the struggle, the decision and the result. Group sessions on the same feature into one story. Pick out the anecdotes: the moment that went wrong, the surprising cause, the number that moved.
 3. **Search the internet for the nearest trend.** `trends.md` is only the start. Run 3 to 5 web searches built from the project's context and the day's actual work, for example "<today's problem> <stack>", "<audience> <pain> this week", "<technique used today> debate". Look at what builders on X, LinkedIn, Reddit and Hacker News and the tech news are discussing **this week**. For each story, find the closest real conversation it proves, contradicts or answers. Never force a link: a strong story with no trend beats a fake tie-in.
-4. **Write `daily/<day>/brief.md` by filling in `templates/brief.md`**: the same headings, and for each suggested post a `### N. Title` heading with `**Platform:**`, `**Hook:**`, `**Angle:**`, `**Anecdote:**`, `**Trend:**`, `**Capture:**` and `**Why it works:**` lines. The gist email and `posts.py` read this format. The sections:
+4. **Write `daily/<day>/brief.md` by filling in `templates/brief.md`**: the same headings, and for each suggested post a `### N. Title` heading, a `**Platform:**` line, a `**Post:**` line followed by the post in a ```` ```text ```` block, then `**Screenshot:**`, `**Angle:**`, `**Anecdote:**`, `**Context:**`, `**Trend:**` and `**Why it works:**` lines. The gist email and `posts.py` read this format. The email shows each post first, ready to copy, and the other lines below it as "how this post was made". The sections:
    - `## Today in one line`: the headline of the day.
    - `## What you shipped`: 3 to 6 bullets in plain words, each with its source (session, commit hash, log entry).
-   - `## Suggested posts`: **5 to 7 numbered options** for the user to choose from. Each has a title, the platform, the angle, a hook line, the anecdote it uses, the trend it rides (with link) or "no trend", the approved capture id to attach (or "none"), and one line on why it works. Rank them, best first. Mix types: a war story, a lesson, a demo, a metric, a behind-the-scenes, a take on the trend.
+   - `## Suggested posts`: **5 to 7 numbered posts, each written out in full and ready to post as is.** Rank them, best first. Mix types: a war story, a lesson, a demo, a metric, a behind-the-scenes, a take on the trend. The `Post` block is exactly what the user will paste, in this order, with a blank line between parts:
+     1. **Hook:** the first line, which has to work on its own.
+     2. **Anecdote:** the real moment, from the day's sessions and commits or from research you did on the web.
+     3. **Context:** the problem and what was built, from the git log, README, commit messages or new commits.
+     4. **Engagement question** for readers to answer.
+     5. **Hashtags**, 3 to 5, on the last line.
+     No labels, no Markdown and nothing addressed to the user inside the block: only the post. For an X thread, start each post with `1/`, `2/` and so on. The screenshot goes in the `**Screenshot:**` line (an approved capture's file, or "No screenshot"), not in the post. Below the block, the detail lines explain how the post was made: the angle, which anecdote it uses and where it came from, where the context came from, the trend (with link) or "no trend", and why it works.
    - `## The story`: one short paragraph on where today moves the product arc.
    - `## Nearest trends`: 3 to 5 items with links, each tied to a line of today's work.
    - `## Screenshots to review`: candidates from the digest that look useful, with their ids, so the user can approve them.
    - `## Capture tomorrow`: 1 or 2 moments worth capturing next time.
-   Don't write full drafts here. The user chooses first.
-
    Before you finish, hold every post to these rules, because the user may post it as written:
-   - **Only links you opened.** Fetch each link and keep it only if it loads; never guess or rebuild a URL. Use the article's own title as the link text.
+   - **Within the platform's limit.** X: 280 characters per post, with every link counted as 23. LinkedIn: at most 3,000 characters and 300 words, and a hook under 210 characters so it shows above "...see more". Threads and Mastodon: 500. Bluesky: 300. The user can change these with `"post_limits"` in `config.json`, for example `{"linkedin": {"chars": 3000, "words": 250}}`.
+   - **Only links that open.** Fetch each link with your web tool before you use it, and keep it only if the page loads and says what you cite. Never guess, shorten or rebuild a URL. Use the article's own title as the link text. If `brief_check.py` reports a link as dead, replace it or drop it. If it couldn't check one, open it again yourself, and drop it unless it loads.
    - **Numbers from their source.** Quote a statistic only from the original source (the survey or report itself, not a blog that repeats it), name that source, and word it the same way everywhere in the brief.
    - **An anecdote is a moment**, not a summary: the error, the wrong guess, the number that moved. On a quiet day, say so instead of inventing one.
    - **Facts about the product match the code**, e.g. which agents are supported.
-   Then run `python3 <skill-dir>/scripts/brief_check.py --repo . --date <day>` and fix every ✗ (missing sections, dead links) before you stop. Warnings (a site that blocks checks) are fine to leave.
+   Then run `python3 <skill-dir>/scripts/brief_check.py --repo . --date <day>` and fix every ✗ (missing sections, a post over its limit, dead links) before you stop. Look at each warning too: a missing question or hashtags, a long LinkedIn hook, a link it couldn't check.
 5. Append any milestone to `## Arc so far` in `narrative.md`.
 6. In a scheduled run, write the files and stop. `nightly.sh` then sends the gist (a notification, plus an email if set up). If the user is present, show the headline and the list of suggested posts, and ask which one to write.
 
@@ -155,8 +160,8 @@ Use this when the user says "review my posts", "write post 2", "what should I po
 - with the CLI, its drafts across all projects: `buildinpublic posts` (`--today`, or `buildinpublic posts <id>`)
 
 1. Read the latest `brief.md` (and earlier days' if the user asks), and show the suggested posts as a numbered list, one line each. Mark the ones already drafted or posted (from `posts/`).
-2. The user picks one or more. Ask which platform if it isn't clear.
-3. Write the draft for each platform, in their voice from `narrative.md`:
+2. The user picks one or more. Each suggestion already has a ready post: start from it. Ask which platform if they want it somewhere else.
+3. Revise it, or rewrite it for another platform, in their voice from `narrative.md`, keeping the same structure (hook, anecdote, context, engagement question, hashtags) and the platform's limit:
    - **X / Threads:** a hook that stands on its own, then 3 to 7 short posts with one idea each, ending with a question or what's next. Also a single post under 280 characters.
    - **LinkedIn:** two strong opening lines (above "see more"), short paragraphs covering the problem, what was built and the lesson, and a soft invitation to follow along.
    - **Reddit / Indie Hackers:** plain and useful, no marketing tone, ending with a question for the community.

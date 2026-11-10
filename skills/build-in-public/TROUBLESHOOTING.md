@@ -104,9 +104,14 @@ claude -p "Reply with just OK" < /dev/null      # should print OK
 
 | Symptom | Cause | Fix |
 |---|---|---|
-| `errors` in `brief-check.json` | The brief is missing a required section or field | Ask your agent: "build in public brief" to rewrite it |
-| `dead_links` | A link in a suggested post doesn't load | Don't use that link in the post |
-| `Couldn't check (HTTP 308)` | The site redirected, so the link couldn't be confirmed | Open it yourself before posting. Usually fine. |
+| `errors` in `brief-check.json` | The brief is missing a required section, or a post has no ready-to-post text | Ask your agent: "build in public brief" to rewrite it |
+| `… characters; X allows 280` / `LinkedIn allows 3000` / `keep LinkedIn posts under 300` | A post is over its platform's limit | Ask your agent to shorten it ("write post 2, shorter"), or change `"post_limits"` in `config.json` |
+| `the hook is … characters, so LinkedIn cuts it` | The first paragraph won't fit above "...see more" | Shorten the hook |
+| `no engagement question` / `no hashtags line` | The post is missing part of its structure | Add a question near the end and a line of hashtags |
+| `dead_links` | A link in a suggested post doesn't load | Don't use that link. The email lists it under "Check before posting". |
+| `Couldn't check (HTTP 403)` / timeouts | The site blocks automated checks, so it may still open in a browser | It's listed under "Open before posting". Open it yourself, and drop it if it doesn't load. |
+| The email has no Copy post button | `"copy_page": ""` in `config.json`, or the post is too long for a link | Select the text in the box instead |
+| `older format, with a Hook but no ready-to-post text` | The brief was written before posts came ready to copy | Ask your agent: "build in public brief" to rewrite it |
 
 ## 7. Email
 

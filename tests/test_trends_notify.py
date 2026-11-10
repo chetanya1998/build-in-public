@@ -72,7 +72,7 @@ Long story.
         (self.out() / "brief.md").write_text(self.BRIEF)
         headline, body = notify.build_gist(self.repo, DAY)
         self.assertEqual(headline, "Fixed due dates that moved a day west of UTC.")
-        self.assertIn("SUGGESTED POSTS\n\n1. CI lives in UTC\n   X thread", body)
+        self.assertIn("SUGGESTED POSTS\n\n1 · X thread\nCI lives in UTC", body)
         self.assertIn("show post 2", body)
         self.assertNotIn("**", body)
         self.assertNotIn("Long story", body)

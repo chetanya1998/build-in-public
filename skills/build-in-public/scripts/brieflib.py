@@ -3,16 +3,39 @@
 Shared by notify.py (the gist email), posts.py (list and show posts) and brief_check.py.
 Standard library only. Reads the template format (templates/brief.md) and older briefs:
 
-  ### 1. Title (X / behind the scenes)        or   1. **Title** · X thread · ...
-  **Hook:** "..."
+  ### 1. Title                                or   1. **Title** · X thread · ...
+  **Platform:** LinkedIn
+  **Post:**
+  ```text
+  <the post, ready to copy: hook, anecdote, context, engagement question, hashtags>
+  ```
+  **Screenshot:** ...
   **Angle:** ...
+
+Older briefs have a **Hook:** line instead of a **Post:** block; they still read.
 """
 import html
 import re
 
 SECTIONS = ("Today in one line", "What you shipped", "Suggested posts", "The story",
             "Nearest trends", "Screenshots to review", "Capture tomorrow")
-POST_FIELDS = ("Platform", "Hook", "Angle", "Anecdote", "Trend", "Capture", "Why it works")
+POST_FIELDS = ("Platform", "Post", "Screenshot", "Angle", "Anecdote", "Context", "Trend", "Why it works")
+# How each post was made, shown under the post itself (Hook and Capture are from older briefs)
+DETAIL_FIELDS = ("Angle", "Anecdote", "Context", "Trend", "Why it works", "Hook", "Capture", "Notes")
+POST_BLOCK = re.compile(r"^\*\*Post:\*\*[ \t]*\n+```[\w-]*[ \t]*\n(.*?)\n```[ \t]*$", re.S | re.M)
+
+# Platform limits. "chars" is the platform's hard limit; "words" is a length to stay under.
+# X counts every link as 23 characters. Override any of these with "post_limits" in config.json.
+LIMITS = {
+    "x": {"chars": 280},
+    "linkedin": {"chars": 3000, "words": 300},
+    "threads": {"chars": 500},
+    "bluesky": {"chars": 300},
+    "mastodon": {"chars": 500},
+}
+LINKEDIN_FOLD = 210  # characters LinkedIn shows before "...see more"
+URL = re.compile(r"https?://\S+")
+THREAD_PART = re.compile(r"^\s*\d+\s*/\s*(?:\d+)?\s", re.M)
 LINK = re.compile(r"\[([^\]]+)\]\((https?://[^)\s]+)\)")
 BARE_URL = re.compile(r"(?<![(\"'=])\bhttps?://[^\s)<>\"]+")
 
@@ -39,8 +62,12 @@ def suggested_posts(text):
     # template / heading style
     for m in re.finditer(r"^###\s*(\d+)[.)]\s*(.+?)\n(.*?)(?=^###\s*\d+[.)]|\Z)", body, re.S | re.M):
         title, platform = _split_title(m.group(2))
-        fields = {}
-        for f in re.finditer(r"^\*\*([^*:]+):\*\*\s*(.*?)(?=^\*\*[^*:]+:\*\*|\Z)", m.group(3), re.S | re.M):
+        fields, chunk = {}, m.group(3)
+        block = POST_BLOCK.search(chunk)
+        if block:  # the post itself keeps its line breaks
+            fields["Post"] = block.group(1).strip("\n")
+            chunk = chunk[:block.start()] + chunk[block.end():]
+        for f in re.finditer(r"^\*\*([^*:]+):\*\*\s*(.*?)(?=^\*\*[^*:]+:\*\*|\Z)", chunk, re.S | re.M):
             fields[f.group(1).strip()] = " ".join(f.group(2).split())
         platform = fields.pop("Platform", "") or platform
         posts.append({"n": int(m.group(1)), "title": title, "platform": platform, "fields": fields})
@@ -53,6 +80,64 @@ def suggested_posts(text):
         posts.append({"n": int(m.group(1)), "title": title, "platform": parts[1] if len(parts) > 1 else "",
                       "fields": {"Notes": " · ".join(parts[2:])} if len(parts) > 2 else {}})
     return posts
+
+
+def platform_key(platform):
+    """'X thread' -> 'x', 'LinkedIn post' -> 'linkedin', 'dev.to' -> 'dev.to'."""
+    p = platform.lower()
+    for key, names in (("x", ("x ", "x/", "twitter")), ("linkedin", ("linkedin",)), ("threads", ("threads",)),
+                       ("bluesky", ("bluesky",)), ("mastodon", ("mastodon",))):
+        if p.strip() == key or any(n in p + " " for n in names):
+            return key
+    return p.split()[0] if p.split() else ""
+
+
+def x_length(text):
+    """Characters as X counts them: every link is 23."""
+    return len(URL.sub("x" * 23, text))
+
+
+def thread_parts(text):
+    """An X thread's posts, split where a line starts with 1/, 2/ ... (or 1/5, 2/5)."""
+    starts = [m.start() for m in THREAD_PART.finditer(text)]
+    if len(starts) < 2:
+        return [text]
+    return [text[a:b].strip() for a, b in zip(starts, starts[1:] + [len(text)])]
+
+
+def post_stats(platform, text, limits=None):
+    """Length and shape of a ready-to-post text: {chars, words, limit, errors, warnings}."""
+    key = platform_key(platform)
+    limit = dict(LIMITS.get(key, {}))
+    limit.update((limits or {}).get(key, {}))
+    errors, warnings = [], []
+    chars, words = len(text), len(text.split())
+    if key == "x":
+        parts = thread_parts(text) if "thread" in platform.lower() else [text]
+        for i, part in enumerate(parts, 1):
+            n = x_length(part)
+            if limit.get("chars") and n > limit["chars"]:
+                where = f"part {i} of the thread" if len(parts) > 1 else "the post"
+                hint = " Start each post of a thread with 1/, 2/ ..." if len(parts) == 1 and "thread" in platform.lower() else ""
+                errors.append(f"{where} is {n} characters; X allows {limit['chars']}.{hint}")
+        chars = max(x_length(p) for p in parts)
+    else:
+        if limit.get("chars") and chars > limit["chars"]:
+            errors.append(f"{chars} characters; {platform} allows {limit['chars']}")
+        if limit.get("words") and words > limit["words"]:
+            errors.append(f"{words} words; keep {platform} posts under {limit['words']}")
+        if key == "linkedin":
+            first = text.strip().split("\n\n")[0]
+            if len(first) > LINKEDIN_FOLD:
+                warnings.append(f"the hook is {len(first)} characters, so LinkedIn cuts it at '...see more' ({LINKEDIN_FOLD})")
+    if re.search(r"`|\*\*|\[[^\]]+\]\(", text):
+        warnings.append("Markdown (` ** [](...)) shows up as-is when posted: use plain text")
+    lines = [l.strip() for l in text.strip().splitlines() if l.strip()]
+    if not lines or not re.fullmatch(r"(#[\w-]+\s*)+", lines[-1]):
+        warnings.append("no hashtags line at the end")
+    if "?" not in "\n".join(lines[-3:]):
+        warnings.append("no engagement question near the end")
+    return {"key": key, "chars": chars, "words": words, "limit": limit, "errors": errors, "warnings": warnings}
 
 
 def links(text):
