@@ -22,7 +22,9 @@ MENU: list[tuple[str, list[tuple[str, list[str], list[Q]]]]] = [
     ("Posts and reminders", [
         ("Build today's summary (doesn't send it)", ["summary"], []),
         ("Build today's summary and send it now", ["summary", "--send"], []),
-        ("Your drafts, and which are posted", ["posts"], []),
+        ("All your drafts, and which are posted", ["posts"], []),
+        ("Today's drafts", ["posts", "--today"], []),
+        ("Show one draft, ready to copy", ["posts"], [("Which draft? Its id, or Enter for the latest", None, False, None)]),
         ("Mark a draft as posted (resets the reminder)", ["posted"], [("Which draft? Its id, or Enter for the latest", None, False, None)]),
         ("Check the posting reminder", ["nudge"], []),
         ("Tell it what you're working on, for a post", ["nudge"], [("What are you working on", "--reply", True, None)]),

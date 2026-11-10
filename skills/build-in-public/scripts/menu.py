@@ -17,6 +17,9 @@ SAY = [
     ("log this", "Add today's log entry now (your agent also does this after tasks)"),
     ("capture this", "Capture the terminal or browser, after asking you"),
     ("build in public brief", "Today's brief with 5 to 7 suggested posts"),
+    ("my posts", "Every saved post and its status"),
+    ("today's posts", "Today's suggestions, plus anything saved today"),
+    ("show post 2", "One post as clean text, ready to copy"),
     ("review my posts", "List the suggested posts so you can pick one"),
     ("write post 2 for LinkedIn", "Draft it; revise it, then say \"approve it\""),
     ("I posted it: <link>", "Mark it posted and add it to your story so far"),
@@ -36,8 +39,14 @@ RUN = [
         ("Screenshots your agents took, waiting for a yes or no", "capture.py", ["candidates"], []),
         ("Today's approved captures", "capture.py", ["list"], []),
     ]),
+    ("Posts", [
+        ("All your posts and their status", "posts.py", [], []),
+        ("Today's suggested posts, plus posts saved today", "posts.py", ["--today"], []),
+        ("Show one post, ready to copy", "posts.py", ["show"], [("Suggestion number or post id", None, True, None)]),
+    ]),
     ("Today's gist", [
         ("Run the whole daily pipeline now", "nightly.sh", [], []),
+        ("Check today's brief: sections, fields, links", "brief_check.py", [], []),
         ("Find this week's trends near your work", "trends.py", [], []),
         ("Preview the gist email (doesn't send)", "notify.py", ["--dry-run"], []),
         ("Send a test email to your address", "notify.py", ["--test"], []),
@@ -92,7 +101,7 @@ def ask_args(entry, ask, say):
                 break
             say("  This one's needed (Ctrl-C to go back).")
         if v:
-            argv += [flag, v]
+            argv += [flag, v] if flag else [v]
     warn = CONFIRM.get((script, *args))
     if warn and ask(f"  {warn} Continue? [y/N] ").strip().lower() not in ("y", "yes"):
         return None

@@ -1,6 +1,6 @@
 ---
 name: build-in-public
-description: Personal build-in-public content strategist that lives in the user's project repo. Logs what the user builds during Claude Code, Codex and Antigravity sessions, asks before capturing terminal or browser output, searches the internet for trends near the project and the day's work, sends a scheduled daily gist (notification, plus email if the user gives an address) with a list of suggested posts, drafts the one the user picks, and can add approved posts and images to the user's commits so they're on GitHub. Never posts. With the optional `buildinpublic` CLI it also journals every session across all projects (macOS, Windows, Linux) and reminds the user when they haven't posted. Use for "build in public", "log this", "capture this", "daily gist", "build in public brief", "review my posts", "write post 2", "what should I post", "build in public help", "help?", weekly recap, "what did I do today/this week", "across my projects", and Build Your Product in Public reminders.
+description: Personal build-in-public content strategist that lives in the user's project repo. Logs what the user builds during Claude Code, Codex and Antigravity sessions, asks before capturing terminal or browser output, searches the internet for trends near the project and the day's work, sends a scheduled daily gist (notification, plus email if the user gives an address) with a list of suggested posts, drafts the one the user picks, and can add approved posts and images to the user's commits so they're on GitHub. Never posts. With the optional `buildinpublic` CLI it also journals every session across all projects (macOS, Windows, Linux) and reminds the user when they haven't posted. Use for "build in public", "log this", "capture this", "daily gist", "build in public brief", "review my posts", "my posts", "today's posts", "show post 2", "write post 2", "what should I post", "build in public help", "help?", weekly recap, "what did I do today/this week", "across my projects", and Build Your Product in Public reminders.
 ---
 
 # Build Your Product in Public
@@ -42,7 +42,7 @@ Templates are in `templates/` and scripts in `scripts/`, next to this file (`<sk
 - Leave out secrets, customer details and anything under Off-limits in `narrative.md`.
 
 **Help.** When the user says "build in public help", "help?", "help", "menu", "what can you do" or "what are the commands", show one numbered list and ask which one to do, then do it:
-1. What they can say to you: set up build in public, log this, capture this, build in public brief, review my posts, write post 2 for LinkedIn, I posted it, weekly recap.
+1. What they can say to you: set up build in public, log this, capture this, build in public brief, my posts, today's posts, show post 2, review my posts, write post 2 for LinkedIn, I posted it, weekly recap.
 2. If `buildinpublic --version` works, the CLI commands too (run `buildinpublic menu`, which prints them all when it isn't in a terminal), grouped as journal, posts and reminders, screenshots, projects, setup.
 Keep each line to the command and what it's for. Point terminal users to `python3 <skill-dir>/scripts/menu.py` and `buildinpublic menu`, which list everything and run the one they pick.
 
@@ -121,7 +121,7 @@ The default day is today, or yesterday if it's before 4am.
    ```
 2. **Understand the day.** Read `narrative.md`, `digest.md`, `trends.md` and `captures/captures.json`. Work out what was really accomplished, the struggle, the decision and the result. Group sessions on the same feature into one story. Pick out the anecdotes: the moment that went wrong, the surprising cause, the number that moved.
 3. **Search the internet for the nearest trend.** `trends.md` is only the start. Run 3 to 5 web searches built from the project's context and the day's actual work, for example "<today's problem> <stack>", "<audience> <pain> this week", "<technique used today> debate". Look at what builders on X, LinkedIn, Reddit and Hacker News and the tech news are discussing **this week**. For each story, find the closest real conversation it proves, contradicts or answers. Never force a link: a strong story with no trend beats a fake tie-in.
-4. **Write `daily/<day>/brief.md`** with these sections, using these exact headings (the gist email is built from the first three):
+4. **Write `daily/<day>/brief.md` by filling in `templates/brief.md`**: the same headings, and for each suggested post a `### N. Title` heading with `**Platform:**`, `**Hook:**`, `**Angle:**`, `**Anecdote:**`, `**Trend:**`, `**Capture:**` and `**Why it works:**` lines. The gist email and `posts.py` read this format. The sections:
    - `## Today in one line`: the headline of the day.
    - `## What you shipped`: 3 to 6 bullets in plain words, each with its source (session, commit hash, log entry).
    - `## Suggested posts`: **5 to 7 numbered options** for the user to choose from. Each has a title, the platform, the angle, a hook line, the anecdote it uses, the trend it rides (with link) or "no trend", the approved capture id to attach (or "none"), and one line on why it works. Rank them, best first. Mix types: a war story, a lesson, a demo, a metric, a behind-the-scenes, a take on the trend.
@@ -130,6 +130,13 @@ The default day is today, or yesterday if it's before 4am.
    - `## Screenshots to review`: candidates from the digest that look useful, with their ids, so the user can approve them.
    - `## Capture tomorrow`: 1 or 2 moments worth capturing next time.
    Don't write full drafts here. The user chooses first.
+
+   Before you finish, hold every post to these rules, because the user may post it as written:
+   - **Only links you opened.** Fetch each link and keep it only if it loads; never guess or rebuild a URL. Use the article's own title as the link text.
+   - **Numbers from their source.** Quote a statistic only from the original source (the survey or report itself, not a blog that repeats it), name that source, and word it the same way everywhere in the brief.
+   - **An anecdote is a moment**, not a summary: the error, the wrong guess, the number that moved. On a quiet day, say so instead of inventing one.
+   - **Facts about the product match the code**, e.g. which agents are supported.
+   Then run `python3 <skill-dir>/scripts/brief_check.py --repo . --date <day>` and fix every ✗ (missing sections, dead links) before you stop. Warnings (a site that blocks checks) are fine to leave.
 5. Append any milestone to `## Arc so far` in `narrative.md`.
 6. In a scheduled run, write the files and stop. `nightly.sh` then sends the gist (a notification, plus an email if set up). If the user is present, show the headline and the list of suggested posts, and ask which one to write.
 
@@ -140,6 +147,12 @@ If the digest shows nothing, write a short brief that says it was a quiet day, w
 ## Mode 5: Review and choose (the user picks what to post)
 
 Use this when the user says "review my posts", "write post 2", "what should I post" or replies to the gist.
+
+**Listing posts.** For "my posts", "all my posts", "today's posts" or "show post 2", run from the project root and show the result:
+- all saved posts with their status: `python3 <skill-dir>/scripts/posts.py`
+- today's suggestions plus anything saved today: `python3 <skill-dir>/scripts/posts.py --today`
+- one post as clean text to copy: `python3 <skill-dir>/scripts/posts.py show 2` (a suggestion number) or `show <id>` (a saved post)
+- with the CLI, its drafts across all projects: `buildinpublic posts` (`--today`, or `buildinpublic posts <id>`)
 
 1. Read the latest `brief.md` (and earlier days' if the user asks), and show the suggested posts as a numbered list, one line each. Mark the ones already drafted or posted (from `posts/`).
 2. The user picks one or more. Ask which platform if it isn't clear.

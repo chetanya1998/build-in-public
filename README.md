@@ -148,6 +148,7 @@ buildinpublic week --project myapp     # weekly rollup
 buildinpublic search stripe webhook    # find any past session
 buildinpublic projects                 # everything it has seen
 buildinpublic project myapp content    # use this project for posts (journal | ignore)
+buildinpublic posts --today            # today's drafts; `posts <id>` prints one, ready to copy
 buildinpublic shot url http://localhost:3000
 buildinpublic shot code src/billing.ts --lines 20-48 --caption "the one-line fix"
 buildinpublic doctor --test            # check everything, send a test notification
@@ -303,6 +304,8 @@ You mostly just code. Here's a day:
 | "log this" | Adds today's log entry now (your agent also does this after tasks) |
 | "capture this" | Offers a terminal or browser capture, and asks first |
 | "build in public brief" | Writes today's brief and the list of suggested posts now |
+| "my posts" / "today's posts" | Every saved post with its status, or today's suggestions and posts |
+| "show post 2" | One post as clean text, hook first, ready to copy |
 | "review my posts" | Shows the suggested posts so you can pick one |
 | "write post 2 for LinkedIn" | Drafts it; you revise and approve it |
 | "I posted it" | Marks it posted, with the link, and adds it to your story so far |
@@ -347,6 +350,8 @@ python3 $SKILL/scripts/collect.py --inspect                   # which sessions w
 sh $SKILL/scripts/nightly.sh                                  # the full daily run, now
 python3 $SKILL/scripts/notify.py --test                       # send a test email (if you set one)
 python3 $SKILL/scripts/share.py                               # rebuild posts/README.md now
+python3 $SKILL/scripts/posts.py --today                       # today's posts; show 2 prints one, ready to copy
+python3 $SKILL/scripts/brief_check.py                         # check today's brief: sections, fields, links
 sh $SKILL/scripts/schedule.sh --time 19:00                    # change the gist time (--remove to stop)
 python3 $SKILL/scripts/doctor.py                              # check the setup
 ```

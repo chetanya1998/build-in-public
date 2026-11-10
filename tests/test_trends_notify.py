@@ -72,8 +72,9 @@ Long story.
         (self.out() / "brief.md").write_text(self.BRIEF)
         headline, body = notify.build_gist(self.repo, DAY)
         self.assertEqual(headline, "Fixed due dates that moved a day west of UTC.")
-        self.assertIn("SUGGESTED POSTS\n1. **CI lives in UTC**", body)
-        self.assertIn("review my posts", body)
+        self.assertIn("SUGGESTED POSTS\n\n1. CI lives in UTC\n   X thread", body)
+        self.assertIn("show post 2", body)
+        self.assertNotIn("**", body)
         self.assertNotIn("Long story", body)
 
     def test_gist_from_digest_when_no_brief(self):
@@ -89,7 +90,8 @@ Long story.
         r = self.run_script("notify.py", "--date", str(DAY), "--dry-run")
         self.assertEqual(r.returncode, 0, r.stderr)
         unfolded = r.stdout.replace("\n ", " ")  # long subjects are folded onto two header lines
-        self.assertIn(f"Subject: Build Your Product in Public · tinyinvoice · {DAY}: Fixed due dates", unfolded)
+        self.assertIn(f"Subject: Build Your Product in Public · tinyinvoice · {DAY:%d %b}: Fixed due dates", unfolded)
+        self.assertIn("Content-Type: text/html", unfolded)
         self.assertIn("To: me@example.com", r.stdout)
         self.assertIn("From: me@example.com", r.stdout)
         self.assertIn(f'filename="brief-{DAY}.md"', r.stdout)

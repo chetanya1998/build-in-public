@@ -19,12 +19,14 @@ method that needs a password, read from BIP_SMTP_PASSWORD, the macOS Keychain
 
 Usage: python3 notify.py [--repo PATH] [--date YYYY-MM-DD] [--dry-run] [--test] [--no-desktop]
 """
-import argparse, datetime as dt, json, os, platform, re, shutil, smtplib, ssl, stat, subprocess, sys
+import argparse, datetime as dt, html, json, os, platform, re, shutil, smtplib, ssl, stat, subprocess, sys
 from email.message import EmailMessage
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import brieflib  # noqa: E402
+
 CONFIG_DIR = Path.home() / ".config" / "buildinpublic"
-GIST_SECTIONS = ("Today in one line", "What you shipped", "Post ideas", "Suggested posts")
 SENDMAIL_PATHS = ("/usr/sbin/sendmail", "/usr/lib/sendmail")
 
 MAIL_APP_SCRIPT = '''on run argv
@@ -61,35 +63,137 @@ def posts_url(repo):
     return f"https://github.com/{m.group(1)}/blob/{branch}/.buildinpublic/posts/README.md"
 
 
-def build_gist(repo, day):
-    """Return (headline, body) for today's gist."""
+PICK = ('In your agent, say "show post 2" or "write post 2 for LinkedIn". In a terminal: '
+        'python3 <skill>/scripts/posts.py --today. Nothing is posted for you.')
+
+
+def gist(repo, day):
+    """The day's gist as plain pieces: headline, shipped lines, suggested posts, notes."""
     out = repo / ".buildinpublic" / "daily" / str(day)
     brief = out / "brief.md"
-    link = posts_url(repo)
-    footer = f"\n\nYour approved posts and images: {link}" if link else ""
+    g = {"repo": repo.name, "day": day, "link": posts_url(repo), "shipped": [], "posts": [], "notes": []}
     if brief.exists():
         text = brief.read_text()
-        parts = [(n, section(text, n)) for n in GIST_SECTIONS]
-        parts = [(n, b) for n, b in parts if b]
-        headline = next((b.splitlines()[0] for n, b in parts if n == "Today in one line"), "") or "Your brief is ready"
-        body = "\n\n".join(f"{n.upper()}\n{b}" for n, b in parts) or text[:3000]
-        body += ("\n\nPick a post: open your agent in this project and say \"review my posts\""
-                 " (or \"write post 2\"). Nothing is posted for you.") + footer
-        return headline, body
-
+        today = brieflib.section(text, "Today in one line")
+        g["headline"] = brieflib.to_text(today.splitlines()[0]).strip() if today else "Your brief is ready"
+        g["shipped"] = brieflib.block_lines(brieflib.section(text, "What you shipped"))
+        g["posts"] = brieflib.suggested_posts(text) or []
+        if not g["posts"] and brieflib.section(text, "Post ideas"):  # very old briefs
+            g["shipped"] += brieflib.block_lines(brieflib.section(text, "Post ideas"))
+        g["pick"] = PICK
+        g["attached"] = True
+        check = out / "brief-check.json"
+        if check.exists():
+            try:
+                g["dead_links"] = json.loads(check.read_text()).get("dead_links", [])
+            except ValueError:
+                pass
+        return g
     digest = out / "digest.md"
     if not digest.exists():
-        return "Quiet day", "No activity was found for this day." + footer
+        g.update(headline="Quiet day", notes=["No activity was found for this day."])
+        return g
     text = digest.read_text()
     found = re.search(r"^Sessions found: (.*)$", text, re.M)
     commits = re.findall(r"^- \d\d:\d\d [0-9a-f]{7,} (.+)$", section(text, "Git commits"), re.M)
     logged = re.findall(r"^### [\d:]+ - (.+?)\s+\(agent", text, re.M)
-    lines = [f"Sessions: {found.group(1)}" if found else ""]
-    lines += [f"- {t}" for t in logged] or [f"- {c}" for c in commits]
-    body = "\n".join(l for l in lines if l)
-    body += ("\n\nNo brief was written yet (no headless agent is set up). Open your agent in this project "
-             "and say \"build in public brief\" to get the story and the list of posts.") + footer
-    return (logged or commits or ["Your digest is ready"])[0], body
+    g["headline"] = (logged or commits or ["Your digest is ready"])[0]
+    g["shipped"] = [("li", t) for t in (logged or commits)]
+    g["notes"] = ([f"Sessions: {found.group(1)}"] if found else []) + [
+        'No brief was written yet (no headless agent is set up). Open your agent in this project and say '
+        '"build in public brief" to get the story and the list of posts.']
+    return g
+
+
+def render_text(g):
+    """Plain text with no Markdown symbols, for every mail app (Apple Mail sends only this)."""
+    L = []
+    if g.get("dead_links"):
+        L += [f"CHECK BEFORE POSTING: {len(g['dead_links'])} link(s) in this brief don't load:"]
+        L += [f"  {u}" for u in g["dead_links"]] + [""]
+    L += ["TODAY", g["headline"], ""]
+    if g["shipped"]:
+        L.append("WHAT YOU SHIPPED")
+        L += [("- " if kind == "li" and not re.match(r"^\d+[.)]", t) else "") + brieflib.to_text(t) for kind, t in g["shipped"]]
+        L.append("")
+    if g["posts"]:
+        L += ["SUGGESTED POSTS", ""]
+        for p in g["posts"]:
+            L.append(f"{p['n']}. {p['title']}")
+            if p["platform"]:
+                L.append(f"   {p['platform']}")
+            f = p["fields"]
+            if f.get("Hook"):
+                L.append(f"   Hook: {brieflib.to_text(f['Hook'])}")
+            for name in ("Angle", "Anecdote", "Trend", "Capture", "Why it works", "Notes"):
+                if f.get(name):
+                    L.append(f"   {name}: {brieflib.to_text(f[name])}")
+            L.append("")
+    L += g["notes"] + ([""] if g["notes"] else [])
+    if g.get("pick"):
+        L += ["PICK ONE", g["pick"]]
+    if g["link"]:
+        L.append(f"Your approved posts and images: {g['link']}")
+    if g.get("attached"):
+        L += ["", "The full brief is attached."]
+    return "\n".join(L).strip() + "\n"
+
+
+def render_html(g):
+    """The same gist as a simple HTML email (inline styles, as mail apps need)."""
+    e = html.escape
+    H2 = 'style="font:600 12px/1 ui-monospace,Menlo,monospace;letter-spacing:.08em;text-transform:uppercase;color:#5a616d;margin:26px 0 10px"'
+    out = ['<div style="font:15px/1.55 -apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif;color:#14161a;max-width:640px;margin:0 auto">',
+           f'<p {H2.replace("26px", "0")}>Your daily gist · {e(g["repo"])} · {g["day"]:%d %b %Y}</p>',
+           f'<h1 style="font-size:22px;line-height:1.3;margin:0 0 6px">{e(g["headline"])}</h1>']
+    if g.get("dead_links"):
+        out.insert(1, '<div style="margin:0 0 16px;padding:10px 14px;border-radius:10px;background:#fff4e5;border:1px solid #f2c97d">'
+                      f'<strong>Check before posting:</strong> {len(g["dead_links"])} link(s) in this brief don\'t load:'
+                      + "".join(f'<br><span style="font-size:13px;word-break:break-all">{e(u)}</span>' for u in g["dead_links"]) + "</div>")
+    if g["shipped"]:
+        out.append(f"<h2 {H2}>What you shipped</h2>")
+        items = [t for k, t in g["shipped"] if k == "li"]
+        if items:
+            out.append('<ul style="margin:0;padding-left:20px">' + "".join(f'<li style="margin:3px 0">{brieflib.to_html(t)}</li>' for t in items) + "</ul>")
+        out += [f'<p style="margin:6px 0">{brieflib.to_html(t)}</p>' for k, t in g["shipped"] if k != "li"]
+    if g["posts"]:
+        out.append(f"<h2 {H2}>Suggested posts</h2>")
+        for p in g["posts"]:
+            f = p["fields"]
+            out.append('<div style="border:1px solid #e2e5ea;border-radius:12px;padding:14px 16px;margin:0 0 12px">')
+            out.append(f'<div style="font:600 12px/1 ui-monospace,Menlo,monospace;color:#2c4bd4;letter-spacing:.04em">{p["n"]}'
+                       + (f' · {e(p["platform"])}' if p["platform"] else "") + "</div>")
+            out.append(f'<div style="font-weight:600;font-size:16px;margin:6px 0 10px">{e(p["title"])}</div>')
+            if f.get("Hook"):
+                out.append('<div style="margin:0 0 10px;padding:9px 12px;border-left:3px solid #2c4bd4;background:#f4f6fb;'
+                           f'border-radius:0 8px 8px 0">{brieflib.to_html(f["Hook"])}</div>')
+            for name in ("Angle", "Anecdote", "Trend", "Capture", "Why it works", "Notes"):
+                if f.get(name):
+                    out.append(f'<p style="margin:5px 0"><strong>{name}:</strong> {brieflib.to_html(f[name])}</p>')
+            out.append("</div>")
+    out += [f'<p style="margin:12px 0">{e(n)}</p>' for n in g["notes"]]
+    if g.get("pick"):
+        out.append(f'<p style="margin:18px 0 6px;padding:12px 14px;background:#f4f6fb;border-radius:10px">{e(g["pick"])}</p>')
+    if g["link"]:
+        out.append(f'<p style="margin:8px 0">Your approved posts and images: <a href="{e(g["link"], quote=True)}" style="color:#2c4bd4">open on GitHub</a></p>')
+    if g.get("attached"):
+        out.append('<p style="margin:16px 0 0;color:#5a616d;font-size:13px">The full brief is attached.</p>')
+    out.append("</div>")
+    return "\n".join(out)
+
+
+def subject(repo, day, headline):
+    """Short enough to read in an inbox: brand · project · date: first words of the headline."""
+    h = headline.strip().rstrip(".")
+    if len(h) > 64:
+        h = h[:64].rsplit(" ", 1)[0].rstrip(",;:—-") + "…"
+    return f"Build Your Product in Public · {repo.name} · {day:%d %b}: {h}"
+
+
+def build_gist(repo, day):
+    """Return (headline, plain-text body) for the day's gist."""
+    g = gist(repo, day)
+    return g["headline"], render_text(g)
 
 
 def desktop(title, message):
@@ -154,12 +258,14 @@ def smtp_password(user):
              "or remove smtp_host/method from email.json to send through your mail app instead.")
 
 
-def compose(cfg, repo, day, headline, body):
+def compose(cfg, repo, day, headline, body, html_body=None):
     msg = EmailMessage()
-    msg["Subject"] = f"Build Your Product in Public · {repo.name} · {day}: {headline}"[:180]
+    msg["Subject"] = subject(repo, day, headline)
     msg["From"] = cfg.get("from") or cfg.get("smtp_user") or cfg["to"]
     msg["To"] = cfg["to"]
     msg.set_content(body)
+    if html_body:
+        msg.add_alternative(html_body, subtype="html")
     brief = repo / ".buildinpublic" / "daily" / str(day) / "brief.md"
     if brief.exists():
         msg.add_attachment(brief.read_bytes(), maintype="text", subtype="markdown", filename=f"brief-{day}.md")
@@ -232,7 +338,8 @@ def main():
         print(f"Test email sent to {cfg['to']} via {how}.")
         return
 
-    headline, body = build_gist(repo, day)
+    g = gist(repo, day)
+    headline, body = g["headline"], render_text(g)
     notify = project.get("notify", True)
     if notify not in (False, "off") and not a.no_desktop and not a.dry_run:
         desktop("Build Your Product in Public", f"{day}: {headline}")
@@ -241,7 +348,7 @@ def main():
     if not cfg:
         print(f"Gist ready ({headline}). Email is optional and not set up.")
         return
-    msg = compose(cfg, repo, day, headline, body)
+    msg = compose(cfg, repo, day, headline, body, render_html(g))
     if a.dry_run:
         print(f"(would send via {method(cfg)})\n{msg}")
         return

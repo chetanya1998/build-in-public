@@ -28,4 +28,6 @@ else
   echo "No headless agent configured; digest and trends are ready. Ask your agent: 'build in public brief'." >> "$LOG"
 fi
 
+# check the brief (sections, fields, links) so the email can flag anything to fix before posting
+[ -f "$OUT/brief.md" ] && python3 "$SKILL_DIR/scripts/brief_check.py" --repo "$REPO" --date "$DAY" >> "$LOG" 2>&1
 python3 "$SKILL_DIR/scripts/notify.py" --repo "$REPO" --date "$DAY" >> "$LOG" 2>&1

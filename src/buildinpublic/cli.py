@@ -193,11 +193,32 @@ def cmd_mark(status):
 def cmd_posts(a):
     nudge.scan_drafts()
     ps = nudge.load_posts()
+    if a.id:  # show one draft as clean text, ready to copy
+        match = [p for p in ps if a.id in p["id"]] if a.id != "latest" else ps[-1:]
+        if not match:
+            sys.exit(f"No draft matching '{a.id}'. Run `buildinpublic posts` to see them.")
+        p = match[-1]
+        text = Path(p["path"]).read_text(encoding="utf-8") if Path(p["path"]).exists() else ""
+        print(f"{p['title']}\n{' · '.join(x for x in (p.get('platform'), p['status'], (p.get('created') or '')[:10]) if x)}\n")
+        body = text.split("\n---\n", 1)[-1].strip() if text.startswith("---") else text.strip()
+        lines = body.splitlines()
+        if lines and lines[0].lstrip("# ").strip() == p["title"]:  # the title is already printed above
+            body = "\n".join(lines[1:]).strip()
+        print(body)
+        return
+    today = dt.date.today().isoformat()
+    if a.today:
+        ps = [p for p in ps if (p.get("created") or "").startswith(today)]
+    if a.status:
+        ps = [p for p in ps if p["status"] == a.status]
     if not ps:
-        print("No drafts yet.")
+        print(f"No {a.status} drafts." if a.status else "No drafts today." if a.today else "No drafts yet.")
     for p in ps[-a.limit:]:
         print(f"{p['id']:<34} {p['status']:<8} {p['title'][:70]}\n    {p['path']}")
-    print(f"\n{nudge.days_since_post()} day(s) since last post.")
+    if ps:
+        print("\nShow one: buildinpublic posts <id>")
+    n = nudge.days_since_post()
+    print("No posts yet." if not any(p["status"] == "posted" for p in nudge.load_posts()) else f"{n} day(s) since your last post.")
 
 
 def cmd_config(a):
@@ -390,7 +411,10 @@ def main(argv=None):
         s = sub.add_parser(name, help=f"mark a draft as {status}")
         s.add_argument("id", nargs="?", default="latest")
         s.set_defaults(fn=cmd_mark(status))
-    s = sub.add_parser("posts", help="list drafts and their status")
+    s = sub.add_parser("posts", help="list drafts (--today, --status), or show one: posts <id>")
+    s.add_argument("id", nargs="?", help="show this draft (any part of its id, or 'latest')")
+    s.add_argument("--today", action="store_true", help="only drafts written today")
+    s.add_argument("--status", choices=["drafted", "posted", "skipped"])
     s.add_argument("--limit", type=int, default=20)
     s.set_defaults(fn=cmd_posts)
 
