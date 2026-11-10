@@ -353,6 +353,25 @@ footer nav { display: flex; gap: 18px; margin-left: auto; flex-wrap: wrap }
   .js .type .ch, .js [data-reveal] { opacity: 1; transform: none; animation: none; transition: none }
   .caret { display: none }
 }
+
+/* contribute */
+.contrib { display: grid; grid-template-columns: repeat(3, 1fr); border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); overflow: hidden }
+.contrib > div { padding: 22px 22px 20px; display: grid; gap: 8px; align-content: start; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); min-width: 0 }
+.contrib > div:nth-child(3n) { border-right: 0 }
+.contrib > div:nth-last-child(-n+3) { border-bottom: 0 }
+.contrib p { color: var(--muted); font-size: 15px }
+.contrib p code { color: var(--fg) }
+.ct-tag { justify-self: start; font: 500 11.5px/1 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted) }
+.ct-tag.help { color: var(--ink) }
+.ct-path { justify-self: start; margin-top: 4px; font-size: 12px; color: var(--fg); background: var(--bg); border: 1px solid var(--line); padding: 2px 7px; border-radius: 6px; overflow-wrap: anywhere }
+.contrib-2 { display: grid; grid-template-columns: 1fr 1.15fr; gap: 28px; align-items: center; margin-top: 28px }
+.contrib-2 > * { min-width: 0 }
+.rules { list-style: none; margin: 14px 0 0; padding: 0; display: grid; gap: 10px }
+.rules li { display: grid; grid-template-columns: 22px 1fr; color: var(--muted); font-size: 15px }
+.rules li::before { content: "✓"; color: var(--ok); font: 600 14px/1.55 var(--mono) }
+.rules b { color: var(--fg); font-weight: 600 }
+@media (max-width: 900px) { .contrib { grid-template-columns: 1fr 1fr } .contrib > div:nth-child(3n) { border-right: 1px solid var(--line) } .contrib > div:nth-child(2n) { border-right: 0 } .contrib > div:nth-last-child(-n+3) { border-bottom: 1px solid var(--line) } .contrib > div:nth-last-child(-n+2) { border-bottom: 0 } .contrib-2 { grid-template-columns: 1fr } }
+@media (max-width: 560px) { .contrib { grid-template-columns: 1fr } .contrib > div { border-right: 0 !important; border-bottom: 1px solid var(--line) !important } .contrib > div:last-child { border-bottom: 0 !important } }
 @media (prefers-reduced-motion: reduce) { .entry, .brief { animation: none } }
 @media (max-width: 520px) { section { padding-block: 56px } .hero { padding-block: 40px 56px } }
 </style>
@@ -364,7 +383,7 @@ footer nav { display: flex; gap: 18px; margin-left: auto; flex-wrap: wrap }
   <div class="wrap">
     <a class="brand" href="#top"><svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" class="mk-bg"/><path d="M6.5 24.5h19" class="mk-base"/><path d="M7 23.5C13 22.6 16.5 19 19.2 15.2S23.2 9.4 24.6 8.3" class="mk-line"/><circle cx="24.8" cy="8.2" r="3.4" class="mk-dot"/></svg>Build Your Product in Public</a>
     <nav class="links" aria-label="Sections">
-      <a href="#how">How it works</a><a href="#demo">Demo</a><a href="#commands">Commands</a><a href="#privacy">Privacy</a><a href="#faq">FAQ</a>
+      <a href="#how">How it works</a><a href="#demo">Demo</a><a href="#commands">Commands</a><a href="#privacy">Privacy</a><a href="#contribute">Contribute</a><a href="#faq">FAQ</a>
     </nav>
     <button class="theme" type="button" aria-label="Switch to dark mode" title="Switch theme">
       <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
@@ -794,6 +813,48 @@ footer nav { display: flex; gap: 18px; margin-left: auto; flex-wrap: wrap }
     </div>
   </section>
 
+  <section id="contribute">
+    <div class="wrap">
+      <div class="head" data-reveal>
+        <div class="eyebrow">Contribute</div>
+        <h2>Built in public, <em>with you.</em></h2>
+        <p class="lede">It's open source under MIT. Most useful changes are small: a new agent, a new post format, a better trend source. Here's where to start.</p>
+      </div>
+      <div class="contrib" data-reveal>
+        <div><span class="ct-tag">Agents</span><h3>Add an agent</h3><p>Cursor, Windsurf, Gemini CLI, Aider. Add its instruction file to setup, its skills folder to <code>install.sh</code>, and a reader for its session files.</p><code class="ct-path">install.sh · readers.py</code></div>
+        <div><span class="ct-tag">Sessions</span><h3>Keep up with formats</h3><p>Agents change how they save sessions. Add a sample of the new format and a test, so nobody's log silently goes empty.</p><code class="ct-path">collect.py · tests/fixtures/sessions/</code></div>
+        <div><span class="ct-tag help">Help wanted</span><h3>Better trend sources</h3><p>Reddit now blocks its public search, so it returns nothing. Replace it, or make dev.to work for topics like <code>next.js</code>.</p><code class="ct-path">trends.py · research.py</code></div>
+        <div><span class="ct-tag">Posts</span><h3>New platforms</h3><p>Bluesky, YouTube, newsletters: describe the format in the skill, and your agent drafts for it.</p><code class="ct-path">SKILL.md · Mode 5</code></div>
+        <div><span class="ct-tag">Captures</span><h3>New kinds of capture</h3><p>Before/after pairs, metric cards, GIFs from browser tests. Every capture still goes through the same approval check.</p><code class="ct-path">capture.py · shots.py</code></div>
+        <div><span class="ct-tag">Anyone</span><h3>Report and share</h3><p>A bug, a confusing step, or a post it wrote for you that worked. Open an issue with your sample log and the post.</p><code class="ct-path">GitHub issues</code></div>
+      </div>
+      <div class="contrib-2" data-reveal>
+        <div>
+          <h3>Every change keeps these rules</h3>
+          <ul class="rules">
+            <li><span><b>Never posts.</b> It drafts; the user posts.</span></li>
+            <li><span><b>Never captures without a yes.</b> New capture types go through <code>approve_or_stop()</code>.</span></li>
+            <li><span><b>Works in every agent.</b> Claude Code, Codex and Antigravity, not just one.</span></li>
+            <li><span><b>Standard library only</b> for the skill's scripts, so it runs anywhere Python 3.9 does.</span></li>
+          </ul>
+        </div>
+        <div class="term">
+<pre><span class="d"># get set up</span>
+<span class="p">$</span> git clone https://github.com/chetanya1998/build-in-public
+<span class="p">$</span> cd build-in-public
+<span class="p">$</span> python3 -m unittest discover tests      <span class="d"># the skill</span>
+<span class="p">$</span> pip install -e ".[full]"                  <span class="d"># the CLI, optional</span>
+<span class="p">$</span> python3 scripts/build_pages.py            <span class="d"># this page</span></pre>
+        </div>
+      </div>
+      <div class="cta-row" style="margin-top:28px">
+        <a class="pill solid" href="https://github.com/chetanya1998/build-in-public/blob/main/CONTRIBUTING.md">Read the contributing guide</a>
+        <a class="pill" href="https://github.com/chetanya1998/build-in-public/issues/new">Open an issue</a>
+        <a class="pill" href="https://github.com/chetanya1998/build-in-public/fork">Fork on GitHub</a>
+      </div>
+    </div>
+  </section>
+
   <section id="faq">
     <div class="wrap">
       <div class="head"><div class="eyebrow">FAQ</div><h2>Questions</h2></div>
@@ -826,6 +887,7 @@ footer nav { display: flex; gap: 18px; margin-left: auto; flex-wrap: wrap }
       <a href="https://github.com/chetanya1998/build-in-public">GitHub</a>
       <a href="https://github.com/chetanya1998/build-in-public#readme">Docs</a>
       <a href="https://github.com/chetanya1998/build-in-public/issues">Issues</a>
+      <a href="#contribute">Contribute</a>
       <a href="https://github.com/chetanya1998/build-in-public/blob/main/LICENSE">License</a>
     </nav>
   </div>
