@@ -357,6 +357,16 @@ footer nav { display: flex; gap: 18px; margin-left: auto; flex-wrap: wrap }
 .rules li { display: grid; grid-template-columns: 22px 1fr; color: var(--muted); font-size: 15px }
 .rules li::before { content: "✓"; color: var(--ok); font: 600 14px/1.55 var(--mono) }
 .rules b { color: var(--fg); font-weight: 600 }
+
+/* troubleshooting: the pipeline, where a run stops, and what to check */
+.pipe { grid-template-columns: repeat(5, 1fr) }
+.pipe .step { padding: 22px 18px 20px }
+.pipe .step .fails { font-size: 14px; color: var(--muted); border-top: 1px dashed var(--line); padding-top: 10px }
+.pipe .step .fails b { color: var(--fg); font-weight: 600 }
+.ts-table { margin-top: 28px }
+.ts-table td:nth-child(2) { white-space: nowrap }
+.rules.warn li::before { content: "!"; color: var(--ink) }
+@media (max-width: 900px) { .pipe { grid-template-columns: 1fr } .pipe .step { border-right: 0; border-bottom: 1px solid var(--line) } .pipe .step:last-child { border-bottom: 0 } }
 @media (max-width: 900px) { .contrib { grid-template-columns: 1fr 1fr } .contrib > div:nth-child(3n) { border-right: 1px solid var(--line) } .contrib > div:nth-child(2n) { border-right: 0 } .contrib > div:nth-last-child(-n+3) { border-bottom: 1px solid var(--line) } .contrib > div:nth-last-child(-n+2) { border-bottom: 0 } .contrib-2 { grid-template-columns: 1fr } }
 @media (max-width: 560px) { .contrib { grid-template-columns: 1fr } .contrib > div { border-right: 0 !important; border-bottom: 1px solid var(--line) !important } .contrib > div:last-child { border-bottom: 0 !important } }
 
@@ -402,7 +412,7 @@ footer nav { display: flex; gap: 18px; margin-left: auto; flex-wrap: wrap }
   <div class="wrap">
     <a class="brand" href="#top"><svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" class="mk-bg"/><path d="M6.5 24.5h19" class="mk-base"/><path d="M7 23.5C13 22.6 16.5 19 19.2 15.2S23.2 9.4 24.6 8.3" class="mk-line"/><circle cx="24.8" cy="8.2" r="3.4" class="mk-dot"/></svg>Build Your Product in Public</a>
     <nav class="links" aria-label="Sections">
-      <a href="#how">How it works</a><a href="#demo">Demo</a><a href="#commands">Commands</a><a href="#privacy">Privacy</a><a href="#contribute">Contribute</a><a href="#faq">FAQ</a>
+      <a href="#how">How it works</a><a href="#demo">Demo</a><a href="#commands">Commands</a><a href="#privacy">Privacy</a><a href="#troubleshoot">Troubleshoot</a><a href="#contribute">Contribute</a><a href="#faq">FAQ</a>
     </nav>
     <button class="theme" type="button" aria-label="Switch to dark mode" title="Switch theme">
       <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
@@ -893,6 +903,65 @@ Then tell me to restart you, so I can say "set up build in public" in my project
     </div>
   </section>
 
+  <section id="troubleshoot">
+    <div class="wrap">
+      <div class="head" data-reveal>
+        <div class="eyebrow">Troubleshooting</div>
+        <h2>No gist tonight? <em>The files show where it stopped.</em></h2>
+        <p class="lede">The gist is a pipeline of five steps, and a later step can look fine after an earlier one failed. Each step leaves a file in <code>.buildinpublic/daily/&lt;date&gt;/</code>, so the first missing file tells you where to look. The end of that day's <code>nightly.log</code> tells you why.</p>
+      </div>
+      <div class="steps pipe" data-reveal>
+        <div class="step"><span class="n">1 · Schedule</span><h3>Starts the run</h3><code>daily/&lt;date&gt;/</code><p class="fails"><b>No folder:</b> the computer was off at gist time. A Mac that was only asleep catches up when it wakes.</p></div>
+        <div class="step"><span class="n">2 · Collect</span><h3>Sessions, commits, trends</h3><code>digest.md · trends.md</code><p class="fails"><b>0 sessions:</b> your agent was started in another folder. Codex sessions need <code>zstd</code>.</p></div>
+        <div class="step"><span class="n">3 · Brief</span><h3>Your agent writes it</h3><code>brief.md</code><p class="fails"><b>Missing:</b> the terminal agent's sign-in expired, or you were offline. Nobody is there to sign in again.</p></div>
+        <div class="step"><span class="n">4 · Check</span><h3>Every link opened</h3><code>brief-check.json</code><p class="fails"><b>Errors:</b> a section is missing or a link is dead. They're flagged at the top of the email.</p></div>
+        <div class="step"><span class="n">5 · Deliver</span><h3>Notification and email</h3><code>nightly.log</code><p class="fails"><b>No email:</b> stuck in Mail's Outbox, or Gmail rejected the password.</p></div>
+      </div>
+      <div class="tablewrap ts-table" data-reveal>
+        <table>
+          <thead><tr><th>What you see</th><th>Stopped at</th><th>Why</th><th>Fix</th></tr></thead>
+          <tbody>
+            <tr><td>No folder for that day</td><td>Schedule</td><td>The computer was off at gist time</td><td>Rerun it: <code>nightly.sh "$PWD" &lt;date&gt;</code></td></tr>
+            <tr><td><code>digest.md</code>, no <code>brief.md</code></td><td>Brief</td><td><code>OAuth session expired</code>: the terminal <code>claude</code> sign-in expired. Signing in to the desktop app doesn't renew it.</td><td><code>claude</code>, then <code>/login</code></td></tr>
+            <tr><td>Log says <code>emailed via mail-app</code>, inbox empty</td><td>Deliver</td><td>Apple Mail accepted it but didn't send it</td><td>Check Mail's Outbox and account, or switch to Gmail SMTP</td></tr>
+            <tr><td>Log ends in <code>SMTPServerDisconnected</code></td><td>Deliver</td><td>Gmail rejected the password: it needs a 16-letter app password</td><td>Create an app password, then <code>security add-generic-password -U …</code></td></tr>
+            <tr><td><code>Not authorised to send Apple events</code></td><td>Deliver</td><td>macOS blocked the script from using Mail</td><td>Run <code>notify.py --test</code> from Terminal and click Allow</td></tr>
+            <tr><td>The log is always empty</td><td>Logging</td><td>Claude Code reads <code>CLAUDE.md</code>, not <code>AGENTS.md</code></td><td>Put the rule, or <code>@AGENTS.md</code>, in <code>CLAUDE.md</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="contrib-2" data-reveal>
+        <div>
+          <h3>Easy to miss</h3>
+          <ul class="rules warn">
+            <li><span><b>"Emailed" isn't "delivered".</b> With Apple Mail, the log only proves Mail took the message.</span></li>
+            <li><span><b>Two sign-ins.</b> The nightly run uses the terminal agent, not the desktop app.</span></li>
+            <li><span><b>The Keychain account must match</b> <code>smtp_user</code> exactly. A placeholder address is never found.</span></li>
+            <li><span><b>Nothing is saved</b> until you retype the password and press Return. In zsh, <code>&lt;…&gt;</code> is a redirect, not a placeholder.</span></li>
+            <li><span><b>Pulled an update?</b> Run <code>sh install.sh</code> again: agents use the installed copy.</span></li>
+          </ul>
+        </div>
+        <div class="term">
+<pre><span class="d"># 1. what's broken (read-only, no network)</span>
+<span class="p">$</span> python3 &lt;skill&gt;/scripts/doctor.py --repo .
+<span class="d"># 2. where the last run stopped, and why</span>
+<span class="p">$</span> ls .buildinpublic/daily/&lt;date&gt;/
+<span class="p">$</span> tail -20 .buildinpublic/daily/&lt;date&gt;/nightly.log
+<span class="d"># 3. test one step at a time</span>
+<span class="p">$</span> claude -p "Reply with just OK" &lt; /dev/null
+<span class="p">$</span> python3 &lt;skill&gt;/scripts/notify.py --test --no-desktop
+<span class="d"># 4. rerun the day, or just resend its gist</span>
+<span class="p">$</span> sh &lt;skill&gt;/scripts/nightly.sh "$PWD" &lt;date&gt;
+<span class="p">$</span> python3 &lt;skill&gt;/scripts/notify.py --date &lt;date&gt;</pre>
+        </div>
+      </div>
+      <div class="cta-row" style="margin-top:28px">
+        <a class="pill solid" href="https://github.com/chetanya1998/build-in-public/blob/main/skills/build-in-public/TROUBLESHOOTING.md">Every failure and its fix</a>
+        <span class="note">Or ask your agent: "why didn't I get my gist?" The guide is installed with the skill.</span>
+      </div>
+    </div>
+  </section>
+
   <section id="contribute">
     <div class="wrap">
       <div class="head" data-reveal>
@@ -944,6 +1013,7 @@ Then tell me to restart you, so I can say "set up build in public" in my project
       <details><summary>How does it know what I did?</summary><p>It reads the session files Claude Code, Codex and Antigravity already save on your computer, and your git history. It doesn't record your screen or keystrokes.</p></details>
       <details><summary>What if nothing interesting happened today?</summary><p>The summary says so and tells you why: only maintenance, no measurable result, nothing visual. Then it suggests low-effort posts and what to capture tomorrow. It won't pad a weak day into a fake story.</p></details>
       <details><summary>I do client work. Is that safe?</summary><p>Add the folder to the exclude list and it's never read. Or leave the project journal only: you get the log, and it's never used for content.</p></details>
+      <details><summary>I didn't get my gist. What now?</summary><p>Look in <code>.buildinpublic/daily/&lt;date&gt;/</code>: the first missing file shows which step stopped, and the end of <code>nightly.log</code> shows why. <a href="#troubleshoot">Troubleshooting</a> covers the common causes, or ask your agent "why didn't I get my gist?".</p></details>
       <details><summary>Can I get the gist by email?</summary><p>Yes, and it needs only your address. On macOS it's sent through Apple Mail, on Linux through sendmail. On Windows the CLI uses a Gmail app password stored in Credential Manager.</p></details>
     </div>
   </section>

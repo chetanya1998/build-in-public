@@ -1,6 +1,6 @@
 ---
 name: build-in-public
-description: Personal build-in-public content strategist that lives in the user's project repo. Logs what the user builds during Claude Code, Codex and Antigravity sessions, asks before capturing terminal or browser output, searches the internet for trends near the project and the day's work, sends a scheduled daily gist (notification, plus email if the user gives an address) with a list of suggested posts, drafts the one the user picks, and can add approved posts and images to the user's commits so they're on GitHub. Never posts. With the optional `buildinpublic` CLI it also journals every session across all projects (macOS, Windows, Linux) and reminds the user when they haven't posted. Use for "build in public", "log this", "capture this", "daily gist", "build in public brief", "review my posts", "my posts", "today's posts", "show post 2", "write post 2", "what should I post", "build in public help", "help?", weekly recap, "what did I do today/this week", "across my projects", and Build Your Product in Public reminders.
+description: Personal build-in-public content strategist that lives in the user's project repo. Logs what the user builds during Claude Code, Codex and Antigravity sessions, asks before capturing terminal or browser output, searches the internet for trends near the project and the day's work, sends a scheduled daily gist (notification, plus email if the user gives an address) with a list of suggested posts, drafts the one the user picks, and can add approved posts and images to the user's commits so they're on GitHub. Never posts. With the optional `buildinpublic` CLI it also journals every session across all projects (macOS, Windows, Linux) and reminds the user when they haven't posted. Use for "build in public", "log this", "capture this", "daily gist", "build in public brief", "review my posts", "my posts", "today's posts", "show post 2", "write post 2", "what should I post", "build in public help", "help?", weekly recap, "what did I do today/this week", "across my projects", Build Your Product in Public reminders, and "I didn't get my gist" / "why didn't it work" troubleshooting.
 ---
 
 # Build Your Product in Public
@@ -46,7 +46,7 @@ Templates are in `templates/` and scripts in `scripts/`, next to this file (`<sk
 2. If `buildinpublic --version` works, the CLI commands too (run `buildinpublic menu`, which prints them all when it isn't in a terminal), grouped as journal, posts and reminders, screenshots, projects, setup.
 Keep each line to the command and what it's for. Point terminal users to `python3 <skill-dir>/scripts/menu.py` and `buildinpublic menu`, which list everything and run the one they pick.
 
-Choose the mode from what the user says. At the end of a task, use **Log**. When something worth showing just happened, use **Capture**. When the scheduled run fires, or the user asks for the brief, use **Daily gist**. When they want to see or choose posts, use **Review and choose**.
+Choose the mode from what the user says. At the end of a task, use **Log**. When something worth showing just happened, use **Capture**. When the scheduled run fires, or the user asks for the brief, use **Daily gist**. When they want to see or choose posts, use **Review and choose**. When something didn't work ("no email", "no brief", "it didn't run"), use **Troubleshoot**.
 
 ---
 
@@ -226,6 +226,12 @@ If your session context contains a `<build-in-public>` block, or that file exist
 Don't nag: once per session at most.
 
 **Screenshot offers.** The CLI notices localhost dev servers and agent browser tests, and asks through a native dialog. If there was no desktop to ask on, the session-start context includes a **Screenshot offer**. Ask about it, and only on a yes run `buildinpublic shot url <url>`. Then run `buildinpublic shot --clear`.
+
+---
+
+## Mode 8: Troubleshoot ("I didn't get my gist", "why didn't it work")
+
+Read `TROUBLESHOOTING.md` next to this file and follow it from the top: run `doctor.py`, find where the run stopped from which files exist in `.buildinpublic/daily/<day>/`, and match the end of that day's `nightly.log` to a row. Check before you conclude: "Gist emailed … via mail-app" only means Apple Mail accepted it, not that it was delivered. Give the user the exact fix, and do the steps that don't need them (rerunning a day, resending with `notify.py --date`). Steps that need them stay theirs: signing in to an agent, creating an app password, saving it in the Keychain. **Never read out or print a password.** To check one, print only its length and character types, as the guide shows.
 
 ---
 

@@ -411,6 +411,23 @@ python3 ~/.claude/skills/build-in-public/scripts/doctor.py
 
 It checks your tools (Python, git, zstd, Playwright, your agent's CLI), the `.buildinpublic/` setup, the logging rules, the git hook, gist delivery (notification and how the email would be sent), sharing posts with commits, the schedule, which sessions it can find for the last 7 days, and errors from the last run. It's read-only and makes no network calls. Paste its output into an [issue](https://github.com/chetanya1998/build-in-public/issues) if you're stuck.
 
+### Points of failure
+
+The gist is a pipeline (schedule → collect → trends → your agent writes the brief → link check → notification and email), and a later step can look fine after an earlier one failed. **The files in `.buildinpublic/daily/<date>/` tell you where a run stopped**, and the end of that day's `nightly.log` tells you why:
+
+| What you see | Where it stopped | Most common cause | Fix |
+|---|---|---|---|
+| No folder for that day | Schedule | The computer was off at gist time | `sh <skill>/scripts/nightly.sh "$PWD" <date>` reruns it |
+| `digest.md` and `trends.md`, no `brief.md` | The agent writing the brief | `OAuth session expired`: the terminal `claude` sign-in expired. Signing in to the desktop app doesn't renew it. | `claude`, then `/login` |
+| `brief.md`, no email, log says `via mail-app` | Apple Mail | Mail accepted it but didn't send it: stuck in the Outbox | Check Mail's Outbox and account, or switch to Gmail SMTP |
+| `brief.md`, no email, log ends in `SMTPServerDisconnected` | Gmail login | The saved password isn't a 16-letter app password | Create an [app password](https://myaccount.google.com/apppasswords) and save it with `security add-generic-password -U …` |
+| The log is always empty | Logging | Claude Code reads `CLAUDE.md`, not `AGENTS.md` | Put the rule, or `@AGENTS.md`, in `CLAUDE.md` |
+| `Claude Code: 0 session(s)` | Collect | The agent was started in a different folder | Start it inside the project |
+
+Resend one day's gist with `python3 <skill>/scripts/notify.py --date <date>`. Test email on its own with `notify.py --test --no-desktop`.
+
+The full list, with every message and its fix, is in **[TROUBLESHOOTING.md](skills/build-in-public/TROUBLESHOOTING.md)**. It's installed with the skill, so you can also just ask your agent *"why didn't I get my gist?"*.
+
 ## 🔒 Privacy
 
 | | |
