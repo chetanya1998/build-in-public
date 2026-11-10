@@ -111,8 +111,12 @@ curl -fsSL https://raw.githubusercontent.com/chetanya1998/build-in-public/main/i
 ```
 ```powershell
 # Windows (PowerShell)
-irm https://raw.githubusercontent.com/chetanya1998/build-in-public/main/install.ps1 | iex
+git clone https://github.com/chetanya1998/build-in-public
+cd build-in-public
+powershell -ExecutionPolicy Bypass -File install.ps1
 ```
+
+`-ExecutionPolicy Bypass` is needed because Windows blocks downloaded scripts by default; it applies to this one run only. Without cloning, `irm https://raw.githubusercontent.com/chetanya1998/build-in-public/main/install.ps1 | iex` works too, but still needs Git installed.
 
 Or `uv tool install "build-in-public[full] @ git+https://github.com/chetanya1998/build-in-public"`, then `buildinpublic setup`. The CLI also installs this repo's skill into every agent it finds, so on Windows it's the easiest way to get both.
 
@@ -190,10 +194,30 @@ If nothing's worth posting, it asks what you're working on and turns your answer
 
 ### 2. Install the skill
 
+**Easiest: ask your agent.** Paste this into Claude Code, Codex or Antigravity:
+
+```text
+Install the Build Your Product in Public skill from https://github.com/chetanya1998/build-in-public
+Clone the repo, go into the folder, and run its installer:
+- macOS or Linux: sh install.sh
+- Windows: powershell -ExecutionPolicy Bypass -File install.ps1
+Then tell me to restart you, so I can say "set up build in public" in my project.
+```
+
+**Or run it yourself** on macOS or Linux:
+
 ```sh
-git clone https://github.com/chetanya1998/build-in-public.git
+git clone https://github.com/chetanya1998/build-in-public
 cd build-in-public
 sh install.sh
+```
+
+On **Windows**, the skill's scripts need macOS or Linux, so you install the [CLI](#-across-all-your-projects-optional), which brings the skill into every agent too:
+
+```powershell
+git clone https://github.com/chetanya1998/build-in-public
+cd build-in-public
+powershell -ExecutionPolicy Bypass -File install.ps1
 ```
 
 This installs it for your user, in every supported agent, so it works in all your projects:

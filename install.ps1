@@ -1,7 +1,18 @@
 # Build Your Product in Public · installer for Windows (PowerShell)
+#   git clone https://github.com/chetanya1998/build-in-public
+#   cd build-in-public
+#   powershell -ExecutionPolicy Bypass -File install.ps1
+# Or without cloning (needs Git, which pip uses to fetch the repo):
 #   irm https://raw.githubusercontent.com/chetanya1998/build-in-public/main/install.ps1 | iex
 $ErrorActionPreference = "Stop"
 $Pkg = if ($env:BIP_PACKAGE) { $env:BIP_PACKAGE } else { "git+https://github.com/chetanya1998/build-in-public.git" }
+$UvPkg = $Pkg
+# Run from a clone of this repo: install that copy instead of downloading it again.
+$here = if ($PSScriptRoot) { Join-Path $PSScriptRoot "pyproject.toml" } else { "" }
+if (-not $env:BIP_PACKAGE -and $here -and (Test-Path $here) -and (Select-String -Quiet -Path $here -Pattern 'name = "build-in-public"')) {
+  $Pkg = $PSScriptRoot
+  $UvPkg = ([System.Uri]$PSScriptRoot).AbsoluteUri  # uv wants a file:/// URL for a local folder
+}
 
 function Say($m) { Write-Host $m -ForegroundColor Cyan }
 $py = (Get-Command py -ErrorAction SilentlyContinue)
@@ -11,7 +22,7 @@ if (-not $py) { Write-Host "Python 3.9+ is required: winget install Python.Pytho
 
 Say "Installing Build Your Product in Public…"
 if (Get-Command uv -ErrorAction SilentlyContinue) {
-  uv tool install --force "build-in-public[full] @ $Pkg"
+  uv tool install --force "build-in-public[full] @ $UvPkg"
 } elseif (Get-Command pipx -ErrorAction SilentlyContinue) {
   pipx install --force $Pkg; pipx inject build-in-public playwright psutil keyring pygments
 } else {
@@ -47,4 +58,6 @@ $bip = Get-Command buildinpublic -ErrorAction SilentlyContinue
 try { if ($bip) { buildinpublic install-browser } else { & $py.Source @pyArgs -m buildinpublic install-browser } } catch { Write-Host "  (skipped: run 'buildinpublic install-browser' later)" }
 
 Say "Starting setup…"
-if (Get-Command buildinpublic -ErrorAction SilentlyContinue) { buildinpublic setup } else { & $py.Source @pyArgs -m buildinpublic setup }
+# Asks a few questions in a terminal; run by an agent (no keyboard), it takes the defaults instead.
+$setupArgs = if ([Console]::IsInputRedirected) { @("setup", "--yes") } else { @("setup") }
+if (Get-Command buildinpublic -ErrorAction SilentlyContinue) { buildinpublic @setupArgs } else { & $py.Source @pyArgs -m buildinpublic @setupArgs }

@@ -15,6 +15,10 @@ while [ $# -gt 0 ]; do
   esac
   shift
 done
+case "$ONLY" in
+  ""|claude|codex|antigravity) ;;
+  *) echo "Unknown agent for --only: $ONLY (use claude, codex or antigravity)"; exit 1 ;;
+esac
 
 if [ "$MODE" = project ]; then
   CLAUDE_DIR=".claude/skills"
@@ -37,6 +41,15 @@ echo "Installing Build Your Product in Public ($MODE)…"
 [ -z "$ONLY" ] || [ "$ONLY" = claude ]      && copy "Claude Code" "$CLAUDE_DIR"
 [ -z "$ONLY" ] || [ "$ONLY" = codex ]       && copy "Codex"       "$CODEX_DIR"
 if [ -z "$ONLY" ] || [ "$ONLY" = antigravity ]; then
-  [ "$AG_DIR" = "$CODEX_DIR" ] || copy "Antigravity" "$AG_DIR"
+  # In a project, Antigravity reads .agents/skills like Codex: copy it unless Codex just did.
+  if [ "$AG_DIR" = "$CODEX_DIR" ] && [ -z "$ONLY" ]; then
+    echo "  ✓ Antigravity → $AG_DIR/build-in-public (shared with Codex)"
+  else
+    copy "Antigravity" "$AG_DIR"
+  fi
 fi
-echo "Done. In any project, ask your agent: \"set up build in public\"."
+if [ "$MODE" = project ]; then
+  echo "Done. Open this project in your agent and say: \"set up build in public\"."
+else
+  echo "Done. In any project, ask your agent: \"set up build in public\"."
+fi

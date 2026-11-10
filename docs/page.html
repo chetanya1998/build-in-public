@@ -359,6 +359,40 @@ footer nav { display: flex; gap: 18px; margin-left: auto; flex-wrap: wrap }
 .rules b { color: var(--fg); font-weight: 600 }
 @media (max-width: 900px) { .contrib { grid-template-columns: 1fr 1fr } .contrib > div:nth-child(3n) { border-right: 1px solid var(--line) } .contrib > div:nth-child(2n) { border-right: 0 } .contrib > div:nth-last-child(-n+3) { border-bottom: 1px solid var(--line) } .contrib > div:nth-last-child(-n+2) { border-bottom: 0 } .contrib-2 { grid-template-columns: 1fr } }
 @media (max-width: 560px) { .contrib { grid-template-columns: 1fr } .contrib > div { border-right: 0 !important; border-bottom: 1px solid var(--line) !important } .contrib > div:last-child { border-bottom: 0 !important } }
+
+/* install box: the "Your agent" prompt wraps like prose */
+.cmd.prompt { flex-direction: column; gap: 8px }
+.cmd.prompt pre { white-space: pre-wrap; overflow-x: visible; font: 13.5px/1.6 var(--display); padding-bottom: 0; width: 100% }
+.prompt-note { font-size: 12.5px; color: var(--muted) }
+
+/* choose how to install */
+.chooser { display: grid; grid-template-columns: 1fr 1.25fr; gap: 20px; align-items: start }
+.chooser > * { min-width: 0 }
+.ch-controls { display: grid; gap: 18px }
+.ch-group { display: grid; gap: 8px }
+.ch-label { font: 500 12px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted) }
+.ch-group button { text-align: left; font: 500 15px/1.3 var(--display); color: var(--fg); background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; cursor: pointer }
+.ch-group button small { display: block; font-size: 12.5px; color: var(--muted); font-weight: 400; margin-top: 2px }
+.ch-group button:hover { border-color: var(--muted) }
+.ch-group button[aria-checked="true"] { border-color: var(--ink); background: var(--ink-soft); box-shadow: inset 3px 0 0 var(--ink) }
+.ch-row { display: flex; flex-wrap: wrap; gap: 8px }
+.ch-row button { padding: 9px 14px; border-radius: 999px; font-size: 14px }
+.ch-row button[aria-checked="true"] { box-shadow: none }
+.ch-agents.off .ch-row { opacity: .4; pointer-events: none }
+.ch-auto { font-size: 13.5px; color: var(--muted) }
+.ch-auto code { color: var(--fg) }
+.ch-term { position: relative; padding-right: 76px }
+.ch-term + .ch-term { margin-top: 10px }
+.ch-os { display: block; font: 500 11px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--term-dim); margin-bottom: 8px }
+.ch-term .copy { position: absolute; top: 12px; right: 12px }
+.ch-term pre { white-space: pre-wrap; word-break: break-word }
+.ch-term .a { color: var(--term-dim) }
+.ch-facts { margin: 16px 0 0; display: grid; grid-template-columns: 96px 1fr; gap: 10px 14px; font-size: 15px }
+.ch-facts dt { font: 500 12px/1.9 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted) }
+.ch-facts dd { margin: 0; color: var(--fg) }
+.ch-facts code { font-size: 12.5px; background: var(--bg); border: 1px solid var(--line); padding: 1px 6px; border-radius: 5px; overflow-wrap: anywhere }
+@media (max-width: 860px) { .chooser { grid-template-columns: 1fr } }
+@media (max-width: 480px) { .ch-facts { grid-template-columns: 1fr; gap: 2px } .ch-facts dd { margin-bottom: 10px } }
 @media (prefers-reduced-motion: reduce) { .entry, .brief { animation: none } }
 @media (max-width: 520px) { section { padding-block: 56px } .hero { padding-block: 40px 56px } }
 </style>
@@ -389,19 +423,27 @@ footer nav { display: flex; gap: 18px; margin-left: auto; flex-wrap: wrap }
 
         <div class="install" data-tabs>
           <div class="tabbar"><div class="tabs" role="tablist" aria-label="Install command">
-            <button class="tab" role="tab" id="t-unix" aria-selected="true" data-os="unix">macOS · Linux</button>
-            <button class="tab" role="tab" id="t-win" aria-selected="false" data-os="win">Windows</button>
-            <button class="tab" role="tab" id="t-uv" aria-selected="false" data-os="cli">All projects (CLI)</button>
+            <button class="tab" role="tab" aria-selected="true" data-os="agent">Your agent</button>
+            <button class="tab" role="tab" aria-selected="false" data-os="unix">macOS · Linux</button>
+            <button class="tab" role="tab" aria-selected="false" data-os="win">Windows</button>
+            <button class="tab" role="tab" aria-selected="false" data-os="cli">All projects</button>
           </div><button class="copy" type="button">Copy</button></div>
-          <div class="cmd" data-panel="unix"><pre><span class="p">$ </span>git clone https://github.com/chetanya1998/build-in-public
+          <div class="cmd prompt" data-panel="agent"><pre>Install the Build Your Product in Public skill from https://github.com/chetanya1998/build-in-public
+Clone the repo, go into the folder, and run its installer:
+- macOS or Linux: sh install.sh
+- Windows: powershell -ExecutionPolicy Bypass -File install.ps1
+Then tell me to restart you, so I can say "set up build in public" in my project.</pre><p class="prompt-note">Paste into Claude Code, Codex or Antigravity: any agent that can run commands.</p></div>
+          <div class="cmd" data-panel="unix" hidden><pre><span class="p">$ </span>git clone https://github.com/chetanya1998/build-in-public
 <span class="p">$ </span>cd build-in-public &amp;&amp; sh install.sh</pre></div>
-          <div class="cmd ps" data-panel="win" hidden><pre><span class="p">PS&gt; </span>irm https://raw.githubusercontent.com/chetanya1998/build-in-public/main/install.ps1 | iex</pre></div>
+          <div class="cmd ps" data-panel="win" hidden><pre><span class="p">PS&gt; </span>git clone https://github.com/chetanya1998/build-in-public
+<span class="p">PS&gt; </span>cd build-in-public
+<span class="p">PS&gt; </span>powershell -ExecutionPolicy Bypass -File install.ps1</pre></div>
           <div class="cmd" data-panel="cli" hidden><pre><span class="p">$ </span>curl -fsSL https://raw.githubusercontent.com/chetanya1998/build-in-public/main/install-cli.sh | sh</pre></div>
         </div>
         <div class="cta-row">
           <a class="pill solid" href="#quickstart">Get started</a>
           <a class="pill" href="https://github.com/chetanya1998/build-in-public">Star on GitHub</a>
-          <span class="note">Python 3.9+ · no API keys · no passwords · never posts for you</span>
+          <span class="note">Python 3.9+ · no API keys · no passwords · never posts for you · <a href="#install">One project or all of them?</a></span>
         </div>
         <div class="agents" aria-label="Works with">
           <span class="chip">Claude Code</span><span class="chip">Codex</span><span class="chip">Antigravity</span><span class="chip">macOS</span><span class="chip">Windows</span><span class="chip">Linux</span>
@@ -494,6 +536,44 @@ footer nav { display: flex; gap: 18px; margin-left: auto; flex-wrap: wrap }
         <div class="step"><span class="n">2 · Capture</span><h3>Only with your OK</h3><p>Tests green after a fight, a benchmark, a new screen: your agent asks before saving terminal output or a browser screenshot.</p><code>1) terminal 2) browser 3) skip</code></div>
         <div class="step"><span class="n">3 · Gist</span><h3>At the time you choose</h3><p>It reads the day's sessions and commits, searches for the trends nearest to your work, and sends 5 to 7 suggested posts by notification and optional email.</p><code>brief_time 19:00</code></div>
         <div class="step"><span class="n">4 · Post</span><h3>You pick, it drafts</h3><p>Say "write post 2". Revise it, approve it, and it can ride along with your next commit so you can copy it from GitHub.</p><code>.buildinpublic/posts/</code></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="install">
+    <div class="wrap">
+      <div class="head" data-reveal>
+        <div class="eyebrow">Choose how to install</div>
+        <h2>One project, all of them, <em>or every session.</em></h2>
+        <p class="lede">Use one agent or all three. Pick what you want tracked, and copy the command.</p>
+      </div>
+      <div class="chooser" data-reveal data-chooser>
+        <div class="ch-controls">
+          <div class="ch-group" role="radiogroup" aria-label="Where">
+            <span class="ch-label">Where</span>
+            <button type="button" role="radio" data-scope="project">Just this project<small>Only this repo's sessions</small></button>
+            <button type="button" role="radio" data-scope="user" aria-checked="true">All my projects<small>Set up each project you post about</small></button>
+            <button type="button" role="radio" data-scope="every">Every session, automatically<small>Every project, no setup per project</small></button>
+          </div>
+          <div class="ch-group ch-agents" role="radiogroup" aria-label="Which agents">
+            <span class="ch-label">Which agents</span>
+            <div class="ch-row">
+              <button type="button" role="radio" data-agent="all" aria-checked="true">All three</button>
+              <button type="button" role="radio" data-agent="claude">Claude Code</button>
+              <button type="button" role="radio" data-agent="codex">Codex</button>
+              <button type="button" role="radio" data-agent="antigravity">Antigravity</button>
+            </div>
+            <p class="ch-auto" hidden>Finds whichever of Claude Code, Codex and Antigravity you have. Add another later and run <code>buildinpublic setup</code> again.</p>
+          </div>
+        </div>
+        <div class="ch-result" aria-live="polite">
+          <div data-ch-cmds></div>
+          <dl class="ch-facts">
+            <dt>Installs to</dt><dd data-ch-where></dd>
+            <dt>Tracks</dt><dd data-ch-tracks></dd>
+            <dt>Then</dt><dd data-ch-then></dd>
+          </dl>
+        </div>
       </div>
     </div>
   </section>
@@ -777,13 +857,21 @@ footer nav { display: flex; gap: 18px; margin-left: auto; flex-wrap: wrap }
       <div>
         <div class="install" data-tabs style="margin-top:0">
           <div class="tabbar"><div class="tabs" role="tablist" aria-label="Install command">
-            <button class="tab" role="tab" aria-selected="true" data-os="unix">macOS · Linux</button>
+            <button class="tab" role="tab" aria-selected="true" data-os="agent">Your agent</button>
+            <button class="tab" role="tab" aria-selected="false" data-os="unix">macOS · Linux</button>
             <button class="tab" role="tab" aria-selected="false" data-os="win">Windows</button>
-            <button class="tab" role="tab" aria-selected="false" data-os="cli">All projects (CLI)</button>
+            <button class="tab" role="tab" aria-selected="false" data-os="cli">All projects</button>
           </div><button class="copy" type="button">Copy</button></div>
-          <div class="cmd" data-panel="unix"><pre><span class="p">$ </span>git clone https://github.com/chetanya1998/build-in-public
+          <div class="cmd prompt" data-panel="agent"><pre>Install the Build Your Product in Public skill from https://github.com/chetanya1998/build-in-public
+Clone the repo, go into the folder, and run its installer:
+- macOS or Linux: sh install.sh
+- Windows: powershell -ExecutionPolicy Bypass -File install.ps1
+Then tell me to restart you, so I can say "set up build in public" in my project.</pre><p class="prompt-note">Paste into Claude Code, Codex or Antigravity: any agent that can run commands.</p></div>
+          <div class="cmd" data-panel="unix" hidden><pre><span class="p">$ </span>git clone https://github.com/chetanya1998/build-in-public
 <span class="p">$ </span>cd build-in-public &amp;&amp; sh install.sh</pre></div>
-          <div class="cmd ps" data-panel="win" hidden><pre><span class="p">PS&gt; </span>irm https://raw.githubusercontent.com/chetanya1998/build-in-public/main/install.ps1 | iex</pre></div>
+          <div class="cmd ps" data-panel="win" hidden><pre><span class="p">PS&gt; </span>git clone https://github.com/chetanya1998/build-in-public
+<span class="p">PS&gt; </span>cd build-in-public
+<span class="p">PS&gt; </span>powershell -ExecutionPolicy Bypass -File install.ps1</pre></div>
           <div class="cmd" data-panel="cli" hidden><pre><span class="p">$ </span>curl -fsSL https://raw.githubusercontent.com/chetanya1998/build-in-public/main/install-cli.sh | sh</pre></div>
         </div>
         <div class="term" style="margin-top:14px">
@@ -844,7 +932,7 @@ footer nav { display: flex; gap: 18px; margin-left: auto; flex-wrap: wrap }
     <div class="wrap">
       <div class="head"><div class="eyebrow">FAQ</div><h2>Questions</h2></div>
       <details><summary>Does it post to X or LinkedIn for me?</summary><p>No. It suggests posts and drafts the one you pick. You post it yourself, then tell your agent "I posted it" so later posts can call back to it.</p></details>
-      <details><summary>Does it work on Windows?</summary><p>Yes, through the <code>buildinpublic</code> CLI, which installs with one PowerShell line, schedules with Task Scheduler and notifies with Windows toasts. The skill's per-project scripts need macOS or Linux.</p></details>
+      <details><summary>Does it work on Windows?</summary><p>Yes, through the <code>buildinpublic</code> CLI, which you install by cloning the repo and running <code>install.ps1</code> (Git and Python needed), schedules with Task Scheduler and notifies with Windows toasts. The skill's per-project scripts need macOS or Linux.</p></details>
       <details><summary>Do I need an API key?</summary><p>No. The brief is written by the agent you already use, Claude Code or Codex, running headless at your gist time. Without one, the gist still arrives from what was found that day, and your agent writes the rest when you ask.</p></details>
       <details><summary>How does it know what I did?</summary><p>It reads the session files Claude Code, Codex and Antigravity already save on your computer, and your git history. It doesn't record your screen or keystrokes.</p></details>
       <details><summary>What if nothing interesting happened today?</summary><p>The summary says so and tells you why: only maintenance, no measurable result, nothing visual. Then it suggests low-effort posts and what to capture tomorrow. It won't pad a weak day into a fake story.</p></details>
@@ -997,7 +1085,7 @@ footer nav { display: flex; gap: 18px; margin-left: auto; flex-wrap: wrap }
     group.querySelectorAll('.tab').forEach(function (t) { t.setAttribute('aria-selected', String(t.dataset.os === os)); });
     group.querySelectorAll('[data-panel]').forEach(function (p) { p.hidden = p.dataset.panel !== os; });
   }
-  var guess = /Win/i.test(navigator.userAgent) ? 'win' : 'unix';
+  var guess = 'agent';  // the prompt works on every OS
   document.querySelectorAll('[data-tabs]').forEach(function (g) {
     selectOs(g, guess);
     g.querySelectorAll('.tab').forEach(function (t) {
@@ -1006,6 +1094,73 @@ footer nav { display: flex; gap: 18px; margin-left: auto; flex-wrap: wrap }
       });
     });
   });
+
+  // choose how to install: where x which agents -> command, paths, what's tracked
+  var chooser = document.querySelector('[data-chooser]');
+  if (chooser) {
+    var GH = 'https://github.com/chetanya1998/build-in-public';
+    var esc = function (t) { return t.replace(/&/g, '&amp;').replace(/</g, '&lt;'); };
+    var c = function (t) { return '<span class="a">' + esc(t) + '</span>'; };  // comments aren't copied
+    var names = { all: 'Claude Code, Codex and Antigravity', claude: 'Claude Code', codex: 'Codex', antigravity: 'Antigravity' };
+    var where = {
+      project: { claude: ['.claude/skills/'], codex: ['.agents/skills/'], antigravity: ['.agents/skills/'], all: ['.claude/skills/', '.agents/skills/ (Codex and Antigravity share it)'] },
+      user: { claude: ['~/.claude/skills/'], codex: ['~/.agents/skills/'], antigravity: ['~/.gemini/config/skills/'], all: ['~/.claude/skills/', '~/.agents/skills/', '~/.gemini/config/skills/'] }
+    };
+    var code = function (list, suffix) { return list.map(function (w) { var i = w.indexOf(' '); return '<code>' + esc(i < 0 ? w : w.slice(0, i)) + '</code>' + (i < 0 ? '' : esc(w.slice(i))); }).join(', ') + (suffix || ''); };
+    var state = { scope: 'user', agent: 'all' };
+    var render = function () {
+      var only = state.agent === 'all' ? '' : ' --only ' + state.agent, cmd, w, tracks, then;
+      if (state.scope === 'project') {
+        cmd = '$ git clone ' + GH + ' ~/build-in-public\n$ cd ~/code/your-project' + '\u0001' + '\n$ sh ~/build-in-public/install.sh --project' + only;
+        w = code(where.project[state.agent], ' inside this project, as part of its repo');
+        tracks = 'This project\'s sessions in ' + names[state.agent] + '. Nothing from your other projects.';
+        then = 'Restart your agent, open the project and say "set up build in public". On Windows, use Every session.';
+      } else if (state.scope === 'user') {
+        cmd = '$ git clone ' + GH + '\n$ cd build-in-public && sh install.sh' + only;
+        w = code(where.user[state.agent], ' for your user');
+        tracks = 'Each project where you say "set up build in public", in ' + names[state.agent] + '. One quick setup per project.';
+        then = 'Restart your agent. On Windows, use Every session.';
+      } else {
+        cmd = [['macOS · Linux', '$ curl -fsSL https://raw.githubusercontent.com/chetanya1998/build-in-public/main/install-cli.sh | sh'],
+               ['Windows (PowerShell)', 'PS> git clone ' + GH + '\nPS> cd build-in-public\nPS> powershell -ExecutionPolicy Bypass -File install.ps1']];
+        w = 'The <code>buildinpublic</code> command, plus the skill in every agent it finds. Your journal stays in <code>~/.buildinpublic/</code>.';
+        tracks = 'Every session in every project. Claude Code and Codex as each session ends, Antigravity every hour. New projects stay journal-only until you turn posts on.';
+        then = 'Answer a few setup questions. Try <code>buildinpublic today</code> after your next session.';
+      }
+      var blocks = typeof cmd === 'string' ? [['', cmd]] : cmd;
+      chooser.querySelector('[data-ch-cmds]').innerHTML = blocks.map(function (b) {
+        var body = b[1].replace(/^(\$|PS>) /gm, '\u0000$1 ').replace(/[&<]/g, function (ch) { return ch === '&' ? '&amp;' : '&lt;'; })
+          .replace(/\u0000(\$|PS&lt;|PS>) /g, function (m, p1) { return '<span class="p">' + p1 + ' </span>'; })
+          .replace('\u0001', '   <span class="a"># your project</span>');
+        return '<div class="term ch-term"><button class="copy ch-copy" type="button">Copy</button>' +
+               (b[0] ? '<span class="ch-os">' + esc(b[0]) + '</span>' : '') + '<pre>' + body + '</pre></div>';
+      }).join('');
+      chooser.querySelector('[data-ch-where]').innerHTML = w;
+      chooser.querySelector('[data-ch-tracks]').innerHTML = esc(tracks).replace(/"set up build in public"/g, '<code>set up build in public</code>').replace(/&lt;code&gt;|&lt;\/code&gt;/g, '');
+      chooser.querySelector('[data-ch-then]').innerHTML = then.indexOf('<code>') >= 0 ? then : esc(then).replace(/"set up build in public"/g, '<code>set up build in public</code>');
+      chooser.querySelectorAll('[data-scope]').forEach(function (b) { b.setAttribute('aria-checked', String(b.dataset.scope === state.scope)); });
+      chooser.querySelectorAll('[data-agent]').forEach(function (b) { b.setAttribute('aria-checked', String(b.dataset.agent === state.agent)); });
+      var auto = state.scope === 'every';
+      chooser.querySelector('.ch-agents').classList.toggle('off', auto);
+      chooser.querySelector('.ch-auto').hidden = !auto;
+    };
+    chooser.addEventListener('click', function (e) {
+      var cp = e.target.closest('.ch-copy');
+      if (cp) {
+        var pre = cp.parentElement.querySelector('pre').cloneNode(true);
+        pre.querySelectorAll('.p, .a').forEach(function (x) { x.remove(); });
+        var text = pre.textContent.split('\n').map(function (l) { return l.replace(/\s+$/, ''); }).join('\n').trim();
+        var done = function () { cp.textContent = 'Copied'; setTimeout(function () { cp.textContent = 'Copy'; }, 1600); };
+        try { navigator.clipboard.writeText(text).then(done, function () {}); } catch (err) {}
+        return;
+      }
+      var b = e.target.closest('[data-scope],[data-agent]');
+      if (!b) return;
+      if (b.dataset.scope) state.scope = b.dataset.scope; else state.agent = b.dataset.agent;
+      render();
+    });
+    render();
+  }
 
   // command groups
   document.querySelectorAll('[data-cmdtabs]').forEach(function (box) {
@@ -1018,7 +1173,7 @@ footer nav { display: flex; gap: 18px; margin-left: auto; flex-wrap: wrap }
   });
 
   // copy buttons copy the command text, without prompts
-  document.querySelectorAll('.copy').forEach(function (b) {
+  document.querySelectorAll('.copy:not(.ch-copy)').forEach(function (b) {
     b.addEventListener('click', function () {
       var box = b.closest('[data-tabs]');
       var src = box ? box.querySelector('[data-panel]:not([hidden]) pre') : b.parentElement.querySelector('pre');

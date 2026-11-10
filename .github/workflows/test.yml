@@ -66,6 +66,27 @@ jobs:
           test -f "$HOME/.claude/skills/build-in-public/SKILL.md"
           grep -q "buildinpublic hook claude-end" "$HOME/.claude/settings.json"
 
+  install-windows:
+    # The Windows steps from the site, as written: run install.ps1 from a clone, with no
+    # keyboard (as an agent would), then check the command and what setup installed.
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - shell: pwsh
+        run: New-Item -ItemType Directory -Force "$env:USERPROFILE\.claude" | Out-Null
+      - shell: pwsh
+        run: powershell -ExecutionPolicy Bypass -File install.ps1
+      - name: command works and setup installed the skill and hooks
+        shell: pwsh
+        run: |
+          $env:Path = [Environment]::GetEnvironmentVariable("Path", "User") + ";" + $env:Path
+          buildinpublic --version
+          if (-not (Test-Path "$env:USERPROFILE\.claude\skills\build-in-public\SKILL.md")) { throw "skill not installed" }
+          if (-not (Select-String -Quiet -Path "$env:USERPROFILE\.claude\settings.json" -Pattern "buildinpublic")) { throw "hooks not installed" }
+
   captures:
     # Same tests with Playwright installed, so capture images are really rendered.
     runs-on: ubuntu-24.04
