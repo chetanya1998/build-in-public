@@ -1,4 +1,4 @@
-# Build Your Product in Public · installer for Windows (PowerShell)
+# Build Your Product in Public - installer for Windows (PowerShell)
 #   git clone https://github.com/chetanya1998/build-in-public
 #   cd build-in-public
 #   powershell -ExecutionPolicy Bypass -File install.ps1
@@ -20,7 +20,7 @@ $pyArgs = @("-3")
 if (-not $py) { $py = (Get-Command python -ErrorAction SilentlyContinue); $pyArgs = @() }
 if (-not $py) { Write-Host "Python 3.9+ is required: winget install Python.Python.3.12"; exit 1 }
 
-Say "Installing Build Your Product in Public…"
+Say "Installing Build Your Product in Public..."
 if (Get-Command uv -ErrorAction SilentlyContinue) {
   uv tool install --force "build-in-public[full] @ $UvPkg"
 } elseif (Get-Command pipx -ErrorAction SilentlyContinue) {
@@ -53,11 +53,15 @@ if (Get-Command uv -ErrorAction SilentlyContinue) {
   }
 }
 
-Say "Installing the browser used for screenshots (Chromium)…"
+Say "Installing the browser used for screenshots (Chromium)..."
 $bip = Get-Command buildinpublic -ErrorAction SilentlyContinue
 try { if ($bip) { buildinpublic install-browser } else { & $py.Source @pyArgs -m buildinpublic install-browser } } catch { Write-Host "  (skipped: run 'buildinpublic install-browser' later)" }
 
-Say "Starting setup…"
+Say "Starting setup..."
 # Asks a few questions in a terminal; run by an agent (no keyboard), it takes the defaults instead.
 $setupArgs = if ([Console]::IsInputRedirected) { @("setup", "--yes") } else { @("setup") }
 if (Get-Command buildinpublic -ErrorAction SilentlyContinue) { buildinpublic @setupArgs } else { & $py.Source @pyArgs -m buildinpublic @setupArgs }
+if ($LASTEXITCODE -ne 0) {
+  Write-Host "Setup didn't finish. Run 'buildinpublic setup' again, or 'buildinpublic doctor' to see what's wrong."
+  exit 1
+}

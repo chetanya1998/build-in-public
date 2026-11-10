@@ -47,5 +47,21 @@ class SkillSourceTest(unittest.TestCase):
                 self.assertIn("Reinstall", str(e.exception))
 
 
+class Cp1252OutputTest(unittest.TestCase):
+    """An agent runs the CLI with output on a pipe; on Windows that pipe is cp1252."""
+
+    def test_cli_prints_check_marks_to_a_cp1252_pipe(self):
+        import os, subprocess
+        with tempfile.TemporaryDirectory() as tmp:
+            env = dict(os.environ, PYTHONIOENCODING="cp1252", BIP_USER_HOME=tmp,
+                       BUILDINPUBLIC_HOME=str(Path(tmp) / ".buildinpublic"), BIP_NO_GUI="1",
+                       PYTHONPATH=str(Path(__file__).resolve().parents[1] / "src"))
+            (Path(tmp) / ".claude").mkdir()
+            r = subprocess.run([sys.executable, "-m", "buildinpublic", "doctor"], env=env,
+                               capture_output=True, text=True, encoding="utf-8", errors="replace")
+            self.assertNotIn("UnicodeEncodeError", r.stderr)
+            self.assertIn("\u2713", r.stdout)
+
+
 if __name__ == "__main__":
     unittest.main()

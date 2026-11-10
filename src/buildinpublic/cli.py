@@ -291,7 +291,20 @@ def cmd_doctor(a):
 
 # ---------------------------------------------------------------- parser
 
+def utf8_output() -> None:
+    """Windows writes to pipes (agents, hooks, redirects) in cp1252, which can't encode the
+    check marks and dots this CLI prints, so setup crashed when an agent ran it."""
+    for stream in (sys.stdout, sys.stderr):
+        enc = (getattr(stream, "encoding", "") or "").lower().replace("-", "")
+        if enc != "utf8" and hasattr(stream, "reconfigure"):
+            try:
+                stream.reconfigure(encoding="utf-8", errors="replace")
+            except (ValueError, OSError):
+                pass
+
+
 def main(argv=None):
+    utf8_output()
     p = argparse.ArgumentParser(prog="buildinpublic", description="Build Your Product in Public: journal every AI coding session and turn it into posts.")
     p.add_argument("--version", action="version", version=__version__)
     sub = p.add_subparsers(dest="cmd", required=True)
