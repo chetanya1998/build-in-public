@@ -80,21 +80,7 @@ At the time you set (`brief_time`, for example 19:00), you get:
 - **A desktop notification** with the day's headline.
 - **An email (optional)** with the day in one line, what you shipped and the numbered list of suggested posts, with the full brief attached. **All it needs is your address:** no password, no mail server. On macOS it's sent through Apple Mail from the account you already use there. On Linux it goes through your system's `sendmail`.
 
-**Each suggested post is written out, ready to post.** In the email it comes first, in a box you can select, with a **Copy post** button and its length against the platform's limit:
-
-```text
-<Hook: a first line that works on its own>
-
-<Anecdote: the real moment, from your sessions, commits or research>
-
-<Context: the problem and what you built, from your commits or README>
-
-<A question for readers>
-
-#hashtag #hashtag #hashtag
-```
-
-Under it: the screenshot to attach (or "No screenshot"), then **how the post was made**: the angle, which anecdote it uses and where it came from, where the context came from, the trend it rides (with a link, or "no trend" when nothing truly fits), and why it should work.
+**Each suggested post is written out, ready to post.** In the email it comes first, in a box you can select, with a **Copy post** button and its length against the platform's limit, and the screenshot to attach under it.
 
 Before the email goes out, `brief_check.py` holds every post to its platform's limit (X: 280 characters a post; LinkedIn: 3,000 characters, 300 words, and a hook short enough to show above "...see more"), and opens every link. A link that doesn't load is flagged at the top of the email. Change the limits with `"post_limits"` in `.buildinpublic/config.json`, for example `{"linkedin": {"chars": 3000, "words": 250}}`.
 
@@ -128,10 +114,12 @@ The skill works inside one project at a time. If you jump between repos, or just
 curl -fsSL https://raw.githubusercontent.com/chetanya1998/build-in-public/main/install-cli.sh | sh
 ```
 ```powershell
-# Windows (PowerShell)
+# Windows (PowerShell). Needs Git and Python 3.9+: winget install Git.Git Python.Python.3.12
+cd ~
 git clone https://github.com/chetanya1998/build-in-public
 cd build-in-public
 powershell -ExecutionPolicy Bypass -File install.ps1
+# then open a new terminal, so the buildinpublic command is found
 ```
 
 `-ExecutionPolicy Bypass` is needed because Windows blocks downloaded scripts by default; it applies to this one run only. Without cloning, `irm https://raw.githubusercontent.com/chetanya1998/build-in-public/main/install.ps1 | iex` works too, but still needs Git installed.
@@ -216,31 +204,49 @@ If nothing's worth posting, it asks what you're working on and turns your answer
 
 ### 2. Install the skill
 
-**Easiest: ask your agent.** Paste this into Claude Code, Codex or Antigravity:
+**Easiest: ask your agent.** Paste the prompt for your computer into Claude Code, Codex or Antigravity.
+
+macOS or Linux:
 
 ```text
-Install the Build Your Product in Public skill from https://github.com/chetanya1998/build-in-public
-Clone the repo, go into the folder, and run its installer:
-- macOS or Linux: sh install.sh
-- Windows: powershell -ExecutionPolicy Bypass -File install.ps1
-Then tell me to restart you, so I can say "set up build in public" in my project.
+Install the Build Your Product in Public skill for me (https://github.com/chetanya1998/build-in-public). I'm on macOS or Linux. Run:
+
+git -C ~/build-in-public pull 2>/dev/null || git clone https://github.com/chetanya1998/build-in-public ~/build-in-public
+sh ~/build-in-public/install.sh
+
+Keep the clone in my home folder, not in this project. If a step fails, show me the error and stop. When it's done, tell me where the skill was installed and remind me to restart you, so I can say "set up build in public" in my project.
 ```
 
-**Or run it yourself** on macOS or Linux:
+Windows (this installs the [CLI](#-across-all-your-projects-optional), which brings the skill into every agent, because the skill's own scripts need macOS or Linux):
+
+```text
+Install Build Your Product in Public for me (https://github.com/chetanya1998/build-in-public). I'm on Windows. Run this one command; it works from PowerShell and from Git Bash:
+
+powershell -NoProfile -ExecutionPolicy Bypass -Command 'cd ~; if (Test-Path build-in-public) { git -C build-in-public pull } else { git clone https://github.com/chetanya1998/build-in-public }; & .\build-in-public\install.ps1'
+
+It needs Git and Python 3.9 or newer. If either is missing, stop and tell me to run: winget install Git.Git Python.Python.3.12
+When it's done, tell me what it installed, and remind me to open a new terminal and restart you.
+```
+
+**Or run it yourself** on macOS or Linux. The clone lives in your home folder, not in your project:
 
 ```sh
-git clone https://github.com/chetanya1998/build-in-public
-cd build-in-public
-sh install.sh
+git clone https://github.com/chetanya1998/build-in-public ~/build-in-public
+sh ~/build-in-public/install.sh
 ```
 
-On **Windows**, the skill's scripts need macOS or Linux, so you install the [CLI](#-across-all-your-projects-optional), which brings the skill into every agent too:
+To update later: `git -C ~/build-in-public pull`, then `sh ~/build-in-public/install.sh` again.
+
+On **Windows**, in PowerShell (needs Git and Python 3.9+: `winget install Git.Git Python.Python.3.12`, then open a new PowerShell):
 
 ```powershell
+cd ~
 git clone https://github.com/chetanya1998/build-in-public
 cd build-in-public
 powershell -ExecutionPolicy Bypass -File install.ps1
 ```
+
+When it finishes, open a new terminal and restart your agent.
 
 This installs it for your user, in every supported agent, so it works in all your projects:
 

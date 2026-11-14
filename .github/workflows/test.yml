@@ -97,3 +97,73 @@ jobs:
           python-version: "3.13"
       - run: pip install playwright && playwright install --with-deps chromium
       - run: python -m unittest discover tests -v
+
+  site-commands:
+    # The install commands on the landing page, taken from docs/page.html and run exactly as a
+    # visitor or their agent would: from inside a project folder, then again to update.
+    # They clone from GitHub, so they test what's on main.
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v5
+      - name: '"Your agent" prompt, run twice from a project folder'
+        run: |
+          cmds="$(python3 scripts/site_commands.py agent unix)"; echo "$cmds"
+          mkdir -p ~/code/app && cd ~/code/app && git init -q
+          sh -c "$cmds" && sh -c "$cmds"
+          test -z "$(git status --short)" || { echo "the install left files in the project"; exit 1; }
+          for d in .claude/skills .agents/skills .gemini/config/skills; do test -f ~/$d/build-in-public/SKILL.md; done
+      - name: Terminal tab
+        run: |
+          rm -rf ~/build-in-public ~/.claude/skills/build-in-public
+          cd ~/code/app && sh -c "$(python3 scripts/site_commands.py term unix)"
+          test -f ~/.claude/skills/build-in-public/SKILL.md
+
+  site-commands-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - shell: pwsh
+        run: New-Item -ItemType Directory -Force "$env:USERPROFILE\.claude", "$env:USERPROFILE\code\app" | Out-Null
+      - name: Terminal tab, typed into PowerShell line by line
+        shell: pwsh
+        run: |
+          $lines = python scripts/site_commands.py term win
+          Set-Location "$env:USERPROFILE\code\app"
+          foreach ($l in $lines) {
+            Write-Host "PS> $l"; $global:LASTEXITCODE = 0
+            Invoke-Expression $l
+            if ($LASTEXITCODE -ne 0) { throw "failed ($LASTEXITCODE): $l" }
+          }
+      - name: Terminal tab worked
+        shell: pwsh
+        run: |
+          $env:Path = [Environment]::GetEnvironmentVariable("Path", "User") + ";" + $env:Path
+          buildinpublic --version
+          if (-not (Test-Path "$env:USERPROFILE\.claude\skills\build-in-public\SKILL.md")) { throw "skill not installed" }
+          if (Test-Path "$env:USERPROFILE\code\app\build-in-public") { throw "cloned into the project" }
+      - name: '"Your agent" one-liner from Git Bash (Claude Code on Windows), twice'
+        shell: bash
+        run: |
+          cmd="$(python scripts/site_commands.py agent win)"; echo "$cmd"
+          cd ~/code/app
+          bash -c "$cmd"   # updates the clone from the previous step
+          rm -rf ~/build-in-public
+          bash -c "$cmd"   # fresh clone
+          test ! -e ~/code/app/build-in-public
+      - name: '"Your agent" one-liner from Windows PowerShell 5.1 (Codex, Antigravity)'
+        shell: powershell
+        run: |
+          $cmd = python scripts/site_commands.py agent win
+          Set-Location "$env:USERPROFILE\code\app"
+          $global:LASTEXITCODE = 0
+          Invoke-Expression $cmd
+          if ($LASTEXITCODE -ne 0) { throw "failed ($LASTEXITCODE)" }
+          $env:Path = [Environment]::GetEnvironmentVariable("Path", "User") + ";" + $env:Path
+          buildinpublic --version

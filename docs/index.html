@@ -386,7 +386,15 @@ footer nav { display: flex; gap: 18px; margin-left: auto; flex-wrap: wrap }
 /* install box: the "Your agent" prompt wraps like prose */
 .cmd.prompt { flex-direction: column; gap: 8px }
 .cmd.prompt pre { white-space: pre-wrap; overflow-x: visible; font: 13.5px/1.6 var(--display); padding-bottom: 0; width: 100% }
-.prompt-note { font-size: 12.5px; color: var(--muted) }
+.prompt-note { font-size: 12.5px; color: var(--muted); margin: 0 }
+.prompt-note code { font: 12px var(--mono); color: var(--fg) }
+.cmd.stack { flex-direction: column; gap: 8px }
+.cmd.stack pre { width: 100%; white-space: pre-wrap; overflow-wrap: anywhere; overflow-x: visible; padding-bottom: 0 }
+.cmd.prompt .run { font: 12.5px/1.6 var(--mono); color: var(--fg) }
+.osbar { display: flex; align-items: center; gap: 4px; padding: 10px 14px 0 16px; font: 500 12px/1 var(--display); color: var(--muted); flex-wrap: wrap }
+.osbar span { margin-right: 6px }
+.osbar button { font: inherit; padding: 6px 10px; border-radius: 999px; border: 1px solid var(--line); background: none; color: var(--muted); cursor: pointer }
+.osbar button[aria-checked="true"] { border-color: var(--fg); color: var(--fg) }
 
 /* choose how to install */
 .chooser { display: grid; grid-template-columns: 1fr 1.25fr; gap: 20px; align-items: start }
@@ -447,23 +455,35 @@ footer nav { display: flex; gap: 18px; margin-left: auto; flex-wrap: wrap }
         <blockquote class="thiel"><p>“Poor sales rather than bad product is the most common cause of failure.”</p><cite>Peter Thiel, <i>Zero to One</i></cite></blockquote>
 
         <div class="install" data-tabs>
-          <div class="tabbar"><div class="tabs" role="tablist" aria-label="Install command">
-            <button class="tab" role="tab" aria-selected="true" data-os="agent">Your agent</button>
-            <button class="tab" role="tab" aria-selected="false" data-os="unix">macOS · Linux</button>
-            <button class="tab" role="tab" aria-selected="false" data-os="win">Windows</button>
-            <button class="tab" role="tab" aria-selected="false" data-os="cli">All projects</button>
+          <div class="tabbar"><div class="tabs" role="tablist" aria-label="How to install">
+            <button class="tab" role="tab" aria-selected="true" data-tab="agent">Your agent</button>
+            <button class="tab" role="tab" aria-selected="false" data-tab="term">Terminal</button>
+            <button class="tab" role="tab" aria-selected="false" data-tab="cli">All projects</button>
           </div><button class="copy" type="button">Copy</button></div>
-          <div class="cmd prompt" data-panel="agent"><pre>Install the Build Your Product in Public skill from https://github.com/chetanya1998/build-in-public
-Clone the repo, go into the folder, and run its installer:
-- macOS or Linux: sh install.sh
-- Windows: powershell -ExecutionPolicy Bypass -File install.ps1
-Then tell me to restart you, so I can say "set up build in public" in my project.</pre><p class="prompt-note">Paste into Claude Code, Codex or Antigravity: any agent that can run commands.</p></div>
-          <div class="cmd" data-panel="unix" hidden><pre><span class="p">$ </span>git clone https://github.com/chetanya1998/build-in-public
-<span class="p">$ </span>cd build-in-public &amp;&amp; sh install.sh</pre></div>
-          <div class="cmd ps" data-panel="win" hidden><pre><span class="p">PS&gt; </span>git clone https://github.com/chetanya1998/build-in-public
-<span class="p">PS&gt; </span>cd build-in-public
-<span class="p">PS&gt; </span>powershell -ExecutionPolicy Bypass -File install.ps1</pre></div>
-          <div class="cmd" data-panel="cli" hidden><pre><span class="p">$ </span>curl -fsSL https://raw.githubusercontent.com/chetanya1998/build-in-public/main/install-cli.sh | sh</pre></div>
+          <div class="osbar" role="radiogroup" aria-label="Your computer"><span>Your computer</span><button type="button" role="radio" aria-checked="true" data-pick="unix">macOS · Linux</button><button type="button" role="radio" aria-checked="false" data-pick="win">Windows</button></div>
+          <div class="cmd prompt" data-panel="agent" data-for="unix"><pre>Install the Build Your Product in Public skill for me (https://github.com/chetanya1998/build-in-public). I'm on macOS or Linux. Run:
+
+<span class="run">git -C ~/build-in-public pull 2&gt;/dev/null || git clone https://github.com/chetanya1998/build-in-public ~/build-in-public</span>
+<span class="run">sh ~/build-in-public/install.sh</span>
+
+Keep the clone in my home folder, not in this project. If a step fails, show me the error and stop. When it's done, tell me where the skill was installed and remind me to restart you, so I can say "set up build in public" in my project.</pre><p class="prompt-note">Paste into Claude Code, Codex or Antigravity. Needs Git and Python 3.9+.</p></div>
+          <div class="cmd prompt" data-panel="agent" data-for="win" hidden><pre>Install Build Your Product in Public for me (https://github.com/chetanya1998/build-in-public). I'm on Windows. Run this one command; it works from PowerShell and from Git Bash:
+
+<span class="run">powershell -NoProfile -ExecutionPolicy Bypass -Command 'cd ~; if (Test-Path build-in-public) { git -C build-in-public pull } else { git clone https://github.com/chetanya1998/build-in-public }; &amp; .\build-in-public\install.ps1'</span>
+
+It needs Git and Python 3.9 or newer. If either is missing, stop and tell me to run: winget install Git.Git Python.Python.3.12
+When it's done, tell me what it installed, and remind me to open a new terminal and restart you.</pre><p class="prompt-note">Paste into Claude Code, Codex or Antigravity. On Windows this installs the <code>buildinpublic</code> CLI, which puts the skill in every agent.</p></div>
+          <div class="cmd stack" data-panel="term" data-for="unix" hidden><pre><span class="p">$ </span><span class="run">git clone https://github.com/chetanya1998/build-in-public ~/build-in-public</span>
+<span class="p">$ </span><span class="run">sh ~/build-in-public/install.sh</span></pre><p class="prompt-note">Needs Git and Python 3.9+. Then restart your agent and say "set up build in public" in your project. To update later: <code>git -C ~/build-in-public pull</code>, then the second line again.</p></div>
+          <div class="cmd stack" data-panel="term" data-for="win" hidden><pre><span class="p">PS&gt; </span><span class="run">cd ~</span>
+<span class="p">PS&gt; </span><span class="run">git clone https://github.com/chetanya1998/build-in-public</span>
+<span class="p">PS&gt; </span><span class="run">cd build-in-public</span>
+<span class="p">PS&gt; </span><span class="run">powershell -ExecutionPolicy Bypass -File install.ps1</span></pre><p class="prompt-note">Needs Git and Python 3.9+. Missing one? <code>winget install Git.Git Python.Python.3.12</code>, then open a new PowerShell. On Windows this installs the <code>buildinpublic</code> CLI, which puts the skill in every agent and journals all your projects. When it finishes, open a new terminal and restart your agent.</p></div>
+          <div class="cmd stack" data-panel="cli" data-for="unix" hidden><pre><span class="p">$ </span><span class="run">curl -fsSL https://raw.githubusercontent.com/chetanya1998/build-in-public/main/install-cli.sh | sh</span></pre><p class="prompt-note">Installs the <code>buildinpublic</code> CLI: a journal of every session in every project, reminders, and the skill in every agent. Needs Python 3.9+.</p></div>
+          <div class="cmd stack" data-panel="cli" data-for="win" hidden><pre><span class="p">PS&gt; </span><span class="run">cd ~</span>
+<span class="p">PS&gt; </span><span class="run">git clone https://github.com/chetanya1998/build-in-public</span>
+<span class="p">PS&gt; </span><span class="run">cd build-in-public</span>
+<span class="p">PS&gt; </span><span class="run">powershell -ExecutionPolicy Bypass -File install.ps1</span></pre><p class="prompt-note">The same steps as Terminal: on Windows the installer always sets up the CLI for all your projects. Needs Git and Python 3.9+. Missing one? <code>winget install Git.Git Python.Python.3.12</code>, then open a new PowerShell. </p></div>
         </div>
         <div class="cta-row">
           <a class="pill solid" href="#quickstart">Get started</a>
@@ -888,23 +908,35 @@ Then tell me to restart you, so I can say "set up build in public" in my project
       </div>
       <div>
         <div class="install" data-tabs style="margin-top:0">
-          <div class="tabbar"><div class="tabs" role="tablist" aria-label="Install command">
-            <button class="tab" role="tab" aria-selected="true" data-os="agent">Your agent</button>
-            <button class="tab" role="tab" aria-selected="false" data-os="unix">macOS · Linux</button>
-            <button class="tab" role="tab" aria-selected="false" data-os="win">Windows</button>
-            <button class="tab" role="tab" aria-selected="false" data-os="cli">All projects</button>
+          <div class="tabbar"><div class="tabs" role="tablist" aria-label="How to install">
+            <button class="tab" role="tab" aria-selected="true" data-tab="agent">Your agent</button>
+            <button class="tab" role="tab" aria-selected="false" data-tab="term">Terminal</button>
+            <button class="tab" role="tab" aria-selected="false" data-tab="cli">All projects</button>
           </div><button class="copy" type="button">Copy</button></div>
-          <div class="cmd prompt" data-panel="agent"><pre>Install the Build Your Product in Public skill from https://github.com/chetanya1998/build-in-public
-Clone the repo, go into the folder, and run its installer:
-- macOS or Linux: sh install.sh
-- Windows: powershell -ExecutionPolicy Bypass -File install.ps1
-Then tell me to restart you, so I can say "set up build in public" in my project.</pre><p class="prompt-note">Paste into Claude Code, Codex or Antigravity: any agent that can run commands.</p></div>
-          <div class="cmd" data-panel="unix" hidden><pre><span class="p">$ </span>git clone https://github.com/chetanya1998/build-in-public
-<span class="p">$ </span>cd build-in-public &amp;&amp; sh install.sh</pre></div>
-          <div class="cmd ps" data-panel="win" hidden><pre><span class="p">PS&gt; </span>git clone https://github.com/chetanya1998/build-in-public
-<span class="p">PS&gt; </span>cd build-in-public
-<span class="p">PS&gt; </span>powershell -ExecutionPolicy Bypass -File install.ps1</pre></div>
-          <div class="cmd" data-panel="cli" hidden><pre><span class="p">$ </span>curl -fsSL https://raw.githubusercontent.com/chetanya1998/build-in-public/main/install-cli.sh | sh</pre></div>
+          <div class="osbar" role="radiogroup" aria-label="Your computer"><span>Your computer</span><button type="button" role="radio" aria-checked="true" data-pick="unix">macOS · Linux</button><button type="button" role="radio" aria-checked="false" data-pick="win">Windows</button></div>
+          <div class="cmd prompt" data-panel="agent" data-for="unix"><pre>Install the Build Your Product in Public skill for me (https://github.com/chetanya1998/build-in-public). I'm on macOS or Linux. Run:
+
+<span class="run">git -C ~/build-in-public pull 2&gt;/dev/null || git clone https://github.com/chetanya1998/build-in-public ~/build-in-public</span>
+<span class="run">sh ~/build-in-public/install.sh</span>
+
+Keep the clone in my home folder, not in this project. If a step fails, show me the error and stop. When it's done, tell me where the skill was installed and remind me to restart you, so I can say "set up build in public" in my project.</pre><p class="prompt-note">Paste into Claude Code, Codex or Antigravity. Needs Git and Python 3.9+.</p></div>
+          <div class="cmd prompt" data-panel="agent" data-for="win" hidden><pre>Install Build Your Product in Public for me (https://github.com/chetanya1998/build-in-public). I'm on Windows. Run this one command; it works from PowerShell and from Git Bash:
+
+<span class="run">powershell -NoProfile -ExecutionPolicy Bypass -Command 'cd ~; if (Test-Path build-in-public) { git -C build-in-public pull } else { git clone https://github.com/chetanya1998/build-in-public }; &amp; .\build-in-public\install.ps1'</span>
+
+It needs Git and Python 3.9 or newer. If either is missing, stop and tell me to run: winget install Git.Git Python.Python.3.12
+When it's done, tell me what it installed, and remind me to open a new terminal and restart you.</pre><p class="prompt-note">Paste into Claude Code, Codex or Antigravity. On Windows this installs the <code>buildinpublic</code> CLI, which puts the skill in every agent.</p></div>
+          <div class="cmd stack" data-panel="term" data-for="unix" hidden><pre><span class="p">$ </span><span class="run">git clone https://github.com/chetanya1998/build-in-public ~/build-in-public</span>
+<span class="p">$ </span><span class="run">sh ~/build-in-public/install.sh</span></pre><p class="prompt-note">Needs Git and Python 3.9+. Then restart your agent and say "set up build in public" in your project. To update later: <code>git -C ~/build-in-public pull</code>, then the second line again.</p></div>
+          <div class="cmd stack" data-panel="term" data-for="win" hidden><pre><span class="p">PS&gt; </span><span class="run">cd ~</span>
+<span class="p">PS&gt; </span><span class="run">git clone https://github.com/chetanya1998/build-in-public</span>
+<span class="p">PS&gt; </span><span class="run">cd build-in-public</span>
+<span class="p">PS&gt; </span><span class="run">powershell -ExecutionPolicy Bypass -File install.ps1</span></pre><p class="prompt-note">Needs Git and Python 3.9+. Missing one? <code>winget install Git.Git Python.Python.3.12</code>, then open a new PowerShell. On Windows this installs the <code>buildinpublic</code> CLI, which puts the skill in every agent and journals all your projects. When it finishes, open a new terminal and restart your agent.</p></div>
+          <div class="cmd stack" data-panel="cli" data-for="unix" hidden><pre><span class="p">$ </span><span class="run">curl -fsSL https://raw.githubusercontent.com/chetanya1998/build-in-public/main/install-cli.sh | sh</span></pre><p class="prompt-note">Installs the <code>buildinpublic</code> CLI: a journal of every session in every project, reminders, and the skill in every agent. Needs Python 3.9+.</p></div>
+          <div class="cmd stack" data-panel="cli" data-for="win" hidden><pre><span class="p">PS&gt; </span><span class="run">cd ~</span>
+<span class="p">PS&gt; </span><span class="run">git clone https://github.com/chetanya1998/build-in-public</span>
+<span class="p">PS&gt; </span><span class="run">cd build-in-public</span>
+<span class="p">PS&gt; </span><span class="run">powershell -ExecutionPolicy Bypass -File install.ps1</span></pre><p class="prompt-note">The same steps as Terminal: on Windows the installer always sets up the CLI for all your projects. Needs Git and Python 3.9+. Missing one? <code>winget install Git.Git Python.Python.3.12</code>, then open a new PowerShell. </p></div>
         </div>
         <div class="term" style="margin-top:14px">
 <pre><span class="p">you ›</span> set up build in public
@@ -1172,20 +1204,26 @@ Then tell me to restart you, so I can say "set up build in public" in my project
 
   var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  // install tabs: all install boxes switch together; Windows visitors see Windows first
-  function selectOs(group, os) {
-    group.querySelectorAll('.tab').forEach(function (t) { t.setAttribute('aria-selected', String(t.dataset.os === os)); });
-    group.querySelectorAll('[data-panel]').forEach(function (p) { p.hidden = p.dataset.panel !== os; });
+  // install box: a tab (agent, terminal, all projects) x your computer (macOS/Linux or Windows).
+  // Every install box on the page switches together; Windows visitors see Windows first.
+  var plat = (navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || navigator.userAgent || '';
+  var pick = { tab: 'agent', os: /win/i.test(plat) ? 'win' : 'unix' };
+  function showInstall() {
+    document.querySelectorAll('[data-tabs]').forEach(function (g) {
+      g.querySelectorAll('.tab').forEach(function (t) { t.setAttribute('aria-selected', String(t.dataset.tab === pick.tab)); });
+      g.querySelectorAll('[data-pick]').forEach(function (b) { b.setAttribute('aria-checked', String(b.dataset.pick === pick.os)); });
+      g.querySelectorAll('[data-panel]').forEach(function (p) { p.hidden = !(p.dataset.panel === pick.tab && p.dataset.for === pick.os); });
+    });
   }
-  var guess = 'agent';  // the prompt works on every OS
   document.querySelectorAll('[data-tabs]').forEach(function (g) {
-    selectOs(g, guess);
-    g.querySelectorAll('.tab').forEach(function (t) {
-      t.addEventListener('click', function () {
-        document.querySelectorAll('[data-tabs]').forEach(function (all) { selectOs(all, t.dataset.os); });
-      });
+    g.addEventListener('click', function (e) {
+      var t = e.target.closest('.tab[data-tab], [data-pick]');
+      if (!t) return;
+      if (t.dataset.tab) pick.tab = t.dataset.tab; else pick.os = t.dataset.pick;
+      showInstall();
     });
   });
+  showInstall();
 
   // choose how to install: where x which agents -> command, paths, what's tracked
   var chooser = document.querySelector('[data-chooser]');
@@ -1208,13 +1246,13 @@ Then tell me to restart you, so I can say "set up build in public" in my project
         tracks = 'This project\'s sessions in ' + names[state.agent] + '. Nothing from your other projects.';
         then = 'Restart your agent, open the project and say "set up build in public". On Windows, use Every session.';
       } else if (state.scope === 'user') {
-        cmd = '$ git clone ' + GH + '\n$ cd build-in-public && sh install.sh' + only;
+        cmd = '$ git clone ' + GH + ' ~/build-in-public\n$ sh ~/build-in-public/install.sh' + only;
         w = code(where.user[state.agent], ' for your user');
         tracks = 'Each project where you say "set up build in public", in ' + names[state.agent] + '. One quick setup per project.';
         then = 'Restart your agent. On Windows, use Every session.';
       } else {
         cmd = [['macOS · Linux', '$ curl -fsSL https://raw.githubusercontent.com/chetanya1998/build-in-public/main/install-cli.sh | sh'],
-               ['Windows (PowerShell)', 'PS> git clone ' + GH + '\nPS> cd build-in-public\nPS> powershell -ExecutionPolicy Bypass -File install.ps1']];
+               ['Windows (PowerShell)', 'PS> cd ~\nPS> git clone ' + GH + '\nPS> cd build-in-public\nPS> powershell -ExecutionPolicy Bypass -File install.ps1']];
         w = 'The <code>buildinpublic</code> command, plus the skill in every agent it finds. Your journal stays in <code>~/.buildinpublic/</code>.';
         tracks = 'Every session in every project. Claude Code and Codex as each session ends, Antigravity every hour. New projects stay journal-only until you turn posts on.';
         then = 'Answer a few setup questions. Try <code>buildinpublic today</code> after your next session.';
