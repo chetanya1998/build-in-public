@@ -30,6 +30,24 @@ DEV_PORTS = set(range(3000, 3011)) | set(range(4000, 4011)) | set(range(5000, 50
 DEV_PROCS = ("node", "bun", "deno", "python", "python3", "uvicorn", "gunicorn", "flask", "ruby", "rails",
              "php", "java", "go", "cargo", "dotnet", "vite", "next-server", "astro", "hugo", "jekyll")
 
+class ShotError(RuntimeError):
+    """A screenshot that can't be made; the message is for the user."""
+
+
+def normalize_url(url: str | None) -> str:
+    """'localhost:3000' -> 'http://localhost:3000'. Raises ShotError when there's no URL."""
+    url = (url or "").strip()
+    if not url:
+        raise ShotError("Which URL? e.g. buildinpublic shot url http://localhost:3000")
+    if not re.match(r"^[a-z][a-z0-9+.-]*://", url, re.I):
+        url = "http://" + url
+    return url
+
+
+def url_base(url: str) -> str:
+    m = re.match(r"[a-z][a-z0-9+.-]*://[^/?#]+", url, re.I)
+    return m.group(0) if m else url
+
 # ---------------------------------------------------------------- playwright
 
 def playwright_ok() -> bool:
@@ -106,9 +124,13 @@ def code_image(source: Path | str, out: Path, lines: str | None = None, title: s
     all_lines = text.splitlines()
     start = 1
     if lines:
-        a, _, b = lines.partition("-")
-        start = max(1, int(a))
-        end = int(b) if b else start + 30
+        m = re.fullmatch(r"\s*(\d+)\s*(?:-\s*(\d+)\s*)?", lines)
+        if not m:
+            raise ShotError(f"--lines should look like 20-48, not {lines!r}")
+        start = max(1, int(m.group(1)))
+        end = int(m.group(2)) if m.group(2) else start + 30
+        if start > len(all_lines) or end < start:
+            raise ShotError(f"Lines {lines} aren't in {src.name} ({len(all_lines)} lines)")
         all_lines = all_lines[start - 1:end]
     else:
         all_lines = all_lines[:40]
@@ -166,6 +188,7 @@ def url_images(url: str, out_dir: Path, theme: str = "ocean") -> list[Path]:
     if not playwright_ok():
         raise RuntimeError("Playwright is needed: pip install playwright && playwright install chromium")
     from playwright.sync_api import sync_playwright
+    url = normalize_url(url)
     out_dir.mkdir(parents=True, exist_ok=True)
     stamp = dt.datetime.now().strftime("%H%M%S")
     name = slug(url.split("//")[-1], 30)
@@ -177,7 +200,13 @@ def url_images(url: str, out_dir: Path, theme: str = "ocean") -> list[Path]:
             page = b.new_page(viewport=vp, device_scale_factor=2, is_mobile=mobile)
             try:
                 page.goto(url, wait_until="networkidle", timeout=25000)
-            except Exception:
+            except Exception as e:  # still busy is fine; not loading at all is not
+                if "net::ERR" in str(e) or page.url in ("about:blank", ""):
+                    page.close()
+                    b.close()
+                    reason = re.search(r"net::(ERR_\w+)", str(e))
+                    raise ShotError(f"Couldn't load {url}" + (f" ({reason.group(1)})" if reason else "") +
+                                    ". Is the app running?") from None
                 page.wait_for_timeout(1500)
             try:  # short pages: don't frame a sea of white
                 h = int(page.evaluate("Math.ceil(Math.max(...[...document.body.children].map(e => e.getBoundingClientRect().bottom), 0))"))
@@ -317,8 +346,15 @@ def agent_testing(minutes: int = 30) -> list[dict]:
 def _project_for(path: str | None) -> tuple[str | None, dict]:
     if not path:
         return None, {}
+
+    def real(x):
+        try:
+            return str(Path(x).resolve())
+        except (OSError, RuntimeError):
+            return str(x)
+    want = real(path)
     for k, v in journal.load_projects().items():
-        if v.get("path") == path:
+        if v.get("path") and (v["path"] == path or real(v["path"]) == want):
             return k, v
     return None, {}
 
@@ -333,11 +369,12 @@ def shots_dir(project_key: str | None, session_dir: str | None = None) -> Path:
 
 
 def capture_url(url: str, project_key: str | None = None, session_dir: str | None = None) -> list[Path]:
+    url = normalize_url(url)
     out = shots_dir(project_key, session_dir)
     files = url_images(url, out)
     st = state()
-    base = re.match(r"https?://[^/]+", url).group(0)
-    st["pending_shots"] = [p for p in st.get("pending_shots", []) if not p["url"].startswith(base)]
+    base = url_base(url)
+    st["pending_shots"] = [p for p in st.get("pending_shots", []) if url_base(p["url"]) != base]
     save_state(st)
     meta_f = out.parent / "meta.json"
     if meta_f.exists():
@@ -365,9 +402,9 @@ def watch(quiet: bool = False) -> list[str]:
     cooldown = dt.timedelta(minutes=int(cfg.get("shot_prompt_cooldown_minutes", 90)))
     results = []
     candidates = agent_testing() + dev_servers()
-    seen_urls = set()
+    seen_urls, waiting = set(), []
     for c in candidates:
-        base = re.match(r"https?://[^/]+", c["url"]).group(0)
+        base = url_base(c["url"])
         if base in seen_urls:
             continue
         seen_urls.add(base)
@@ -377,6 +414,7 @@ def watch(quiet: bool = False) -> list[str]:
             continue
         last = cool.get(f"{key}:{base}")
         if last and now - dt.datetime.fromisoformat(last) < cooldown:
+            waiting.append(c["url"])
             continue
         cool[f"{key}:{base}"] = now.isoformat(timespec="seconds")
         save_state(st)
@@ -392,7 +430,7 @@ def watch(quiet: bool = False) -> list[str]:
                 files = capture_url(c["url"], key, c.get("session_dir"))
                 results.append(f"captured {c['url']} → {files[0].parent}")
                 notify.desktop(f"Saved {len(files)} screenshots of {name}")
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001 - a background job must not crash
                 results.append(f"capture failed for {c['url']}: {e}")
         elif answer == "Never for this project" and key:
             journal.set_project(key, shots="never")
@@ -403,28 +441,38 @@ def watch(quiet: bool = False) -> list[str]:
                 save_state(st)
             results.append(f"queued {c['url']} to ask in your next agent session")
     if not quiet:
+        if waiting and not results:
+            results.append(f"{', '.join(waiting)} running; asked about it in the last {int(cooldown.total_seconds() // 60)} min, "
+                           "so not asking again yet (buildinpublic shot url <url> captures it now)")
         print("\n".join(results) or "No local dev servers or agent browser tests found.")
     return results
 
 
 def clear_pending(url: str | None = None) -> None:
     st = state()
-    st["pending_shots"] = [p for p in st.get("pending_shots", []) if url and p["url"] != url]
+    keep = url_base(normalize_url(url)) if url else None
+    st["pending_shots"] = [p for p in st.get("pending_shots", []) if keep and url_base(p["url"]) != keep]
     save_state(st)
 
 
-def latest_code_shot(project_key: str | None = None, theme: str = "dusk") -> Path | None:
+def latest_code_shot(project_key: str | None = None, theme: str = "dusk", cwd: str | None = None) -> Path | None:
     """Make a code image from the most recent session's most-changed file."""
     m = journal.latest_meta(project_key)
-    if not m or not m.get("files"):
-        return None
-    root = Path(m.get("path", ""))
-    for f in m["files"]:
+    if m and m.get("files"):
+        root, files, out = Path(m.get("path", "")), m["files"], Path(m["dir"]) / "shots"
+        name = m.get("project_name")
+    else:  # no session yet: the uncommitted changes in the repo you're in
+        root = Path(journal.project_root(str(cwd or Path.cwd())))
+        r = subprocess.run(["git", "-C", str(root), "diff", "--name-only", "HEAD"], capture_output=True, text=True)
+        files = r.stdout.split() if r.returncode == 0 else []
+        out, name = shots_dir(project_key), root.name
+    stamp = dt.datetime.now().strftime("%H%M%S")
+    for f in files:
         p = Path(f) if Path(f).is_absolute() else root / f
         if p.exists() and p.suffix not in (".json", ".lock", ".md", ".png", ".svg"):
             rng = _changed_range(root, p)
-            return code_image(p, Path(m["dir"]) / "shots" / f"code-{slug(p.name, 30)}.png",
-                              lines=rng, title=f"{m.get('project_name')} · {p.name}", theme=theme)
+            return code_image(p, out / f"code-{slug(p.stem, 30)}-{stamp}.png",
+                              lines=rng, title=f"{name} · {p.name}", theme=theme)
     return None
 
 

@@ -153,7 +153,8 @@ def build(day: dt.date | None = None, send: bool = False, research_on: bool | No
         L += ["## New projects found"] + [f"- {projects[k]['name']} ({projects[k]['path']}): "
                                           f"`buildinpublic project {k} content|journal|ignore`" for k in pend] + [""]
     if pending_shots():
-        L += ["## Screenshots waiting for your OK"] + [f"- {s['url']} ({s.get('via')}): `buildinpublic shot url {s['url']}`"
+        L += ["## Screenshots waiting for your OK"] + [f"- {s['url']} ({s.get('via')}): `buildinpublic shot url {s['url']}"
+                                                       f"{' --project ' + s['project'] if s.get('project') else ''}`"
                                                        for s in pending_shots()] + [""]
     waiting = nudge.waiting_drafts()
     if waiting and not drafts:

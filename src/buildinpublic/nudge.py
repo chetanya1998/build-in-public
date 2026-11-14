@@ -185,7 +185,8 @@ def session_start_context() -> str:
         s = shots[-1]
         parts.append("## Screenshot offer\n"
                      f"Earlier, {s['url']} was running ({s.get('via')}). Ask the user if they want screenshots for "
-                     f"a post. If yes: `buildinpublic shot url {s['url']}`. Then `buildinpublic shot --clear`.")
+                     f"a post. If yes: `buildinpublic shot url {s['url']}{' --project ' + s['project'] if s.get('project') else ''}`. "
+                     f"If no: `buildinpublic shot url {s['url']} --clear`.")
     save_state(st)
     if not parts:
         return ""

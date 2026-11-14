@@ -129,29 +129,44 @@ def cmd_project(a):
 
 def cmd_shot(a):
     if a.clear:
-        shots.clear_pending()
-        print("Cleared pending screenshot offers.")
+        shots.clear_pending(a.target if a.kind == "url" else None)
+        print(f"Cleared the screenshot offer for {a.target}." if a.kind == "url" and a.target
+              else "Cleared pending screenshot offers.")
         return
-    key = journal.find_project(a.project)[0] if a.project else None
-    if a.kind == "url":
-        files = shots.capture_url(a.target, key)
-        print("\n".join(str(f) for f in files))
-    elif a.kind == "code":
-        if a.target:
-            m = journal.latest_meta(key)
-            out_dir = Path(m["dir"]) / "shots" if m else app_home() / "shots"
-            f = shots.code_image(a.target, out_dir / f"code-{Path(a.target).stem}.png", a.lines, theme=a.theme,
-                                 caption=a.caption or "")
-        else:
-            f = shots.latest_code_shot(key, a.theme)
-        print(f or "No recent edited file found. Pass a file: buildinpublic shot code path/to/file.py")
-    else:  # auto: whatever is running right now
-        found = shots.dev_servers()
-        if not found:
-            print("No local dev server found. Start your app, or use: buildinpublic shot url <url>")
-        for s in found:
-            k, _ = shots._project_for(s.get("project_path"))
-            print("\n".join(str(f) for f in shots.capture_url(s["url"], k)))
+    if a.project:
+        key = journal.find_project(a.project)[0]
+        if not key:
+            sys.exit(f"No project called {a.project!r}. See: buildinpublic projects")
+    else:  # the project you're in, if it's one we know
+        key = shots._project_for(journal.project_root(os.getcwd()))[0]
+    try:
+        if a.kind == "url":
+            for f in shots.capture_url(a.target, key):
+                print(f)
+        elif a.kind == "code":
+            if a.target:
+                src = Path(a.target)
+                if not src.is_file():
+                    sys.exit(f"No file at {a.target}")
+                m = journal.latest_meta(key)
+                out_dir = Path(m["dir"]) / "shots" if m else shots.shots_dir(key)
+                stamp = dt.datetime.now().strftime("%H%M%S")
+                f = shots.code_image(src, out_dir / f"code-{shots.slug(src.stem, 30)}-{stamp}.png", a.lines,
+                                     theme=a.theme, caption=a.caption or "")
+            else:
+                f = shots.latest_code_shot(key, a.theme)
+            print(f or "No recently edited file found. Pass a file: buildinpublic shot code path/to/file.py")
+        else:  # auto: whatever is running right now
+            found = shots.dev_servers()
+            if not found:
+                print("No local dev server found. Start your app, or use: buildinpublic shot url <url>")
+            for s in found:
+                k, _ = shots._project_for(s.get("project_path"))
+                print("\n".join(str(f) for f in shots.capture_url(s["url"], k or key)))
+    except shots.ShotError as e:
+        sys.exit(str(e))
+    except RuntimeError as e:  # Playwright missing
+        sys.exit(str(e))
 
 
 def cmd_watch(a):
@@ -387,7 +402,7 @@ def main(argv=None):
     s.add_argument("--theme", default="dusk", choices=list(shots.THEMES))
     s.add_argument("--caption")
     s.add_argument("--project")
-    s.add_argument("--clear", action="store_true", help="clear pending screenshot offers")
+    s.add_argument("--clear", action="store_true", help="clear pending screenshot offers (shot url URL --clear: just that one)")
     s.set_defaults(fn=cmd_shot)
     s = sub.add_parser("watch", help="look for localhost servers / agent browser tests and offer screenshots")
     s.add_argument("--quiet", action="store_true")
