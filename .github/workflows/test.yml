@@ -118,8 +118,9 @@ jobs:
           for d in .claude/skills .agents/skills .gemini/config/skills; do test -f ~/$d/build-in-public/SKILL.md; done
       - name: Terminal tab
         run: |
+          cmds="$(python3 scripts/site_commands.py term unix)"; echo "$cmds"
           rm -rf ~/build-in-public ~/.claude/skills/build-in-public
-          cd ~/code/app && sh -c "$(python3 scripts/site_commands.py term unix)"
+          cd ~/code/app && sh -c "$cmds"
           test -f ~/.claude/skills/build-in-public/SKILL.md
 
   site-commands-windows:
