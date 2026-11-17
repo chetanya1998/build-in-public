@@ -1,0 +1,1004 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Bip Desk Pet</title>
+<style>
+:root {
+  --bg: #f6f7f9; --surface: #ffffff; --surface-2: #f0f2f5; --fg: #101216; --muted: #5a616d; --line: #e2e5ea;
+  --ink: #2c4bd4; --ink-soft: #e9edfc; --ok: #1f8a4c; --ok-soft: #e4f4ea; --warn: #a15c00; --warn-soft: #fbefdc; --rec: #e5484d;
+  --wall-1: #c9d6ff; --wall-2: #f5d0e6; --wall-3: #fde7c4;
+  --display: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0a0b0d; --surface: #16181d; --surface-2: #1d2027; --fg: #eceef2; --muted: #8e95a2; --line: #2a2e36;
+  --ink: #93a6ff; --ink-soft: #1b2140; --ok: #4cc584; --ok-soft: #10261a; --warn: #f0b45a; --warn-soft: #2a1f0e; --rec: #ff6369;
+  --wall-1: #1b2350; --wall-2: #3a1d3a; --wall-3: #3b2a14; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #0a0b0d; --surface: #16181d; --surface-2: #1d2027; --fg: #eceef2; --muted: #8e95a2; --line: #2a2e36;
+  --ink: #93a6ff; --ink-soft: #1b2140; --ok: #4cc584; --ok-soft: #10261a; --warn: #f0b45a; --warn-soft: #2a1f0e; --rec: #ff6369;
+  --wall-1: #1b2350; --wall-2: #3a1d3a; --wall-3: #3b2a14; color-scheme: dark }
+:root[data-theme="light"] { color-scheme: light }
+
+* { box-sizing: border-box }
+html, body { margin: 0; height: 100%; overflow: hidden }
+body { background: var(--bg); color: var(--fg); font: 400 13px/1.45 var(--display); -webkit-font-smoothing: antialiased }
+button, input, select, textarea { font: inherit; color: inherit }
+:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; border-radius: 6px }
+
+/* ---------- fake desktop ---------- */
+.desk { position: fixed; inset: 0; background: radial-gradient(80% 90% at 15% 10%, var(--wall-1), transparent 60%), radial-gradient(70% 80% at 90% 20%, var(--wall-2), transparent 60%), radial-gradient(90% 80% at 60% 100%, var(--wall-3), transparent 60%), var(--bg); overflow: hidden }
+.menubar { position: relative; z-index: 2; height: 26px; display: flex; align-items: center; gap: 16px; padding: 0 14px; font-size: 12px; font-weight: 500; background: color-mix(in srgb, var(--surface) 70%, transparent); backdrop-filter: blur(16px) }
+.menubar .r { margin-left: auto; color: var(--muted) }
+.win { position: absolute; border-radius: 12px; background: var(--surface); border: 1px solid var(--line); box-shadow: 0 20px 50px -30px rgba(0,0,0,.35); display: grid; overflow: hidden; z-index: 1 }
+.win.active { z-index: 3; box-shadow: 0 30px 80px -24px rgba(0,0,0,.45) }
+.win-h { height: 34px; display: flex; align-items: center; gap: 8px; padding: 0 12px; border-bottom: 1px solid var(--line); font-size: 12px; color: var(--muted); cursor: grab; user-select: none; -webkit-user-select: none; touch-action: none }
+.win.active .win-h { color: var(--fg) }
+.dots { display: flex; gap: 6px } .dots i { width: 11px; height: 11px; border-radius: 50%; background: var(--line) }
+.win.active .dots i { background: #ff5f57 } .win.active .dots i:nth-child(2) { background: #febc2e } .win.active .dots i:nth-child(3) { background: #28c840 }
+#w-editor { grid-template-rows: 34px 1fr 130px }
+#w-browser { grid-template-rows: 34px 1fr }
+.code { padding: 14px 18px; font: 12.5px/1.7 var(--mono); color: var(--muted); overflow: hidden; white-space: pre }
+.code b { color: #c792ea; font-weight: 400 } .code s { color: var(--ink); text-decoration: none } .code u { color: #3fa874; text-decoration: none }
+.term { background: #0d0f13; color: #c9ced8; font: 12px/1.6 var(--mono); padding: 10px 14px; overflow: hidden; white-space: pre }
+.term .g { color: #4cc584 } .term .d { color: #6f7684 } .term .r { color: #ff7b72 }
+.page { padding: 16px; display: grid; gap: 10px; align-content: start; background: var(--surface-2) }
+.page i { display: block; height: 10px; border-radius: 5px; background: var(--line) }
+.page .hero { height: 70px; border-radius: 10px; background: linear-gradient(135deg, var(--ink-soft), color-mix(in srgb, var(--ink) 30%, transparent)) }
+.dock { position: absolute; left: 50%; bottom: 10px; transform: translateX(-50%); display: flex; gap: 10px; padding: 8px 12px; border-radius: 18px; background: color-mix(in srgb, var(--surface) 60%, transparent); backdrop-filter: blur(16px); border: 1px solid color-mix(in srgb, var(--line) 70%, transparent); z-index: 2 }
+.dock i { width: 40px; height: 40px; border-radius: 10px; background: linear-gradient(135deg, var(--c1), var(--c2)) }
+
+/* ---------- Bip ---------- */
+.pet { position: fixed; z-index: 40; width: 60px; height: 54px; cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none;
+  transition: left .35s cubic-bezier(.3,.7,.3,1), top .35s cubic-bezier(.3,.7,.3,1), transform .3s ease, opacity .3s }
+.pet.dragging { transition: none; cursor: grabbing }
+.pet.walking { transition: left var(--walk, 1.6s) linear, top .35s ease }
+.pet canvas { position: absolute; inset: 0; width: 60px; height: 54px; image-rendering: pixelated; image-rendering: crisp-edges }
+.fx { position: absolute; left: 50%; top: -14px; font: 700 14px/1 var(--mono); color: var(--muted); pointer-events: none; white-space: nowrap }
+.fx.zz { animation: zz 2.6s ease-in-out infinite } @keyframes zz { 0% { opacity: 0; transform: translate(4px, 6px) } 30% { opacity: 1 } 100% { opacity: 0; transform: translate(16px, -14px) } }
+.fx.q { color: var(--ink); left: 62%; animation: bobq 1.4s ease-in-out infinite } @keyframes bobq { 50% { transform: translateY(-3px) rotate(12deg) } }
+.fx.bang { color: #ff5a7a; font-size: 16px; left: 64%; animation: bang .5s ease-out 1 } @keyframes bang { from { transform: translateY(6px) scale(.4) } }
+.fx.dots { left: 66% } .fx.dots span { animation: dot 1.2s infinite; opacity: .2 } .fx.dots span:nth-child(2) { animation-delay: .2s } .fx.dots span:nth-child(3) { animation-delay: .4s }
+@keyframes dot { 30% { opacity: 1 } }
+.fx.orbit { left: 50%; top: -6px; width: 0; height: 0; animation: orbit 1s linear infinite; color: #ffb000 } .fx.orbit::before, .fx.orbit::after { content: "✦"; position: absolute; left: -18px; top: -4px } .fx.orbit::after { left: 10px; top: 2px }
+@keyframes orbit { to { transform: rotate(360deg) } }
+.fx.note { left: 70%; color: var(--ink); animation: note 1s ease-in-out infinite } @keyframes note { 50% { transform: translateY(-4px) rotate(-10deg) } }
+.heart { position: fixed; z-index: 45; color: #ff5a7a; font-size: 14px; pointer-events: none; animation: heart 1.1s ease-out forwards }
+@keyframes heart { from { opacity: 1; transform: translateY(0) scale(.6) } to { opacity: 0; transform: translateY(-34px) scale(1.1) } }
+.confetti { position: fixed; z-index: 45; width: 4px; height: 4px; pointer-events: none }
+.pet .dot { position: absolute; top: 14px; left: 2px; width: 11px; height: 11px; border-radius: 50%; background: #ff5a7a; border: 2px solid var(--surface); display: none }
+.pet.has-dot .dot { display: block }
+.pet.peek-left { transform: translateX(-34px) } .pet.peek-right { transform: translateX(34px) }
+.pet.hidden { opacity: 0; pointer-events: none; transform: scale(.6) }
+
+.bubble { position: fixed; z-index: 41; max-width: 240px; padding: 8px 12px; border-radius: 12px; background: var(--surface); border: 1px solid var(--line); box-shadow: 0 10px 30px -10px rgba(0,0,0,.3); font-size: 13px; font-weight: 500; opacity: 0; transform: translateY(6px); transition: opacity .2s, transform .2s; pointer-events: none; cursor: pointer }
+.bubble.on { opacity: 1; transform: none; pointer-events: auto }
+
+/* ---------- radial menu ---------- */
+.rb { position: fixed; z-index: 44; width: 46px; height: 46px; margin: -23px 0 0 -23px; border-radius: 50%; border: 1px solid var(--line); background: var(--surface); color: var(--fg); box-shadow: 0 10px 24px -10px rgba(0,0,0,.4); display: grid; place-items: center; cursor: pointer; padding: 0;
+  opacity: 0; transform: scale(.3); pointer-events: none; transition: left .24s cubic-bezier(.3,.8,.3,1.25), top .24s cubic-bezier(.3,.8,.3,1.25), opacity .16s, transform .24s cubic-bezier(.3,.8,.3,1.25); touch-action: none; user-select: none; -webkit-user-select: none }
+.rb.on { opacity: 1; transform: scale(1); pointer-events: auto }
+.rb:hover { border-color: var(--fg) }
+.rb svg { width: 20px; height: 20px }
+.rb .rl { position: absolute; left: calc(50% + var(--lx, 0px)); top: calc(50% + var(--ly, 30px)); transform: translate(-50%, -50%); font-size: 11px; font-weight: 500; white-space: nowrap; background: var(--surface); padding: 1px 7px; border-radius: 999px; border: 1px solid var(--line); pointer-events: none }
+.rb .badge { position: absolute; top: -4px; right: -4px; min-width: 17px; height: 17px; border-radius: 9px; background: #ff5a7a; color: #fff; font: 600 10px/17px var(--mono); text-align: center; padding: 0 4px; border: 2px solid var(--surface) }
+.rb.rec, .micbtn.rec { background: var(--rec); color: #fff; border-color: var(--rec); animation: recp 1s ease-in-out infinite }
+@keyframes recp { 50% { box-shadow: 0 0 0 10px color-mix(in srgb, var(--rec) 22%, transparent) } }
+.recbar { position: fixed; z-index: 46; padding: 6px 10px; border-radius: 999px; background: var(--rec); color: #fff; font: 600 12px/1 var(--mono); display: none; align-items: center; gap: 8px; box-shadow: 0 10px 24px -10px rgba(0,0,0,.4) }
+.recbar.on { display: flex }
+.recbar .wave { display: flex; gap: 2px; align-items: center; height: 14px }
+.recbar .wave i { width: 2px; background: #fff; border-radius: 1px; animation: wave .6s ease-in-out infinite }
+@keyframes wave { 50% { height: 3px } }
+
+/* ---------- compact cards ---------- */
+.card { position: fixed; z-index: 42; width: 310px; max-width: calc(100vw - 24px); max-height: calc(100vh - 110px); overflow: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; box-shadow: 0 24px 60px -20px rgba(0,0,0,.4); display: none }
+.card.on { display: flex; flex-direction: column; animation: pop .16s ease-out }
+@keyframes pop { from { opacity: 0; transform: translateY(8px) scale(.98) } }
+.c-h { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--line); font-weight: 600 }
+.c-h .sub { margin-left: auto; font-size: 11.5px; color: var(--muted); font-weight: 400; display: flex; align-items: center; gap: 6px }
+.c-h .x { border: 0; background: none; color: var(--muted); cursor: pointer; font-size: 16px; line-height: 1; padding: 2px 4px }
+.live { width: 7px; height: 7px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 0 3px var(--ok-soft) }
+.c-b { padding: 12px; display: grid; gap: 8px }
+.in { width: 100%; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); padding: 8px 10px; resize: none }
+textarea.in { min-height: 64px }
+.row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap }
+.btn { height: 28px; padding: 0 11px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); cursor: pointer; font-weight: 500; font-size: 12px; white-space: nowrap }
+.btn:hover { border-color: var(--fg) }
+.btn.solid { background: var(--fg); color: var(--bg); border-color: var(--fg) }
+.btn.ghost { border-color: transparent; color: var(--muted) }
+.chip-opt { height: 26px; padding: 0 10px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); cursor: pointer; font-size: 12px }
+.chip-opt[aria-pressed="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg) }
+.hint { font-size: 11.5px; color: var(--muted) }
+/* chat */
+.msgs { display: grid; gap: 8px; padding: 12px; max-height: 300px; overflow: auto; align-content: start }
+.msg { max-width: 86%; padding: 7px 10px; border-radius: 12px; font-size: 12.5px; line-height: 1.4; overflow-wrap: anywhere }
+.msg.bip { background: var(--surface-2); border-bottom-left-radius: 4px; justify-self: start }
+.msg.you { background: var(--fg); color: var(--bg); border-bottom-right-radius: 4px; justify-self: end }
+.msg .chips { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 6px }
+.msg .chips button { height: 24px; padding: 0 9px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); font-size: 11.5px; cursor: pointer; color: var(--fg) }
+.msg .chips button:hover { border-color: var(--fg) }
+.msg .meta { display: block; font-size: 10.5px; color: var(--muted); margin-top: 2px }
+.msg.you .meta { color: color-mix(in srgb, var(--bg) 70%, transparent) }
+.composer { display: flex; gap: 6px; padding: 10px 12px; border-top: 1px solid var(--line); align-items: center }
+.composer .in { height: 34px; padding: 0 10px }
+.micbtn, .sendbtn { flex: none; width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--line); background: var(--surface); cursor: pointer; display: grid; place-items: center; padding: 0; touch-action: none; user-select: none; -webkit-user-select: none }
+.sendbtn { background: var(--fg); color: var(--bg); border-color: var(--fg) }
+.micbtn svg, .sendbtn svg { width: 16px; height: 16px }
+.examples { display: flex; gap: 5px; flex-wrap: wrap; padding: 0 12px 10px }
+.examples button { height: 22px; padding: 0 8px; border-radius: 999px; border: 1px dashed var(--line); background: none; font: 11px var(--mono); color: var(--muted); cursor: pointer }
+
+/* ---------- context menu ---------- */
+.menu { position: fixed; z-index: 43; min-width: 210px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 16px 40px -14px rgba(0,0,0,.4); padding: 5px; display: none; font-size: 12.5px }
+.menu.on { display: block }
+.menu button { display: block; width: 100%; text-align: left; border: 0; background: none; padding: 6px 10px; border-radius: 6px; cursor: pointer }
+.menu button:hover { background: var(--surface-2) }
+.menu hr { border: 0; border-top: 1px solid var(--line); margin: 4px 0 }
+
+/* ---------- region capture ---------- */
+.shade { position: fixed; inset: 0; z-index: 60; background: rgba(0,0,0,.25); cursor: crosshair; display: none }
+.shade.on { display: block }
+.shade .sel { position: absolute; border: 1.5px dashed #fff; background: rgba(255,255,255,.08) }
+.shade .tip { position: absolute; left: 50%; top: 40px; transform: translateX(-50%); background: rgba(0,0,0,.75); color: #fff; padding: 6px 12px; border-radius: 8px; font-size: 12px }
+.flash { position: fixed; inset: 0; z-index: 61; background: #fff; opacity: 0; pointer-events: none; transition: opacity .25s }
+.flash.on { opacity: .7; transition: none }
+
+/* ---------- mockup controls ---------- */
+.ctl { position: fixed; z-index: 30; left: 16px; top: 40px; width: 280px; max-height: calc(100vh - 140px); overflow: auto; background: color-mix(in srgb, var(--surface) 96%, transparent); backdrop-filter: blur(12px); border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 16px 40px -20px rgba(0,0,0,.35) }
+.ctl-h { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--line); position: sticky; top: 0; background: var(--surface); z-index: 1 }
+.ctl-h b { font-size: 13px } .ctl-h .tag { margin-left: auto; font: 500 10px/1 var(--mono); letter-spacing: .06em; color: var(--warn); background: var(--warn-soft); padding: 4px 6px; border-radius: 5px; text-transform: uppercase }
+.ctl-b { padding: 10px 12px; display: grid; gap: 9px }
+.ctl.min .ctl-b { display: none }
+.ctl h5 { margin: 4px 0 0; font: 500 10.5px/1 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted) }
+.ev { display: grid; grid-template-columns: 1fr 1fr; gap: 4px }
+.ev button { text-align: left; border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 5px 8px; cursor: pointer; font-size: 11.5px; line-height: 1.25 }
+.ev button:hover { border-color: var(--muted) }
+.moods { display: flex; flex-wrap: wrap; gap: 4px }
+.moods button { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 3px 8px; font-size: 11px; cursor: pointer }
+.moods button[aria-pressed="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg) }
+.swatches { display: flex; gap: 6px }
+.swatches button { width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--surface); box-shadow: 0 0 0 1px var(--line); cursor: pointer; padding: 0 }
+.swatches button[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--fg) }
+.clock { display: flex; align-items: center; gap: 6px; font: 12px var(--mono) }
+.log { font: 11px/1.5 var(--mono); color: var(--muted); max-height: 130px; overflow: auto; background: var(--surface-2); border-radius: 8px; padding: 6px 8px }
+.log div + div { border-top: 1px dashed var(--line); margin-top: 3px; padding-top: 3px }
+.log .k { color: var(--fg) }
+label.chk { display: flex; gap: 6px; align-items: center; font-size: 12px; cursor: pointer }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden }
+.seg button { border: 0; background: var(--surface); padding: 4px 9px; font-size: 11.5px; cursor: pointer; color: var(--muted) }
+.seg button[aria-pressed="true"] { background: var(--fg); color: var(--bg) }
+.theme-btn { width: 28px; height: 28px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); cursor: pointer; display: grid; place-items: center; padding: 0 }
+.theme-btn svg { width: 14px; height: 14px }
+select.sel-in { height: 26px; border: 1px solid var(--line); border-radius: 7px; background: var(--surface); padding: 0 6px; font-size: 12px }
+
+@media (max-width: 760px) {
+  .code { font-size: 11px }
+  .ctl { left: 10px; right: 10px; width: auto; top: 34px; max-height: 46vh }
+  .dock i { width: 30px; height: 30px }
+}
+@media (prefers-reduced-motion: reduce) { .fx, .rb, .heart { animation: none !important; transition: none !important } }
+</style>
+</head>
+<body>
+<div class="desk" id="desk">
+  <div class="menubar"><span>Code</span><span>File</span><span>Edit</span><span>View</span><span class="r" id="mb-time">Wed 21:30</span></div>
+  <div class="win active" id="w-editor" data-name="Code editor">
+    <div class="win-h"><span class="dots"><i></i><i></i><i></i></span><span style="margin-left:8px" id="ed-title">api/webhooks/stripe.ts · invoice-ai</span></div>
+    <div class="code"><b>export async function</b> <s>handleInvoicePaid</s>(event: Stripe.Event) {
+  <b>const</b> key = <u>`stripe:${event.id}`</u>
+  <b>if</b> (<b>await</b> seen(key)) <b>return</b> ok(<u>"duplicate"</u>)
+  <b>await</b> db.charges.insert({ id: key, amount })
+  <b>await</b> markSeen(key)
+  <b>return</b> ok()
+}
+
+<b>// Stripe retries any webhook that doesn't answer in 10s.</b></div>
+    <div class="term" id="term"><span class="d">~/Projects/invoice-ai</span> $ pnpm test webhooks
+<span class="r">✗ handles retried invoice.paid (2 charges, expected 1)</span>
+<span class="d">Tests: 1 failed, 11 passed</span>
+<span class="d">~/Projects/invoice-ai</span> $ ▍</div>
+  </div>
+  <div class="win" id="w-browser" data-name="Browser">
+    <div class="win-h"><span class="dots"><i></i><i></i><i></i></span><span style="margin-left:8px">localhost:3000/billing</span></div>
+    <div class="page"><span class="hero"></span><i style="width:70%"></i><i style="width:90%"></i><i style="width:55%"></i><i style="width:80%"></i></div>
+  </div>
+  <div class="dock" aria-hidden="true"><i style="--c1:#5b7bff;--c2:#2c4bd4"></i><i style="--c1:#ffb86b;--c2:#ff7a59"></i><i style="--c1:#4cc584;--c2:#1f8a4c"></i><i style="--c1:#c3a1ff;--c2:#8a4fd8"></i><i style="--c1:#9aa3b2;--c2:#5a616d"></i></div>
+</div>
+
+<aside class="ctl" id="ctl" aria-label="Mockup controls">
+  <div class="ctl-h"><b>Try Bip</b><span class="tag">Mockup</span>
+    <button class="theme-btn" id="theme" aria-label="Switch light and dark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></button>
+    <button class="theme-btn" id="ctl-min" aria-label="Collapse controls">–</button></div>
+  <div class="ctl-b">
+    <p class="hint">Click Bip for its menu (try the chat). Click it 3× fast, or rub the cursor back and forth over it. Hold 🎙 to record. Drag Bip or a window's title bar.</p>
+    <h5>Your agent is…</h5>
+    <div class="ev">
+      <button data-ag="reading">📖 Reading files</button>
+      <button data-ag="editing">⌨️ Editing code</button>
+      <button data-ag="testing">🧪 Running tests</button>
+      <button data-ag="waiting">✋ Waiting for you</button>
+      <button data-ag="done">✓ Finished</button>
+      <button data-ev="session_end">■ Session ends</button>
+    </div>
+    <h5>Events</h5>
+    <div class="ev">
+      <button data-ev="tests_fail">✗ Tests fail again</button>
+      <button data-ev="tests_green">✅ Tests pass at last</button>
+      <button data-ev="dev_server">🌐 Dev server up</button>
+      <button data-ev="commit">⬆ Big commit</button>
+      <button data-ev="gist_ready">💡 Post idea</button>
+      <button data-ev="reminder_due">⏰ Post is due</button>
+      <button data-ev="late">🌙 It's 23:40</button>
+      <button data-ev="session_start">▶ New session</button>
+    </div>
+    <h5>Milestones</h5>
+    <div class="ev">
+      <button data-ms="first">🎉 First post</button>
+      <button data-ms="ten">🔟 10th post</button>
+      <button data-ms="streak">🔥 7-day streak</button>
+      <button data-ms="launch">🚀 Launch day</button>
+    </div>
+    <h5>Moods</h5>
+    <div class="moods" id="moods"></div>
+    <h5>Where Bip sits</h5>
+    <div class="seg" role="group" aria-label="Where Bip sits"><button data-home="window" aria-pressed="true">Active window</button><button data-home="corner" aria-pressed="false">Screen corner</button></div>
+    <label class="chk"><input type="checkbox" id="wander" checked> Wanders now and then</label>
+    <label class="chk"><input type="checkbox" id="cursor" checked> Reacts to the cursor</label>
+    <label class="chk"><input type="checkbox" id="peek" checked> Peek when docked to a side</label>
+    <h5>Look</h5>
+    <div class="row"><span class="hint">Project</span><select class="sel-in" id="project" aria-label="Project"><option value="invoice-ai">invoice-ai</option><option value="build-in-public">build-in-public</option></select><span class="hint">(scarf colour)</span></div>
+    <label class="chk"><input type="checkbox" id="acc-scarf" checked> Scarf in the project's colour</label>
+    <label class="chk"><input type="checkbox" id="acc-phones" checked> Headphones in deep work (45+ min)</label>
+    <label class="chk"><input type="checkbox" id="acc-hats" checked> Hats (party, night cap)</label>
+    <div class="swatches" id="swatches"></div>
+    <div class="row"><span class="hint">Streak</span><input type="range" id="streak" min="0" max="3" value="2" style="flex:1" aria-label="Streak stage"><span class="hint" id="streak-l">flower</span></div>
+    <h5>Time and quiet</h5>
+    <div class="clock"><span>Sim time</span><b id="clock">21:30</b><button class="btn" id="tick">+15 min</button></div>
+    <label class="chk"><input type="checkbox" id="focus"> Focus / Do Not Disturb</label>
+    <label class="chk"><input type="checkbox" id="fullscreen"> A full-screen app is in front</label>
+    <h5>What Bip decided</h5>
+    <div class="log" id="log"></div>
+  </div>
+</aside>
+
+<div class="pet" id="pet" role="button" tabindex="0" aria-label="Bip, your build-in-public pet. Click for actions." aria-haspopup="menu">
+  <canvas id="cv" width="30" height="27"></canvas>
+  <span class="dot" aria-hidden="true"></span>
+</div>
+<div class="bubble" id="bubble" role="status" aria-live="polite"></div>
+<div id="ring" role="menu" aria-label="Bip actions"></div>
+<div class="recbar" id="recbar" role="status"><span class="wave"><i style="height:6px"></i><i style="height:12px;animation-delay:.1s"></i><i style="height:9px;animation-delay:.2s"></i><i style="height:13px;animation-delay:.3s"></i><i style="height:7px;animation-delay:.15s"></i></span><span id="rectime">0:00</span><span id="rechint">release to save</span></div>
+
+<section class="card" id="card" role="dialog" aria-label="Bip"></section>
+
+<div class="menu" id="menu" role="menu">
+  <button data-m="chat">Chat with Bip</button>
+  <button data-m="note">New note <span class="hint" style="float:right">⌥⇧B</span></button>
+  <button data-m="stay">Stay put (no wandering)</button>
+  <button data-m="hide1">Hide for 1 hour</button>
+  <button data-m="hideday">Hide until tomorrow</button>
+  <button data-m="hideproj">Hide for this project</button>
+  <hr>
+  <button data-m="quit">Quit Bip</button>
+</div>
+
+<div class="shade" id="shade"><div class="tip">Drag to capture a region · Esc to cancel</div><div class="sel" id="sel" hidden></div></div>
+<div class="flash" id="flash"></div>
+
+<script>
+const $ = s => document.querySelector(s);
+const pet = $("#pet"), bubble = $("#bubble"), card = $("#card"), cv = $("#cv"), ctx = cv.getContext("2d");
+const W = 60, H = 54;
+
+/* =====================================================================
+   SPRITE — Bip is built from shapes (body, ears, feet, accessories) that
+   are rasterized onto a 30×27 pixel grid and shown at 2× (body ≈ 24 px →
+   48 px on screen). Each shape gets a 1-px outline, so overlapping parts
+   read clearly. scripts/build_sprites.py does the same in Python and
+   writes every frame as a GIF.
+   ===================================================================== */
+const CW = 30, CH = 27, OUT = "#2b2140";
+const THEMES = {
+  peach:    { b: "#ffcf8a", h: "#fff0d4", d: "#f0b060", k: "#ff9aa2", e: OUT, c: "#ff8f9c" },
+  mint:     { b: "#a8ecc4", h: "#e6fff0", d: "#7fd2a2", k: "#ff9aa2", e: OUT, c: "#ff8f9c" },
+  sky:      { b: "#a9d4ff", h: "#e8f4ff", d: "#80b9f3", k: "#ffb3c1", e: OUT, c: "#ff8fa8" },
+  lilac:    { b: "#d4b8ff", h: "#f3ebff", d: "#b597f0", k: "#ff9ccc", e: OUT, c: "#ff8fb8" },
+  charcoal: { b: "#5b5f6b", h: "#8a8f9c", d: "#454852", k: "#ff9aa2", e: "#ffffff", c: "#ff8fa0" },
+};
+const PROJECTS = { "invoice-ai": { c: "#ef7d32", d: "#b9581b", file: "api/webhooks/stripe.ts · invoice-ai" }, "build-in-public": { c: "#5b7bff", d: "#3651c9", file: "src/buildinpublic/pet/brain.py · build-in-public" } };
+// face parts, centred on their anchor
+const EYE = {
+  open:    ["wee", "eee", "eee", ".e."],
+  line:    ["...", "...", "eee", "..."],
+  happy:   ["...", ".e.", "e.e", "..."],
+  content: ["...", "e.e", ".e.", "..."],
+  up:      ["wee", "eee", ".e.", "..."],
+  down:    ["...", "...", "eee", "eee"],
+  big:     [".ee.", "weee", "eeee", "eeee", ".ee."],
+  dizzy:   ["eee", "..e", "e.e", "eee"],
+};
+const MOUTH = {
+  smile: ["m..m", ".mm."], open: ["mmmm", ".pp."], o: [".m.", "m.m", ".m."], flat: ["mm"],
+  wavy: ["m.m.", ".m.m"], smug: ["...m", "mmm."], cat: ["m.m.m", ".m.m."], tiny: ["m"],
+};
+// held props (already outlined)
+const PROP = {
+  laptop:  ["..oooooooooo..", "..oKKKKKKKKo..", "..oKKKKwwKKo..", "..oKKKKKKKKo..", "oooooooooooooo", "oggggggggggggo", "oooooooooooooo"],
+  laptop2: ["..oooooooooo..", "..oKKKKKKKKo..", "..oKKKKKKKKo..", "..oKKKKKKKKo..", "oooooooooooooo", "oggggggggggggo", "oooooooooooooo"],
+  book:    [".oooo..oooo.", "oWWWWooWWWWo", "oWggWooWggWo", "oWWWWooWWWWo", "oWggWooWggWo", ".oooooooooo."],
+  flask:   [".oo.", "oGGo", "oGWo", "oGGo", "ollo", "oWlo", "ollo", ".oo."],
+  flask2:  [".oo.", "oGWo", "oGGo", "oGGo", "olWo", "ollo", "ollo", ".oo."],
+  sign:    ["ooooooo", "oWBBBWo", "oWWWBWo", "oWWBBWo", "oWWBWWo", "oWWWWWo", "oWWBWWo", "ooooooo", "...u...", "...u...", "...u...", "...u...", "...u..."],
+  card:    ["ooooo", "oWWWo", "oggWo", "oWWWo", "oggWo", "ooooo"],
+  spark:   ["..y..", ".yYy.", "yYWYy", ".yYy.", "..y.."],
+  star:    ["..Y..", ".YyY.", "YyyyY", ".Y.Y."],
+};
+// ear poses in degrees (left, right); 0 = straight up
+const EARS = {
+  up: [-12, 12], perk: [-3, 3], back: [-38, 38], droop: [-58, 58], flop: [-12, 84], tilt: [-30, 5],
+  proud: [-6, 6], twitch: [-12, 12], listen: [-2, -8],
+};
+const MOODS = {
+  // resting / work states
+  idle:      { eyes: "open",    mouth: "smile", ears: "up" },
+  editing:   { eyes: "line",    mouth: "flat",  ears: "back",   prop: "laptop" },
+  reading:   { eyes: "down",    mouth: "tiny",  ears: "tilt",   prop: "book", scan: true },
+  testing:   { eyes: "open",    mouth: "o",     ears: "perk",   prop: "flask", look: 1 },
+  waiting:   { eyes: "open",    mouth: "smile", ears: "perk",   prop: "sign", fx: "q", bounce: true },
+  sleepy:    { eyes: "line",    mouth: "flat",  ears: "droop",  fx: "zz", hat: "nightcap" },
+  // reactions
+  curious:   { eyes: "open",    mouth: "o",     ears: "twitch", prop: "spark", look: 1 },
+  idea:      { eyes: "open",    mouth: "smile", ears: "perk",   prop: "card" },
+  happy:     { eyes: "happy",   mouth: "open",  ears: "up",     anim: "hop", wiggle: true },
+  surprised: { eyes: "big",     mouth: "o",     ears: "perk",   fx: "bang", anim: "boing", lift: -1 },
+  proud:     { eyes: "content", mouth: "smug",  ears: "proud",  prop: "star", wiggle: true },
+  thinking:  { eyes: "up",      mouth: "flat",  ears: "tilt",   fx: "dots" },
+  confused:  { eyes: ["open", "line"], mouth: "wavy", ears: "flop", fx: "q" },
+  // clicks
+  giggle:    { eyes: "happy",   mouth: "cat",   ears: "up",     anim: "giggle", wiggle: true },
+  dizzy:     { eyes: "dizzy",   mouth: "wavy",  ears: "flop",   fx: "orbit", anim: "wobble" },
+  petted:    { eyes: "content", mouth: "cat",   ears: "droop",  anim: "purr" },
+  // celebration + voice
+  party:     { eyes: "happy",   mouth: "open",  ears: "proud",  hat: "party", anim: "dance", wiggle: true },
+  listening: { eyes: "open",    mouth: "tiny",  ears: "listen", fx: "note", lift: -1 },
+};
+const MOOD_GROUPS = ["idle", "editing", "reading", "testing", "waiting", "sleepy", "curious", "idea", "happy", "surprised", "proud", "thinking", "confused", "giggle", "dizzy", "petted", "party", "listening"];
+const CLIP = [[], [[0, 0, "L"], [-1, 0, "l"]], [[0, 0, "y"], [-1, 0, "f"], [1, 0, "f"], [0, -1, "f"], [0, 1, "f"]], [[0, 0, "y"], [-1, 0, "f"], [1, 0, "f"], [0, -1, "f"], [0, 1, "f"], [3, 1, "y"], [2, 1, "F"], [4, 1, "F"], [3, 0, "F"], [3, 2, "F"]]];
+const CLIP_NAMES = ["none", "bud", "flower", "two flowers"];
+
+let theme = "peach", stage = 2, project = "invoice-ai", facing = 1, lookCursor = 0, blinkUntil = 0;
+const acc = { scarf: true, phones: true, hats: true };
+const fr = { sx: 1, sy: 1, dx: 0, dy: 0, feet: 0, earAlt: false, frame: 0 };
+
+function draw(moodName) {
+  const M = MOODS[moodName], T = THEMES[theme], P = PROJECTS[project];
+  const pal = { o: OUT, b: T.b, h: T.h, d: T.d, k: T.k, e: T.e, c: T.c, m: T.e, w: "#ffffff", W: "#ffffff", p: "#ff6b81", K: "#262a33", q: "#3d4250",
+    g: "#b9c0cc", G: "#e6eef5", s: P.c, S: P.d, r: "#ff5a7a", y: "#ffd23f", Y: "#ffb000", B: "#4c6ef5", n: "#3949ab", u: "#b87a43", l: "#4cc584", L: "#2f9e57", f: "#ff7eb3", F: "#ffa94d" };
+  const G = Array.from({ length: CH }, () => Array(CW).fill(null));
+  const shape = (mask, fill) => {
+    const Mk = Array.from({ length: CH }, (_, y) => Array.from({ length: CW }, (_, x) => mask(x + .5, y + .5)));
+    for (let y = 0; y < CH; y++) for (let x = 0; x < CW; x++)
+      if (!Mk[y][x] && (Mk[y - 1]?.[x] || Mk[y + 1]?.[x] || Mk[y][x - 1] || Mk[y][x + 1])) G[y][x] = "o";
+    for (let y = 0; y < CH; y++) for (let x = 0; x < CW; x++) if (Mk[y][x]) G[y][x] = fill(x + .5, y + .5);
+  };
+  const put = (pat, cx, cy) => {
+    const h = pat.length, w = Math.max(...pat.map(r => r.length));
+    const x0 = Math.round(cx - w / 2), y0 = Math.round(cy - h / 2);
+    pat.forEach((r, j) => [...r].forEach((ch, i) => { const x = x0 + i, y = y0 + j; if (ch !== "." && G[y] && x >= 0 && x < CW) G[y][x] = ch; }));
+  };
+  const ell = (x, y, ex, ey, rx, ry, a = 0) => { const dx = x - ex, dy = y - ey, c = Math.cos(a), s = Math.sin(a); const u = dx * c + dy * s, v = -dx * s + dy * c; return u * u / (rx * rx) + v * v / (ry * ry) <= 1; };
+
+  const sx = fr.sx, sy = fr.sy, cx = 15, a = 10.8 * sx, bt = 8.2 * sy, bb = 5.8 * sy, bottom = 23.5, cy = bottom - bb, top = cy - bt;
+  const inBody = (x, y) => Math.abs((x - cx) / a) ** 2.6 + Math.abs((y - cy) / (y < cy ? bt : bb)) ** 2.6 <= 1;
+  const lift = M.lift || 0;
+  // ears
+  let [la, ra] = EARS[M.ears];
+  if (M.ears === "twitch" && fr.frame % 14 < 2) ra += 18;
+  if (M.wiggle && fr.earAlt) { la -= 9; ra += 9; }
+  if (moodName === "listening" && fr.earAlt) ra -= 4;
+  [[-1, la], [1, ra]].forEach(([side, deg]) => {
+    const an = deg * Math.PI / 180, bx = cx + side * 4.7 * sx, by = top + 2.8 + lift, rx = 2.4, ry = 6.1;
+    const ex = bx + Math.sin(an) * (ry - 1.5), ey = by - Math.cos(an) * (ry - 1.5);
+    const ix = bx + Math.sin(an) * (ry - 2.0), iy = by - Math.cos(an) * (ry - 2.0);
+    shape((x, y) => ell(x, y, ex, ey, rx, ry, an), (x, y) => ell(x, y, ix, iy, 1.05, ry - 2.6, an) ? "k" : "b");
+  });
+  // feet (behind the body, so the body's outline sits on top of them)
+  [-1, 1].forEach(side => { const up = fr.feet === side ? 1 : 0; shape((x, y) => ell(x, y, cx + side * 5.0 + (fr.feet ? side * .4 : 0), 24.4 - up, 2.7, 1.45), () => "d"); });
+  // body + a small shine high on the left
+  shape(inBody, (x, y) => ell(x, y, cx - 6.2 * sx, top + 2.4, 1.9, .9) || ell(x, y, cx - 3.6 * sx, top + 1.5, .7, .6) ? "h" : "b");
+  // scarf in the project's colour
+  if (acc.scarf) { const y1 = cy + 2.9, y2 = cy + 4.7;
+    shape((x, y) => (inBody(x, y) && y > y1 && y < y2) || (x > cx + 4.4 && x < cx + 7.4 && y > y1 && y < 25.8),
+      (x, y) => y > y2 ? (Math.floor(y) % 2 ? "s" : "S") : (Math.floor(x) % 4 === 0 ? "S" : "s")); }
+  // hats
+  const hat = M.hat && acc.hats ? M.hat : (acc.phones && deepWork() && ["editing", "reading", "testing", "thinking"].includes(moodName) ? "phones" : null);
+  if (hat === "phones") {
+    const hy = cy - 1;
+    shape((x, y) => y < hy - 3 && ell(x, y, cx, hy, 12.8, bt + 3.4) && !ell(x, y, cx, hy, 11.9, bt + 2.5), () => "q");
+    [-1, 1].forEach(side => shape((x, y) => ell(x, y, cx + side * 12.1, hy - .4, 1.7, 2.8), (x, y) => y < hy - 1.6 ? "g" : "K"));
+  }
+  // streak flower clip, tucked at the base of the right ear
+  CLIP[stage].forEach(([dx, dy, ch]) => { const x = Math.round(cx + 7.2 + dx), y = Math.round(top + 1.6 + dy); if (G[y]) G[y][x] = ch; });
+  // face
+  const look = M.look ?? (M.scan ? (Math.floor(fr.frame / 10) % 2 ? 1 : -1) : lookCursor);
+  const fcx = cx + look, fcy = cy - .7 + (M.lift || 0) * .5;
+  const blink = performance.now() < blinkUntil && ["open", "up", "big"].includes(Array.isArray(M.eyes) ? "x" : M.eyes);
+  const [le, re] = Array.isArray(M.eyes) ? M.eyes : [M.eyes, M.eyes];
+  put(EYE[blink ? "line" : le], fcx - 4.5, fcy - .7);
+  put(EYE[blink ? "line" : re], fcx + 4.5, fcy - .7);
+  put(["ccc"], fcx - 7.7, fcy + 2.3); put(["ccc"], fcx + 7.7, fcy + 2.3);
+  put(MOUTH[M.mouth], fcx, fcy + 3.0);
+  if (hat === "party") {
+    const ay = top - 6.6, by2 = top + 1.6;
+    shape((x, y) => y > ay && y < by2 && Math.abs(x - cx) <= 3.9 * (y - ay) / (by2 - ay), (x, y) => Math.floor((y - ay) / 1.7) % 2 ? "r" : "y");
+    shape((x, y) => ell(x, y, cx, ay, 1.3, 1.3), () => "Y");
+  }
+  if (hat === "nightcap") {
+    const A = [cx - 5.4, top + 2.6], B = [cx + 5.4, top + 2.6], C = [cx + 7.5, top - 6.2];
+    const sgn = (p, q, r) => (p[0] - r[0]) * (q[1] - r[1]) - (q[0] - r[0]) * (p[1] - r[1]);
+    shape((x, y) => { const P0 = [x, y], d1 = sgn(P0, A, B), d2 = sgn(P0, B, C), d3 = sgn(P0, C, A); return !((d1 < 0 || d2 < 0 || d3 < 0) && (d1 > 0 || d2 > 0 || d3 > 0)); }, (x, y) => y > top + 1.1 ? "W" : "n");
+    shape((x, y) => ell(x, y, C[0], C[1], 1.3, 1.3), () => "W");
+  }
+  // props
+  const alt = fr.frame % 6 < 3;
+  if (M.prop === "laptop") put(alt ? PROP.laptop : PROP.laptop2, cx, 22.4);
+  if (M.prop === "book") put(PROP.book, cx, 22.4);
+  if (M.prop === "flask") put(alt ? PROP.flask : PROP.flask2, cx + 11.4, 19.8);
+  if (M.prop === "sign") put(PROP.sign, cx + 10.6, top + 1.2 + (M.bounce && alt ? -1 : 0));
+  if (M.prop === "card") put(PROP.card, cx + 11.4, cy);
+  if (M.prop === "spark" && alt) put(PROP.spark, cx + 11, top - 4);
+  if (M.prop === "star") put(PROP.star, cx + 11, top - 3);
+
+  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, CW, CH);
+  if (facing < 0) ctx.setTransform(-1, 0, 0, 1, CW, 0);
+  for (let y = 0; y < CH; y++) for (let x = 0; x < CW; x++) { const k = G[y][x]; if (k && pal[k]) { ctx.fillStyle = pal[k]; ctx.fillRect(x, y, 1, 1); } }
+  cv.style.transform = `translate(${fr.dx * 2}px, ${fr.dy * 2}px)`;
+}
+
+/* ---------- moods, transient reactions and the animation loop ---------- */
+let overlay = null, overlayUntil = 0, agentState = "editing";
+const nowMood = () => overlay && performance.now() < overlayUntil ? overlay : baseMood();
+function baseMood() {
+  const t = sim % 1440;
+  if (!session.on && (t >= 22 * 60 || t < 6 * 60)) return "sleepy";
+  return agentState && agentState !== "done" ? agentState : "idle";
+}
+let lastFx = null;
+function flash(m, ms = 1800) { overlay = m; overlayUntil = performance.now() + ms; const A = MOODS[m].anim; if (A) play(A); syncFx(); markMood(); }
+function syncFx() {
+  const m = nowMood(), fx = MOODS[m].fx || null;
+  if (fx === lastFx) return; lastFx = fx;
+  pet.querySelector(".fx")?.remove();
+  const html = { zz: '<span class="fx zz">z</span>', bang: '<span class="fx bang">!</span>', q: '<span class="fx q">?</span>', dots: '<span class="fx dots"><span>.</span><span>.</span><span>.</span></span>', orbit: '<span class="fx orbit"></span>', note: '<span class="fx note">♪</span>' }[fx];
+  if (html) pet.insertAdjacentHTML("beforeend", html);
+}
+function markMood() { const m = nowMood(); document.querySelectorAll("#moods button").forEach(b => b.setAttribute("aria-pressed", b.dataset.mood === m)); }
+// squash-and-stretch sequences: [sx, sy, dx, dy, ms, facing?]
+const ANIMS = {
+  hop:    [[1.1, .88, 0, 0, 90], [.92, 1.1, 0, -2, 120], [.95, 1.05, 0, -3, 110], [1, 1, 0, -1, 90], [1.12, .86, 0, 0, 100], [1, 1, 0, 0, 80]],
+  boing:  [[.86, 1.16, 0, -1, 110], [1.1, .9, 0, 0, 110], [.96, 1.04, 0, 0, 110], [1, 1, 0, 0, 60]],
+  giggle: [[1.07, .93, 0, 0, 80], [.96, 1.04, 0, 0, 80], [1.07, .93, 0, 0, 80], [.96, 1.04, 0, 0, 80], [1, 1, 0, 0, 60]],
+  wobble: Array.from({ length: 12 }, (_, i) => [1, 1, i % 2 ? 1 : -1, 0, 110]).concat([[1, 1, 0, 0, 60]]),
+  purr:   Array.from({ length: 16 }, (_, i) => [1.03, .97, i % 2, 0, 70]).concat([[1, 1, 0, 0, 60]]),
+  dance:  [0, 1, 2, 3].flatMap(i => [[1.1, .88, 0, 0, 90, i % 2 ? 1 : -1], [.92, 1.1, i % 2 ? 1 : -1, -3, 140], [1, 1, i % 2 ? 1 : -1, -1, 90], [1.1, .9, 0, 0, 90]]).concat([[1, 1, 0, 0, 60, 1]]),
+};
+let anim = null;
+function play(name) { anim = { f: ANIMS[name], i: 0, until: performance.now() + ANIMS[name][0][4] }; }
+let tickN = 0;
+setInterval(() => {
+  const now = performance.now(); tickN++; fr.frame = tickN >> 1;
+  if (overlay && now >= overlayUntil) { overlay = null; }
+  if (Math.random() < .012) blinkUntil = now + 150;
+  const m = nowMood();
+  if (anim) {
+    if (now >= anim.until) { anim.i++; if (anim.i >= anim.f.length) anim = null; else anim.until = now + anim.f[anim.i][4]; }
+  }
+  if (anim) { const [sx, sy, dx, dy, , face] = anim.f[anim.i]; Object.assign(fr, { sx, sy, dx, dy }); if (face) facing = face; fr.feet = 0; }
+  else if (pet.classList.contains("walking")) { const ph = Math.floor(now / 170) % 2; Object.assign(fr, { sx: ph ? 1.04 : .97, sy: ph ? .95 : 1.03, dx: 0, dy: ph ? 0 : -1, feet: ph ? -1 : 1 }); }
+  else { const br = Math.floor(now / 900) % 2; Object.assign(fr, { sx: br ? 1.035 : 1, sy: br ? .96 : 1, dx: 0, dy: MOODS[m].bounce && Math.floor(now / 450) % 4 === 0 ? -1 : 0, feet: 0 }); }
+  fr.earAlt = Math.floor(now / 160) % 2 === 0;
+  syncFx(); draw(m);
+  if (tickN % 6 === 0) markMood();
+}, 50);
+
+/* ===================================================================== state */
+let sim = 21 * 60 + 30, lastBubble = -999, bubblesToday = 0, notNow = {};
+let session = { on: true, agent: "Claude", start: sim - 32 };
+const deepWork = () => session.on && sim - session.start >= 45;
+const notes = [], links = [], shots = [];
+let suggestions = [];
+const fmt = m => `${String(Math.floor(m / 60) % 24).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
+function log(k, why) { $("#log").insertAdjacentHTML("afterbegin", `<div><span class="k">${fmt(sim)} ${k}</span><br>${why}</div>`); }
+
+/* ===================================================================== where Bip lives */
+let homeMode = "window", spot = null, homeX = null;
+const wins = [...document.querySelectorAll(".win")];
+let activeWin = $("#w-editor");
+function layoutWindows() {
+  const vw = innerWidth, vh = innerHeight, small = vw < 760;
+  Object.assign($("#w-editor").style, small ? { left: "10px", right: "10px", top: "120px", height: (vh * .42) + "px", width: "auto" } : { left: "22%", top: "110px", width: "50%", height: (vh - 230) + "px", right: "auto" });
+  Object.assign($("#w-browser").style, small ? { left: "40px", right: "24px", top: (vh * .42 + 170) + "px", height: (vh * .2) + "px", width: "auto" } : { left: "68%", top: "200px", width: "28%", height: "300px", right: "auto" });
+}
+const rectOf = w => w.getBoundingClientRect();
+const windowSpotOK = w => rectOf(w).top - H > 30;
+function place(animate = true) {
+  if (!animate) pet.classList.add("dragging");
+  let x, y;
+  if (spot.kind === "window") { const r = rectOf(spot.win); x = Math.max(r.left, Math.min(r.right - W, r.left + spot.x)); y = r.top - H + 4; }
+  else if (spot.kind === "floor") { x = Math.max(0, Math.min(innerWidth - W, spot.x)); y = innerHeight - H - 72; }
+  else { x = spot.side === "left" ? 0 : innerWidth - W; y = Math.max(30, Math.min(innerHeight - H - 10, spot.y)); }
+  pet.style.left = x + "px"; pet.style.top = y + "px";
+  if (!animate) { void pet.offsetWidth; pet.classList.remove("dragging"); }
+  applyPeek(); if (card.classList.contains("on")) placeCard(); if (ringOpen) layoutRing();
+}
+function goHome(why, animate = true) {
+  stopWalk();
+  if (homeMode === "window" && windowSpotOK(activeWin)) spot = { kind: "window", win: activeWin, x: rectOf(activeWin).width - W - 70 };
+  else spot = { kind: "floor", x: innerWidth - W - 24 };
+  homeX = spot.x; place(animate);
+  if (why) log("perch", why);
+}
+function applyPeek() {
+  pet.classList.remove("peek-left", "peek-right");
+  if ($("#peek").checked && spot?.kind === "side" && !card.classList.contains("on") && !ringOpen && !pet.classList.contains("has-dot") && !bubble.classList.contains("on")) pet.classList.add("peek-" + spot.side);
+}
+wins.forEach(w => {
+  w.addEventListener("pointerdown", () => {
+    if (activeWin === w) return;
+    wins.forEach(x => x.classList.toggle("active", x === w)); activeWin = w;
+    if (homeMode === "window" && spot.kind === "window") setTimeout(() => { play("hop"); goHome(`${w.dataset.name} is now active → hops onto its title bar`); }, 120);
+  });
+  const bar = w.querySelector(".win-h"); let d = null;
+  bar.addEventListener("pointerdown", e => { const r = rectOf(w); d = { x: e.clientX, y: e.clientY, l: r.left, t: r.top }; bar.setPointerCapture(e.pointerId); });
+  bar.addEventListener("pointermove", e => {
+    if (!d) return; Object.assign(w.style, { left: (d.l + e.clientX - d.x) + "px", top: Math.max(30, d.t + e.clientY - d.y) + "px", right: "auto" });
+    if (spot?.kind === "window" && spot.win === w) { if (windowSpotOK(w)) place(false); else goHome(); }
+  });
+  bar.addEventListener("pointerup", () => { if (d && spot?.kind === "window" && spot.win === w && !windowSpotOK(w)) goHome("no room above this window → the corner"); d = null; });
+});
+
+/* ===================================================================== drag, click, poke, pet */
+let drag = null, clicks = [];
+pet.addEventListener("pointerdown", e => {
+  if (e.button !== 0) return;
+  drag = { x: e.clientX, y: e.clientY, l: parseFloat(pet.style.left), t: parseFloat(pet.style.top), moved: false };
+  try { pet.setPointerCapture(e.pointerId); } catch (_) {}
+});
+pet.addEventListener("pointermove", e => {
+  if (!drag) return;
+  const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+  if (!drag.moved && Math.hypot(dx, dy) < 5) return;
+  if (!drag.moved) { drag.moved = true; pet.classList.add("dragging"); pet.classList.remove("peek-left", "peek-right"); closeAll(); hideBubble(); stopWalk(); flash("surprised", 700); }
+  pet.style.left = Math.max(0, Math.min(innerWidth - W, drag.l + dx)) + "px";
+  pet.style.top = Math.max(30, Math.min(innerHeight - H - 10, drag.t + dy)) + "px";
+});
+pet.addEventListener("pointerup", () => {
+  if (!drag) return;
+  const moved = drag.moved; drag = null; pet.classList.remove("dragging");
+  if (!moved) return onClick();
+  const x = parseFloat(pet.style.left), y = parseFloat(pet.style.top), cx = x + W / 2, feet = y + H;
+  const target = wins.find(w => { const r = rectOf(w); return cx > r.left && cx < r.right && Math.abs(feet - r.top) < 40 && windowSpotOK(w); });
+  if (target) { spot = { kind: "window", win: target, x: x - rectOf(target).left }; homeX = spot.x; log("drop", `on ${target.dataset.name}'s title bar`); }
+  else if (feet > innerHeight - 150) { spot = { kind: "floor", x }; homeX = x; log("drop", "on the floor above the dock"); }
+  else { const side = cx < innerWidth / 2 ? "left" : "right"; spot = { kind: "side", side, y }; log("drop", `docked to the ${side} edge`); }
+  play("boing"); place();
+});
+function onClick() {
+  const now = performance.now();
+  clicks = clicks.filter(t => now - t < 900); clicks.push(now);
+  if (clicks.length >= 3) { clicks = []; closeAll(); flash("dizzy", 2200); log("poke", "clicked 3× fast → dizzy (and the menu stays shut)"); return; }
+  flash("giggle", 380);
+  toggleRing();
+}
+pet.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleRing(); } });
+pet.addEventListener("contextmenu", e => {
+  e.preventDefault(); const m = $("#menu"); m.classList.add("on");
+  m.style.left = Math.min(e.clientX, innerWidth - 220) + "px"; m.style.top = Math.min(e.clientY, innerHeight - 260) + "px";
+});
+// petting: rub the cursor back and forth over Bip
+let rub = [], lastPet = -1e9, lastRubPt = null;
+pet.addEventListener("pointermove", e => {
+  if (drag || e.pointerType === "touch") return;
+  const now = performance.now();
+  if (lastRubPt) rub.push({ t: now, d: Math.abs(e.clientX - lastRubPt.x) + Math.abs(e.clientY - lastRubPt.y), dir: Math.sign(e.clientX - lastRubPt.x) });
+  lastRubPt = { x: e.clientX, y: e.clientY };
+  rub = rub.filter(r => now - r.t < 1500);
+  const dist = rub.reduce((s, r) => s + r.d, 0), turns = rub.filter((r, i) => i && r.dir && rub[i - 1].dir && r.dir !== rub[i - 1].dir).length;
+  if (dist > 160 && turns >= 2 && now - lastPet > 3500) { lastPet = now; rub = []; flash("petted", 2400); hearts(); log("pet", "you rubbed Bip → it purrs"); }
+});
+pet.addEventListener("pointerenter", () => { pet.classList.remove("peek-left", "peek-right"); stopWalk(); });
+pet.addEventListener("pointerleave", () => { lastRubPt = null; if (!drag) setTimeout(applyPeek, 700); });
+function hearts() { const r = pet.getBoundingClientRect(); [0, 220, 440].forEach((d, i) => setTimeout(() => { const h = document.createElement("span"); h.className = "heart"; h.textContent = "♥"; h.style.left = (r.left + 18 + i * 10) + "px"; h.style.top = (r.top - 2) + "px"; document.body.append(h); setTimeout(() => h.remove(), 1200); }, d)); }
+function confetti() {
+  const r = pet.getBoundingClientRect(), cols = ["#ff5a7a", "#ffd23f", "#4cc584", "#5b7bff", "#c3a1ff", "#ffa94d"];
+  const parts = Array.from({ length: 34 }, () => { const el = document.createElement("i"); el.className = "confetti"; el.style.background = cols[Math.random() * cols.length | 0]; document.body.append(el);
+    return { el, x: r.left + 30, y: r.top + 16, vx: (Math.random() - .5) * 7, vy: -3 - Math.random() * 5 }; });
+  const t0 = performance.now();
+  (function step(t) { const k = (t - t0) / 1000; parts.forEach(p => { p.vy += .32; p.x += p.vx; p.y += p.vy; p.el.style.transform = `translate(${Math.round(p.x / 2) * 2}px, ${Math.round(p.y / 2) * 2}px)`; p.el.style.opacity = Math.max(0, 1 - k / 1.4); });
+    if (k < 1.4) requestAnimationFrame(step); else parts.forEach(p => p.el.remove()); })(t0);
+}
+
+/* ===================================================================== wandering */
+let walkT = null;
+function stopWalk() {
+  clearTimeout(walkT);
+  if (!pet.classList.contains("walking")) return;
+  const x = pet.getBoundingClientRect().left;
+  pet.classList.add("dragging"); pet.style.left = x + "px"; void pet.offsetWidth; pet.classList.remove("walking", "dragging");
+  if (spot.kind === "window") spot.x = x - rectOf(spot.win).left; else if (spot.kind === "floor") spot.x = x;
+  facing = 1;
+}
+function canWander() {
+  return $("#wander").checked && !drag && spot && spot.kind !== "side" && !card.classList.contains("on") && !ringOpen && !bubble.classList.contains("on") && !rec
+    && ["idle", "editing", "reading"].includes(nowMood()) && !pet.classList.contains("hidden") && !pet.matches(":hover");
+}
+const surfaceRange = () => spot.kind === "window" ? [0, rectOf(spot.win).width - W] : [0, innerWidth - W];
+function wander() {
+  if (!canWander()) return;
+  const [lo, hi] = surfaceRange(), away = Math.abs(spot.x - homeX) > 5;
+  let to = away ? homeX : spot.x + (Math.random() < .5 ? -1 : 1) * (50 + Math.random() * 90);
+  to = Math.max(lo, Math.min(hi, to));
+  if (Math.abs(to - spot.x) < 20) return;
+  facing = to > spot.x ? 1 : -1;
+  const secs = Math.abs(to - spot.x) / 50;
+  pet.style.setProperty("--walk", secs.toFixed(2) + "s");
+  pet.classList.add("walking"); spot.x = to; place();
+  log("wander", away ? "toddles back to its spot" : `takes a little walk ${facing > 0 ? "right" : "left"}`);
+  walkT = setTimeout(() => { pet.classList.remove("walking"); facing = 1; }, secs * 1000 + 50);
+}
+setInterval(wander, 9000);
+
+/* ===================================================================== cursor */
+let last = null, lastDodge = -Infinity;
+document.addEventListener("pointermove", e => {
+  if (!$("#cursor").checked || drag || pet.classList.contains("hidden") || e.pointerType === "touch") return;
+  const r = pet.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+  const dx = e.clientX - cx, dy = e.clientY - cy, dist = Math.hypot(dx, dy), now = performance.now();
+  lookCursor = dist < 240 && !e.target.closest("#pet") ? (dx > 25 ? 1 : dx < -25 ? -1 : 0) : 0;
+  if (facing < 0) lookCursor = -lookCursor;
+  if (last && dist < 110 && !e.target.closest("#pet, #card, .rb")) {
+    const closing = (last.dist - dist) / Math.max(1, now - last.t);
+    if (closing > 1.1 && now - lastDodge > 2500 && !card.classList.contains("on") && !ringOpen && spot) {
+      lastDodge = now; stopWalk();
+      if (spot.kind === "side") spot.y += dy > 0 ? -80 : 80;
+      else { const [lo, hi] = surfaceRange(), dir = dx > 0 ? -1 : 1; let to = spot.x + dir * 80; if (to < lo || to > hi) to = spot.x - dir * 80; spot.x = Math.max(lo, Math.min(hi, to)); }
+      flash("surprised", 700); place();
+      log("dodge", `cursor rushed in at ${closing.toFixed(1)} px/ms → hopped aside`);
+    }
+  }
+  last = { t: now, dist };
+});
+
+/* ===================================================================== bubbles (brain.py rules) */
+function canBubble(kind) {
+  if ($("#fullscreen").checked) return [false, "a full-screen app is in front: Bip is hidden"];
+  if (kind === "asked") return [true, ""];
+  if ($("#focus").checked) return [false, "Focus / Do Not Disturb is on: no bubbles"];
+  const t = sim % 1440;
+  if (t >= 22 * 60 || t < 8 * 60) return [false, "quiet hours (22:00–08:00): no bubbles"];
+  if (kind === "celebrate") return [true, ""];
+  if (notNow[kind] >= 3) return [false, `you said "Not now" to this 3 times, so it's off`];
+  if (sim - lastBubble < 45) return [false, `last bubble was ${sim - lastBubble} min ago (needs 45)`];
+  if (bubblesToday >= 6) return [false, "already 6 bubbles today"];
+  return [true, ""];
+}
+function say(text, kind, ms = 10000, dot = true) {
+  const [ok, why] = canBubble(kind);
+  if (!ok) { pet.classList.add("has-dot"); applyPeek(); log("held", `${why}. Waiting in the chat with a dot.`); return false; }
+  if (!["asked", "celebrate"].includes(kind)) { lastBubble = sim; bubblesToday++; }
+  stopWalk(); pet.classList.remove("peek-left", "peek-right");
+  bubble.textContent = text; bubble.classList.add("on");
+  const r = pet.getBoundingClientRect();
+  bubble.style.left = Math.max(8, Math.min(innerWidth - bubble.offsetWidth - 8, r.left + r.width / 2 - bubble.offsetWidth / 2)) + "px";
+  bubble.style.top = (r.top < 90 ? r.bottom + 8 : r.top - bubble.offsetHeight - 22) + "px";
+  clearTimeout(say.t); say.t = setTimeout(() => { hideBubble(); if (dot) pet.classList.add("has-dot"); applyPeek(); }, ms);
+  log("bubble", ["asked", "celebrate"].includes(kind) ? `"${text}" (not counted)` : `"${text}" (${bubblesToday} of 6 today)`);
+  return true;
+}
+function hideBubble() { bubble.classList.remove("on"); }
+bubble.onclick = () => { hideBubble(); openCard("chat"); };
+
+/* ===================================================================== events */
+function addSugg(s) {
+  s.id = "s" + Math.random().toString(36).slice(2, 7);
+  suggestions = [s, ...suggestions.filter(x => x.key !== s.key)].slice(0, 3);
+  chat.push({ from: "bip", text: `${s.ic} ${s.text}`, chips: [[s.yes, "yes:" + s.id], ["Not now", "no:" + s.id]], sid: s.id });
+  updateBadge(); if (cardKind === "chat") renderCard();
+}
+const AG = {
+  reading: ["reading", "PreToolUse Read/Grep → reading, eyes scanning a tiny book"],
+  editing: ["editing", "PreToolUse Edit/Write → typing on its laptop"],
+  testing: ["testing", "PreToolUse Bash `pnpm test` → watching a bubbling flask"],
+  waiting: ["waiting", "Notification hook → holds up a “?” sign. No bubble: your agent already notifies you"],
+  done:    ["done", "Stop hook → a happy stretch, then idle"],
+};
+document.querySelectorAll("[data-ag]").forEach(b => b.onclick = () => {
+  const [s, why] = AG[b.dataset.ag]; agentState = s; session.on = true; overlay = null;
+  if (s === "done") flash("happy", 900);
+  log("agent", why); syncFx(); markMood();
+});
+const EV = {
+  session_start() { session = { on: true, agent: "Claude", start: sim }; agentState = "editing"; overlay = null; log("event", "session_start → Bip appears (or switches project)"); },
+  tests_fail() { $("#term").innerHTML = `<span class="d">~/Projects/invoice-ai</span> $ pnpm test webhooks\n<span class="r">✗ handles retried invoice.paid (2 charges, expected 1)</span>\n<span class="r">✗ again, 3rd time in a row</span>\n<span class="d">~/Projects/invoice-ai</span> $ ▍`;
+    flash("confused", 4000); log("event", "same test failed 3× → confused (no bubble: never nag while you're stuck)"); },
+  tests_green() {
+    $("#term").innerHTML = `<span class="d">~/Projects/invoice-ai</span> $ pnpm test webhooks\n<span class="g">✓ handles retried invoice.paid (1 charge)</span>\n<span class="g">Tests: 12 passed</span>  <span class="d">after 40 min of red</span>\n<span class="d">~/Projects/invoice-ai</span> $ ▍`;
+    flash("surprised", 900); setTimeout(() => flash("curious", 7000), 950);
+    addSugg({ kind: "capture", ic: "✦", text: "Tests pass after 40 min. Capture the terminal?", yes: "Capture", key: "tests" }); say("Green at last ✦ Capture?", "tests");
+  },
+  dev_server() { addSugg({ kind: "capture", ic: "🌐", text: "Your app is running on :3000. Capture it?", yes: "Capture", key: "dev" }); flash("curious", 7000); say("Your app is up. Capture it?", "dev"); },
+  commit() { addSugg({ kind: "note", ic: "⬆", text: "Big commit (212 lines). Note down why?", yes: "Write a note", key: "commit" }); flash("surprised", 900); say("Whoa, 212 lines. Note why?", "commit"); },
+  gist_ready() { addSugg({ kind: "idea", ic: "💡", text: 'Post idea: "A 504 cost one user $49 twice"', yes: "Draft it", key: "gist" }); flash("idea", 10000); say("Post idea ready 💡", "gist"); },
+  reminder_due() { addSugg({ kind: "remind", ic: "⏰", text: "Time to post: Make the whole pitch fit one laptop screen (X)", yes: "Copy it", key: "remind" }); flash("idea", 9000); say("Time to post ⏰", "remind"); },
+  session_end() { session.on = false; agentState = null; addSugg({ kind: "note", ic: "📝", text: "Session done. Anything worth remembering?", yes: "Write a note", key: "end" }); pet.classList.add("has-dot"); applyPeek(); log("event", "session_end → dot only. Bip leaves after 20 min with no session."); },
+  late() { sim = 23 * 60 + 40; tickUI(); session.on = false; agentState = null; overlay = null; log("event", "late + idle → sleepy, ears droop, night cap on"); },
+};
+document.querySelectorAll("[data-ev]").forEach(b => b.onclick = () => EV[b.dataset.ev]());
+const MS = {
+  first:  ["Your first post! 🎉", "1st post"],
+  ten:    ["10 posts! You're on a roll 🎉", "10th post"],
+  streak: ["7 days in a row 🔥", "7-day streak"],
+  launch: ["Launch day! 🚀 Go get 'em", "launch (a v1 tag, or you said so in chat)"],
+};
+function celebrate(k) {
+  const [text, what] = MS[k];
+  stopWalk(); flash("party", 3400); confetti();
+  if (k === "streak" && stage < 3) { stage = 3; $("#streak").value = 3; $("#streak-l").textContent = CLIP_NAMES[3]; }
+  if (!say(text, "celebrate", 4000, false)) log("held", "celebration saved for later");
+  log("milestone", `${what} → party hat, confetti, a little dance`);
+}
+document.querySelectorAll("[data-ms]").forEach(b => b.onclick = () => celebrate(b.dataset.ms));
+function tickUI() { $("#clock").textContent = fmt(sim); $("#mb-time").textContent = "Wed " + fmt(sim); }
+$("#tick").onclick = () => { sim += 15; tickUI(); log("clock", `+15 min · session ${sim - session.start} min${deepWork() ? " → deep work: headphones on" : ""}`); };
+$("#fullscreen").onchange = e => { pet.classList.toggle("hidden", e.target.checked); if (e.target.checked) { closeAll(); hideBubble(); } log("screen", e.target.checked ? "full-screen app → Bip hides" : "Bip returns"); };
+$("#focus").onchange = e => log("focus", e.target.checked ? "Focus on → visible but quiet" : "Focus off");
+$("#peek").onchange = applyPeek;
+$("#wander").onchange = e => { if (!e.target.checked) stopWalk(); };
+document.querySelectorAll("[data-home]").forEach(b => b.onclick = () => {
+  homeMode = b.dataset.home; document.querySelectorAll("[data-home]").forEach(x => x.setAttribute("aria-pressed", x === b));
+  play("hop"); goHome(homeMode === "window" ? "sits on the active window's title bar" : "sits in the screen corner");
+});
+$("#moods").innerHTML = MOOD_GROUPS.map(m => `<button data-mood="${m}">${m}</button>`).join("");
+$("#moods").onclick = e => { const b = e.target.closest("[data-mood]"); if (!b) return; const m = b.dataset.mood;
+  if (["idle", "editing", "reading", "testing", "waiting", "sleepy"].includes(m) && m !== "sleepy") { agentState = m === "idle" ? null : m; overlay = null; syncFx(); markMood(); }
+  else { if (m === "party") confetti(); if (m === "petted") hearts(); flash(m, 5000); } };
+$("#project").onchange = e => { project = e.target.value; $("#ed-title").textContent = PROJECTS[project].file; log("project", `switched to ${project} → scarf changes colour`); if (cardKind) renderCard(); };
+$("#acc-scarf").onchange = e => acc.scarf = e.target.checked;
+$("#acc-phones").onchange = e => acc.phones = e.target.checked;
+$("#acc-hats").onchange = e => acc.hats = e.target.checked;
+
+/* ===================================================================== radial menu */
+const IC = {
+  capture: '<path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2"/><circle cx="12" cy="12" r="3"/>',
+  post: '<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>',
+  note: '<path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/>',
+  link: '<path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/>',
+  chat: '<path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/>',
+  voice: '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/>',
+  send: '<path d="M5 12h14M13 6l6 6-6 6"/>',
+};
+const svg = k => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${IC[k]}</svg>`;
+const RING = [["capture", "Capture"], ["post", "Post"], ["note", "Note"], ["link", "Link"], ["chat", "Chat"], ["voice", "Hold to talk"]];
+$("#ring").innerHTML = RING.map(([k, l]) => `<button class="rb" data-rb="${k}" role="menuitem" aria-label="${l}" tabindex="-1">${svg(k)}<span class="rl">${l}</span>${k === "chat" ? '<span class="badge" hidden></span>' : ""}</button>`).join("");
+let ringOpen = false;
+function layoutRing() {
+  const r = pet.getBoundingClientRect(), px = r.left + r.width / 2, py = r.top + r.height / 2;
+  const base = Math.atan2(innerHeight / 2 - py, innerWidth / 2 - px), n = RING.length, spread = 200 * Math.PI / 180, R = 84;
+  document.querySelectorAll(".rb").forEach((b, i) => {
+    const a = base - spread / 2 + spread * i / (n - 1);
+    // keep room at the screen edges for the label that sits outside each button
+    const x = Math.max(60, Math.min(innerWidth - 60, px + Math.cos(a) * R)), y = Math.max(52, Math.min(innerHeight - 50, py + Math.sin(a) * R));
+    b.style.left = (ringOpen ? x : px) + "px"; b.style.top = (ringOpen ? y : py) + "px";
+    const lw = b.querySelector(".rl").offsetWidth / 2 + 6;
+    let lx = Math.round(Math.cos(a) * 40);
+    lx = Math.min(lx, innerWidth - lw - x); lx = Math.max(lx, lw - x); // pull the label back on screen
+    b.style.setProperty("--lx", lx + "px"); b.style.setProperty("--ly", Math.round(Math.sin(a) * 34) + "px");
+  });
+}
+function openRing() {
+  closeCard(); hideBubble(); stopWalk(); pet.classList.remove("has-dot", "peek-left", "peek-right");
+  ringOpen = true; layoutRing(false);
+  document.querySelectorAll(".rb").forEach((b, i) => { b.tabIndex = 0; setTimeout(() => b.classList.add("on"), i * 25); });
+  updateBadge(); setTimeout(() => document.querySelector(".rb")?.focus({ preventScroll: true }), 60);
+}
+function closeRing() { if (!ringOpen) return; ringOpen = false; document.querySelectorAll(".rb").forEach(b => { b.classList.remove("on"); b.tabIndex = -1; }); layoutRing(); applyPeek(); }
+function toggleRing() { ringOpen ? closeRing() : (card.classList.contains("on") ? closeAll() : openRing()); }
+function closeAll() { closeRing(); closeCard(); $("#menu").classList.remove("on"); }
+function updateBadge() { const n = suggestions.length, b = document.querySelector('.rb[data-rb="chat"] .badge'); if (b) { b.hidden = !n; b.textContent = n; } }
+document.querySelectorAll(".rb").forEach(b => {
+  if (b.dataset.rb === "voice") return wireMic(b, "ring");
+  b.onclick = () => { closeRing(); openCard(b.dataset.rb); };
+});
+$("#ring").addEventListener("keydown", e => {
+  const items = [...document.querySelectorAll(".rb")], i = items.indexOf(document.activeElement);
+  if (["ArrowRight", "ArrowDown"].includes(e.key)) { e.preventDefault(); items[(i + 1) % items.length].focus(); }
+  if (["ArrowLeft", "ArrowUp"].includes(e.key)) { e.preventDefault(); items[(i - 1 + items.length) % items.length].focus(); }
+});
+
+/* ===================================================================== compact cards */
+let cardKind = null, captureMode = "region", postFrom = "today", postPlat = "x";
+const chat = [{ from: "bip", text: "Hi! Tell me what to do, or tap one of these:", chips: [["note: …", "ex:note: "], ["capture", "ex:capture"], ["what should I post?", "ex:what should I post?"]] }];
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+function openCard(kind) { cardKind = kind; card.classList.add("on"); pet.classList.remove("has-dot"); renderCard(); setTimeout(() => card.querySelector(".in")?.focus(), 30); }
+function closeCard() { if (!card.classList.contains("on")) return; card.classList.remove("on"); cardKind = null; applyPeek(); }
+function placeCard() {
+  const r = pet.getBoundingClientRect(), w = card.offsetWidth, h = card.offsetHeight;
+  const left = Math.max(12, Math.min(r.left + r.width / 2 - w / 2, innerWidth - w - 12));
+  let top = r.top - h - 12; if (top < 34) top = Math.min(r.bottom + 12, innerHeight - h - 12);
+  card.style.left = left + "px"; card.style.top = Math.max(34, top) + "px";
+}
+const head = (title) => `<div class="c-h">${title}<span class="sub">${session.on ? `<span class="live"></span>${project}` : project}</span><button class="x" data-close aria-label="Close">×</button></div>`;
+function renderCard() {
+  const k = cardKind; if (!k) return;
+  if (k === "note") card.innerHTML = head("📝 Note") + `<div class="c-b"><textarea class="in" id="note-in" placeholder="What was hard, what surprised you, what you decided…"></textarea>
+    <div class="row"><span class="hint">⌘↩ saves · to today's notes.md</span><button class="btn solid" id="note-save" style="margin-left:auto">Save</button></div></div>`;
+  else if (k === "link") card.innerHTML = head("🔗 Link") + `<div class="c-b"><input class="in" id="link-url" type="url" placeholder="https://…">
+    <input class="in" id="link-why" placeholder="What did it help you solve? (optional)">
+    <div class="row"><span class="hint">Goes into this session's research</span><button class="btn solid" id="link-save" style="margin-left:auto">Save</button></div></div>`;
+  else if (k === "capture") card.innerHTML = head("📸 Capture") + `<div class="c-b"><div class="row">${[["region", "Region"], ["window", "Active window"], ["dev", "Dev server"], ["code", "Code"]].map(([v, l]) => `<button class="chip-opt" data-cap="${v}" aria-pressed="${captureMode === v}">${l}</button>`).join("")}</div>
+    <p class="hint">${{ region: "Drag a box anywhere, with your OS's own screenshot tool.", window: "The window Bip sits on. Bip steps out of the shot.", dev: "localhost:3000 as framed desktop + mobile shots.", code: "stripe.ts lines 1–7 from the last session, as a code card." }[captureMode]}</p>
+    <div class="row"><button class="btn solid" id="cap-go" style="margin-left:auto">Capture</button></div></div>`;
+  else if (k === "post") card.innerHTML = head("✍️ Post") + `<div class="c-b">
+    <div class="row"><span class="hint" style="width:36px">From</span>${[["today", "Today"], ["capture", "Capture"], ["note", "A note"], ["link", "A link"]].map(([v, l]) => `<button class="chip-opt" data-from="${v}" aria-pressed="${postFrom === v}">${l}</button>`).join("")}</div>
+    <div class="row"><span class="hint" style="width:36px">For</span>${[["x", "X"], ["linkedin", "LinkedIn"], ["threads", "Threads"]].map(([v, l]) => `<button class="chip-opt" data-plat="${v}" aria-pressed="${postPlat === v}">${l}</button>`).join("")}</div>
+    <div class="row"><span class="hint">Your agent writes it; you approve and post.</span><button class="btn solid" id="post-go" style="margin-left:auto">Ask for a draft</button></div></div>`;
+  else if (k === "chat") {
+    card.innerHTML = head("💬 Bip") + `<div class="msgs" id="msgs">${chat.map(m => `<div class="msg ${m.from}">${esc(m.text)}${m.meta ? `<span class="meta">${esc(m.meta)}</span>` : ""}${m.chips && !m.used ? `<div class="chips">${m.chips.map(([l, a]) => `<button data-chip="${esc(a)}">${esc(l)}</button>`).join("")}</div>` : ""}</div>`).join("")}</div>
+      <div class="composer"><input class="in" id="chat-in" placeholder="Tell Bip… e.g. note: Stripe retries in 10s" aria-label="Message Bip"><button class="micbtn" id="chat-mic" aria-label="Hold to record a voice note">${svg("voice")}</button><button class="sendbtn" id="chat-send" aria-label="Send">${svg("send")}</button></div>`;
+    const ms = $("#msgs"); ms.scrollTop = ms.scrollHeight;
+  }
+  wireCard(); placeCard();
+}
+function done(msg, m = "happy") { closeAll(); flash(m, 1600); say(msg, "asked", 2600, false); }
+function wireCard() {
+  card.querySelector("[data-close]").onclick = closeCard;
+  const ni = $("#note-in");
+  if (ni) { const save = () => { if (!ni.value.trim()) return ni.focus(); saveNote(ni.value.trim()); done("Saved 📝"); }; $("#note-save").onclick = save; ni.onkeydown = e => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) save(); }; }
+  const ls = $("#link-save"); if (ls) ls.onclick = () => { const u = $("#link-url").value.trim(); if (!u) return $("#link-url").focus(); saveLink(u, $("#link-why").value.trim()); done("Link saved 🔗"); };
+  card.querySelectorAll("[data-cap]").forEach(b => b.onclick = () => { captureMode = b.dataset.cap; renderCard(); });
+  const cg = $("#cap-go"); if (cg) cg.onclick = () => doCapture(captureMode);
+  card.querySelectorAll("[data-from]").forEach(b => b.onclick = () => { postFrom = b.dataset.from; renderCard(); });
+  card.querySelectorAll("[data-plat]").forEach(b => b.onclick = () => { postPlat = b.dataset.plat; renderCard(); });
+  const pg = $("#post-go"); if (pg) pg.onclick = () => { requestPost(postFrom, postPlat); closeAll(); };
+  const ci = $("#chat-in");
+  if (ci) {
+    const send = () => { const t = ci.value.trim(); if (!t) return; ci.value = ""; handle(t); };
+    $("#chat-send").onclick = send; ci.onkeydown = e => { if (e.key === "Enter") send(); };
+    wireMic($("#chat-mic"), "chat");
+    card.querySelectorAll("[data-chip]").forEach(b => b.onclick = () => chip(b.dataset.chip, b));
+  }
+}
+function chip(a, btn) {
+  const msg = chat.find(m => m.chips?.some(c => c[1] === a));
+  if (a.startsWith("ex:")) { const v = a.slice(3); if (v.endsWith(": ")) { $("#chat-in").value = v; $("#chat-in").focus(); } else handle(v); return; }
+  const [kind, id] = a.split(":"), s = suggestions.find(x => x.id === id);
+  if (msg) msg.used = true;
+  if (!s) return renderCard();
+  suggestions = suggestions.filter(x => x !== s); updateBadge();
+  if (kind === "no") { notNow[s.key] = (notNow[s.key] || 0) + 1; chat.push({ from: "you", text: "Not now" }); chat.push({ from: "bip", text: notNow[s.key] >= 3 ? "Got it. Want me to stop suggesting these?" : "No problem 👍", chips: notNow[s.key] >= 3 ? [["Stop these", "stop:" + s.key], ["Keep them", "keep:" + s.key]] : null }); log("not now", `${s.key}: ${notNow[s.key]}/3`); return renderCard(); }
+  chat.push({ from: "you", text: s.yes });
+  if (s.kind === "capture") { chat.push({ from: "bip", text: "📸 Captured and saved as approved." }); renderCard(); return setTimeout(() => finishCapture(s.key === "dev" ? "localhost:3000 (desktop + mobile)" : "Terminal: tests passing", true), 200); }
+  if (s.kind === "note") { chat.push({ from: "bip", text: "What's the note? Start with “note:” or just hold 🎙 and say it." }); renderCard(); $("#chat-in").value = "note: "; return $("#chat-in").focus(); }
+  if (s.kind === "remind") { chat.push({ from: "bip", text: "Copied! Paste it, then tell me “posted” 🎉" }); log("copy", "post text copied"); return renderCard(); }
+  requestPost("today", "x", true);
+}
+
+/* ---------- chat: a tiny local parser, no AI model ---------- */
+function handle(t) {
+  chat.push({ from: "you", text: t });
+  const L = t.toLowerCase();
+  let reply, after;
+  const url = t.match(/https?:\/\/\S+/);
+  if (/^(note|n)\s*[:\-]/i.test(t) || /^remember\b/i.test(t)) { const body = t.replace(/^(note|n)\s*[:\-]\s*|^remember( that)?\s*/i, ""); saveNote(body); reply = "📝 Saved to today's notes."; flash("happy", 1200); }
+  else if (url) { const why = t.replace(url[0], "").replace(/^\s*(because|for|—|-|:)\s*/i, "").trim(); saveLink(url[0], why); reply = `🔗 Saved${why ? ` with “${why}”` : ""}. I'll use it in posts.`; flash("happy", 1200); }
+  else if (/capture|screenshot|snap|screen ?shot/.test(L)) { const m = /window/.test(L) ? "window" : /app|dev|localhost|server/.test(L) ? "dev" : /code|file/.test(L) ? "code" : "region"; reply = { region: "📸 Drag a box to capture.", window: "📸 Capturing the active window…", dev: "📸 Capturing your app…", code: "📸 Making a code card…" }[m]; after = () => doCapture(m); }
+  else if (/what should i post|post idea|ideas?\b/.test(L)) { reply = "Your strongest one today: the Stripe retry bug. Say “post about today for linkedin” and I'll ask your agent for a draft."; flash("thinking", 900); }
+  else if (/\b(post|draft|write)\b/.test(L)) { const plat = /linkedin/.test(L) ? "linkedin" : /thread/.test(L) ? "threads" : "x"; const from = /\bnote\b/.test(L) ? "note" : /\blink\b/.test(L) ? "link" : /capture|screenshot/.test(L) ? "capture" : "today"; requestPost(from, plat, true); return; }
+  else if (/what did i do|today|morning/.test(L)) { reply = "2 sessions, 1h 52m: Stripe webhook idempotency (invoice-ai) and the pet design (build-in-public)."; }
+  else if (/how long|time|week/.test(L)) { reply = "invoice-ai this week: 5h 41m over 4 sessions. Most of it on Tuesday."; }
+  else if (/\bposted\b/.test(L)) { reply = "Nice! Marked as posted ✓"; after = () => { closeAll(); flash("proud", 2500); }; }
+  else if (/launch|shipped|we're live|went live/.test(L)) { reply = "🚀 Launch day!"; after = () => { closeAll(); celebrate("launch"); }; }
+  else if (/hide|go away|be quiet|later/.test(L)) { reply = "Okay, back in an hour 👋"; after = () => menuAct("hide1"); }
+  else if (/^(hi|hey|hello)\b/.test(L)) { reply = "Hi! 👋"; flash("giggle", 500); }
+  else { reply = "I'll pass that to your agent. It'll see it next time you talk to it."; log("request", `free text → requests/: “${t}”`); flash("thinking", 1200); }
+  chat.push({ from: "bip", text: reply }); renderCard();
+  if (after) setTimeout(after, 500);
+}
+function saveNote(text, voice) { notes.unshift({ t: fmt(sim), text, voice }); log(voice ? "voice" : "note", voice ? "audio + transcript → notes.md (🎙)" : "saved to today's notes.md"); }
+function saveLink(u, why) { let title = u; try { const x = new URL(u); title = x.hostname.replace(/^www\./, "") + x.pathname.replace(/\/$/, ""); } catch (e) {} links.unshift({ t: fmt(sim), title, why }); log("link", "articles.md, source: you"); }
+function requestPost(from, plat, inChat) {
+  log("request", `post from ${from} for ${plat} → requests/; your agent picks it up at its next prompt`);
+  if (inChat) { chat.push({ from: "bip", text: `✍️ Asked your agent for a ${{ x: "X", linkedin: "LinkedIn", threads: "Threads" }[plat]} draft from ${from === "today" ? "today's work" : "your " + from}. It'll show up on the dashboard.` }); renderCard(); flash("thinking", 1800); }
+  else { flash("thinking", 1800); setTimeout(() => say("Asked your agent ✍️", "asked", 2600, false), 1000); }
+}
+
+/* ---------- capture ---------- */
+function doCapture(mode) {
+  closeAll();
+  if (mode === "region") return startRegion();
+  if (mode === "window") { pet.classList.add("hidden"); log("capture", "Bip hides for a moment so it isn't in the shot"); return setTimeout(() => { pet.classList.remove("hidden"); finishCapture(activeWin.dataset.name + " window"); }, 500); }
+  finishCapture({ dev: "localhost:3000 (desktop + mobile)", code: "stripe.ts lines 1–7 (code card)" }[mode]);
+}
+function finishCapture(what, quiet) {
+  $("#flash").classList.add("on"); setTimeout(() => $("#flash").classList.remove("on"), 60);
+  shots.unshift({ t: fmt(sim), what }); log("capture", `${what} → shots/, approved (you asked)`);
+  if (!quiet) setTimeout(() => done("Captured 📸"), 250); else flash("happy", 1200);
+}
+function startRegion() {
+  const sh = $("#shade"), sel = $("#sel"); sh.classList.add("on"); let o = null;
+  sh.onpointerdown = e => { o = { x: e.clientX, y: e.clientY }; sel.hidden = false; Object.assign(sel.style, { left: o.x + "px", top: o.y + "px", width: 0, height: 0 }); };
+  sh.onpointermove = e => { if (!o) return; Object.assign(sel.style, { left: Math.min(o.x, e.clientX) + "px", top: Math.min(o.y, e.clientY) + "px", width: Math.abs(e.clientX - o.x) + "px", height: Math.abs(e.clientY - o.y) + "px" }); };
+  sh.onpointerup = () => { if (!o) return; const w = parseInt(sel.style.width), h = parseInt(sel.style.height); o = null; sh.classList.remove("on"); sel.hidden = true;
+    w > 10 && h > 10 ? finishCapture(`Region ${w}×${h}`) : (log("capture", "cancelled"), flash("confused", 1500)); };
+}
+
+/* ---------- voice notes: hold to talk, or tap to start and tap to stop ---------- */
+let rec = null;
+const SAMPLES = ["Stripe retries after ten seconds, not thirty. That one assumption caused the double charge.", "Idea for a post: the six line fix that saved a customer forty nine dollars.", "Remember to add the idempotency key to the refund webhook too."];
+function wireMic(btn, where) {
+  btn.addEventListener("pointerdown", e => {
+    e.preventDefault();
+    if (rec?.tap) return stopRec(true);
+    startRec(btn, where);
+  });
+  btn.addEventListener("pointerup", () => { if (!rec || rec.tap) return; if (performance.now() - rec.t0 < 350) { rec.tap = true; $("#rechint").textContent = "tap again to save"; } else stopRec(true); });
+  btn.addEventListener("pointerleave", () => { if (rec && !rec.tap && rec.btn === btn && performance.now() - rec.t0 > 350) stopRec(true); });
+  btn.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); rec ? stopRec(true) : (startRec(btn, where), rec.tap = true, $("#rechint").textContent = "press again to save"); } });
+}
+function startRec(btn, where) {
+  stopWalk(); rec = { t0: performance.now(), btn, where, tap: false }; btn.classList.add("rec");
+  overlay = "listening"; overlayUntil = Infinity; syncFx();
+  const bar = $("#recbar"), r = btn.getBoundingClientRect(); bar.classList.add("on"); $("#rechint").textContent = "release to save";
+  bar.style.left = Math.max(8, Math.min(innerWidth - 220, r.left - 60)) + "px"; bar.style.top = (r.top > 60 ? r.top - 40 : r.bottom + 10) + "px";
+  rec.iv = setInterval(() => { const s = Math.floor((performance.now() - rec.t0) / 1000); $("#rectime").textContent = `0:${String(s).padStart(2, "0")}`; if (s >= 60) stopRec(true); }, 200);
+  log("voice", "recording… (audio stays on your machine)");
+}
+function stopRec(save) {
+  if (!rec) return; const r = rec; rec = null; clearInterval(r.iv); r.btn.classList.remove("rec"); $("#recbar").classList.remove("on"); overlay = null;
+  const secs = (performance.now() - r.t0) / 1000;
+  if (!save || secs < .8) { log("voice", "too short, nothing saved"); flash("confused", 900); return; }
+  const text = SAMPLES[Math.floor(secs) % SAMPLES.length];
+  flash("thinking", 900);
+  setTimeout(() => {
+    saveNote(text, true);
+    if (r.where === "chat" && cardKind === "chat") { chat.push({ from: "you", text: "🎙 " + text, meta: `voice note · ${secs.toFixed(0)}s · transcribed on this computer` }); chat.push({ from: "bip", text: "📝 Saved as a note." }); renderCard(); flash("happy", 1200); }
+    else { closeRing(); done("Voice note saved 🎙"); }
+  }, 900);
+}
+
+/* ---------- menu, keys, outside clicks ---------- */
+function menuAct(m) {
+  $("#menu").classList.remove("on");
+  if (m === "chat" || m === "note") return openCard(m);
+  if (m === "stay") { $("#wander").checked = false; stopWalk(); return log("wander", "off: stays put"); }
+  const label = { hide1: "for 1 hour", hideday: "until tomorrow", hideproj: `for ${project}`, quit: "until your next session" }[m];
+  pet.classList.add("hidden"); closeAll(); hideBubble();
+  log(m === "quit" ? "quit" : "hide", `${m === "quit" ? `Waves bye: ${notes.length} notes, ${shots.length} captures today. Gone` : "Hidden"} ${label}. (Mockup: back in 3s)`);
+  setTimeout(() => pet.classList.remove("hidden"), 3000);
+}
+document.querySelectorAll("[data-m]").forEach(b => b.onclick = () => menuAct(b.dataset.m));
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape") { if ($("#shade").classList.contains("on")) { $("#shade").classList.remove("on"); $("#sel").hidden = true; log("capture", "cancelled"); } if (rec) stopRec(false); closeAll(); pet.focus({ preventScroll: true }); }
+  if (e.altKey && e.shiftKey && e.code === "KeyB") { e.preventDefault(); openCard("note"); }
+});
+document.addEventListener("pointerdown", e => {
+  if (!e.target.closest("#card, #pet, #bubble, .ctl, #shade, .rb, #recbar")) closeAll();
+  if (!e.target.closest("#menu")) $("#menu").classList.remove("on");
+});
+
+/* ---------- look ---------- */
+$("#swatches").innerHTML = Object.entries(THEMES).map(([k, t]) => `<button data-sw="${k}" aria-label="${k}" aria-pressed="${k === theme}" style="background:${t.b}"></button>`).join("");
+$("#swatches").onclick = e => { const b = e.target.closest("[data-sw]"); if (!b) return; theme = b.dataset.sw; document.querySelectorAll("[data-sw]").forEach(x => x.setAttribute("aria-pressed", x === b)); };
+$("#streak").oninput = e => { stage = +e.target.value; $("#streak-l").textContent = CLIP_NAMES[stage]; };
+$("#theme").onclick = () => { const r = document.documentElement, dark = r.dataset.theme ? r.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches; r.dataset.theme = dark ? "light" : "dark"; };
+$("#ctl-min").onclick = () => { const c = $("#ctl"); c.classList.toggle("min"); $("#ctl-min").textContent = c.classList.contains("min") ? "+" : "–"; };
+addEventListener("resize", () => { layoutWindows(); place(false); });
+
+/* ---------- go ---------- */
+layoutWindows(); goHome(null, false); tickUI();
+log("start", "SessionStart hook → buildinpublic pet --project invoice-ai; perched on the active window");
+setTimeout(() => say("Hi! I'll hang out up here 🐰", "asked", 3500, false), 700);
+</script>
+</body>
+</html>
