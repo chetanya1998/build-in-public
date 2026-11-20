@@ -80,6 +80,8 @@ The schedule records your `PATH` when you set it. If you install `claude`, `code
 | doctor: `N compressed Codex sessions can't be read` | Codex saves `.jsonl.zst` files | `brew install zstd` (or `apt install zstd`) |
 | A source you use shows 0 sessions | The agent changed its session format | `python3 <skill>/scripts/collect.py --inspect`, then open an issue with the output |
 | doctor: `git repo: not a git repo` | The project has no `.git` | `git init`, or ignore it: commits just won't be included |
+| Commits you made aren't in the gist | The schedule points at **another copy** of the repo (an old clone in a different folder). That copy only sees what's been pushed, and only after a fetch. | Run `schedule.sh` from the folder you actually work in. `launchctl list \| grep buildinpublic` and the plist show which folder it uses. |
+| A commit shows up as `(on origin/branch, by Name)` | It was pushed from somewhere else: another folder, another machine, or a teammate. The gist fetches before it reads, and lists commits from every branch. | Nothing to fix. It's labelled so you know it isn't from this folder. |
 
 ## 5. The agent writes the brief
 
@@ -90,7 +92,11 @@ This step runs your agent with no window and nobody at the keyboard, so anything
 | `Failed to authenticate: OAuth session expired and could not be refreshed` | The terminal `claude` sign-in expired. **Signing in to the Claude desktop app doesn't renew it**: they're separate sign-ins. | In a terminal: `claude`, then `/login`, finish in the browser, then `/exit` |
 | `API Error: Unable to connect to API (ConnectionRefused)` | Offline at gist time | Rerun the day once you're online |
 | `Request timed out` | The agent call took too long | Rerun the day |
-| `No headless agent configured` | `agent` is `none`, or `claude` / `codex` isn't on the schedule's `PATH` | Set `"agent"` in `config.json`, then rerun `schedule.sh` |
+| `requires usage credits` / `usage limit` | The agent's plan ran out at gist time | Check your usage, or set a different model or `"agent_command"` in `config.json` |
+| `The 'claude' command wasn't found on PATH` | `claude` / `codex` isn't on the `PATH` the schedule recorded | Rerun `schedule.sh` from a terminal where the command works |
+| `No headless agent configured` | `agent` is `none` | Set `"agent"` in `config.json` |
+
+When this step fails, the gist email now says so at the top ("The brief wasn't written"), with the agent's own words and the fix. The reason is saved in `daily/<date>/agent-error.txt`.
 
 Check this step on its own, without spending a full run:
 

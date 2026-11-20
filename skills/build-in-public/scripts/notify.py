@@ -128,10 +128,39 @@ def gist(repo, day):
     logged = re.findall(r"^### [\d:]+ - (.+?)\s+\(agent", text, re.M)
     g["headline"] = (logged or commits or ["Your digest is ready"])[0]
     g["shipped"] = [("li", t) for t in (logged or commits)]
-    g["notes"] = ([f"Sessions: {found.group(1)}"] if found else []) + [
-        'No brief was written yet (no headless agent is set up). Open your agent in this project and say '
-        '"build in public brief" to get the story and the list of posts.']
+    g["notes"] = ([f"Sessions: {found.group(1)}"] if found else [])
+    failed = agent_failure(out)
+    if failed:
+        g["problem"] = failed
+        g["headline"] = "No posts today: the brief wasn't written"
+        g["notes"] += ['Once that\'s fixed, open your agent in this project and say "build in public brief" '
+                       'to get today\'s posts.']
+    else:
+        g["notes"] += ['No brief was written yet (no headless agent is set up). Open your agent in this project and say '
+                       '"build in public brief" to get the story and the list of posts.']
     return g
+
+
+FIXES = (  # what the agent printed -> what to do about it
+    (r"usage credits|usage limit|rate limit|quota|credit balance", "Your agent ran out of usage. Check your plan, "
+     "or set a different model or agent for the gist in .buildinpublic/config.json."),
+    (r"authenticat|log ?in|logged in|oauth|token|unauthori[sz]ed|401", "Your agent is signed out. In a terminal, run "
+     "claude, then /login (signing in to the desktop app doesn't renew it)."),
+    (r"not found on PATH|command not found|No such file", "The agent's command wasn't found when the gist ran. "
+     "Check it's installed, or set agent_command in .buildinpublic/config.json."),
+)
+
+
+def agent_failure(out):
+    """Why the agent didn't write the brief, from daily/<day>/agent-error.txt, as one plain sentence."""
+    f = out / "agent-error.txt"
+    if not f.exists():
+        return None
+    lines = f.read_text(errors="ignore").splitlines()
+    agent = next((l.split(":", 1)[1].strip() for l in lines if l.startswith("agent:")), "your agent")
+    said = " ".join(l.strip() for l in lines if not l.startswith(("agent:", "exit:")))[:300]
+    fix = next((msg for pat, msg in FIXES if re.search(pat, said, re.I)), "Check nightly.log in the same folder.")
+    return {"agent": agent, "said": said, "fix": fix}
 
 
 def length_line(p):
@@ -155,6 +184,10 @@ def screenshot_line(f):
 def render_text(g):
     """Plain text with no Markdown symbols, for every mail app (Apple Mail sends only this)."""
     L = []
+    if g.get("problem"):
+        pr = g["problem"]
+        L += [f"THE BRIEF WASN'T WRITTEN: {pr['agent']} stopped" + (f' with "{pr["said"]}"' if pr["said"] else "") + ".",
+              pr["fix"], ""]
     if g.get("dead_links"):
         L += [f"CHECK BEFORE POSTING: {len(g['dead_links'])} link(s) in this brief don't load:"]
         L += [f"  {u}" for u in g["dead_links"]] + [""]
@@ -206,6 +239,11 @@ def render_html(g):
         out.insert(1, '<div style="margin:0 0 16px;padding:10px 14px;border-radius:10px;background:#f4f6fb;border:1px solid #e2e5ea">'
                       f'<strong>Open before posting:</strong> {len(g["unchecked_links"])} link(s) couldn\'t be checked:'
                       + "".join(f'<br><span style="font-size:13px;word-break:break-all">{e(u)}</span>' for u in g["unchecked_links"]) + "</div>")
+    if g.get("problem"):
+        pr = g["problem"]
+        out.insert(1, '<div style="margin:0 0 16px;padding:10px 14px;border-radius:10px;background:#fdecec;border:1px solid #f0a8a8">'
+                      f'<strong>The brief wasn\'t written.</strong> {e(pr["agent"])} stopped'
+                      + (f' with <em>{e(pr["said"])}</em>' if pr["said"] else "") + f'.<br>{e(pr["fix"])}</div>')
     if g.get("dead_links"):
         out.insert(1, '<div style="margin:0 0 16px;padding:10px 14px;border-radius:10px;background:#fff4e5;border:1px solid #f2c97d">'
                       f'<strong>Check before posting:</strong> {len(g["dead_links"])} link(s) in this brief don\'t load:'

@@ -233,16 +233,42 @@ def antigravity_sessions(repo, day):
     return out
 
 
-def git_info(repo, day):
+def git_info(repo, day, fetch=True):
+    """The day's commits on every branch, local and on the remote, not just the one checked out.
+    Commits from other branches say which branch; commits by someone else say who."""
     if not (repo / ".git").exists():
         return "", ""
-    since, until = f"{day} 00:00", f"{day + dt.timedelta(days=1)} 06:00"
-    run = lambda *a: subprocess.run(["git", "-C", str(repo), *a], capture_output=True, text=True).stdout.strip()
-    log = run("log", f"--since={since}", f"--until={until}", "--date=format:%H:%M",
-              "--pretty=format:- %ad %h %s", "--shortstat")
-    log = re.sub(r"\n\s*\n", "\n", log)
+    env = dict(os.environ, GIT_TERMINAL_PROMPT="0", GIT_SSH_COMMAND=os.environ.get("GIT_SSH_COMMAND", "ssh -o BatchMode=yes"))
+
+    def run(*a, timeout=30):
+        try:
+            return subprocess.run(["git", "-C", str(repo), *a], capture_output=True, text=True,
+                                  timeout=timeout, env=env).stdout.strip()
+        except (OSError, subprocess.SubprocessError):
+            return ""
+    if fetch and run("remote"):
+        run("fetch", "--quiet", "--no-tags", "--prune", timeout=25)  # see pushes from other folders and teammates
+    # your local day, midnight to midnight, like the sessions: each commit is in exactly one digest
+    since, until = f"{day} 00:00", f"{day + dt.timedelta(days=1)} 00:00"
+    current, me = run("branch", "--show-current"), run("config", "user.name")
+    raw = run("log", "--branches", "--remotes", "--source", f"--since={since}", f"--until={until}",
+              "--date=format-local:%H:%M", "--pretty=format:\x1e%ad\x1f%h\x1f%S\x1f%an\x1f%s", "--shortstat")
+    lines = []
+    for rec in raw.split("\x1e"):
+        head, _, stat = rec.strip().partition("\n")
+        parts = head.split("\x1f")
+        if len(parts) != 5:
+            continue
+        when, sha, ref, author, subject = parts
+        branch = re.sub(r"^refs/(heads|remotes)/", "", ref)  # "dashboard-design", or "origin/x" if only pushed
+        same = {current, f"origin/{current}", "HEAD", "origin/HEAD"}
+        extra = [f"on {branch}"] if branch and branch not in same else []
+        extra += [f"by {author}"] if me and author != me else []
+        lines.append(f"- {when} {sha} {subject}" + (f" ({', '.join(extra)})" if extra else ""))
+        if stat.strip():
+            lines.append(" " + stat.strip())
     diff = run("diff", "--stat", "HEAD")
-    return log, diff
+    return "\n".join(lines), diff
 
 
 SCREENSHOT_DIRS = (".playwright-mcp", "test-results", "playwright-report", "screenshots", "cypress/screenshots")
