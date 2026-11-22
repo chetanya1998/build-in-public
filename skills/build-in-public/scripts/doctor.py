@@ -71,8 +71,31 @@ def check_tools(cfg):
         (ok if shutil.which(exe) else fail)("Nightly agent", f"agent_command '{exe}'" + ("" if shutil.which(exe) else " not found on PATH"))
     elif agent in ("claude", "codex"):
         (ok if shutil.which(agent) else fail)("Nightly agent", f"{agent}" + ("" if shutil.which(agent) else " CLI not found on PATH, so the nightly brief can't be written"))
+    if agent == "claude" or (custom and custom.split()[0] == "claude"):
+        check_agent_auth()
     elif cfg:
         warn("Nightly agent", "none configured: nightly runs stop at the digest; ask your agent for the brief")
+
+
+def check_agent_auth():
+    """Is there a long-lived token, so the unattended nightly run can sign in? (agent_auth.py)"""
+    import agent_auth
+    kind = agent_auth.active_kind()
+    if not kind:
+        warn("Nightly sign-in", "uses your normal claude sign-in, which expires and then the brief fails. "
+             "Once a year instead: claude setup-token, then python3 <skill>/scripts/agent_auth.py set")
+        return
+    meta = agent_auth.read_meta()
+    until, left = agent_auth.expiry(meta)
+    label = f"{agent_auth.KINDS[kind][1]} in {meta.get('store', 'your secret store')}"
+    if until is None:
+        ok("Nightly sign-in", label)
+    elif left < 0:
+        fail("Nightly sign-in", f"{label} probably expired on {until:%d %b %Y}: claude setup-token, then agent_auth.py set")
+    elif left <= 30:
+        warn("Nightly sign-in", f"{label} expires in about {left} days ({until:%d %b %Y}): make a new one with claude setup-token")
+    else:
+        ok("Nightly sign-in", f"{label}, until about {until:%d %b %Y}")
 
 
 def check_install():

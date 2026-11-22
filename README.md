@@ -318,6 +318,16 @@ You mostly just code. Here's a day:
 6. **Commit and push as usual.** If sharing is on, the approved post and its image go along with your commit. Open `.buildinpublic/posts/README.md` on GitHub, on any device.
 7. **Post it yourself**, then tell your agent **"I posted it"** with the link, so later posts can call back to it.
 
+> **Keep the nightly brief signed in.** The scheduled run has nobody at the keyboard, so a normal `claude` sign-in expires there and the brief fails. Once a year, make a long-lived token for your own Claude subscription and save it in your system's secret store (macOS Keychain, Linux Secret Service, or a file only you can read):
+>
+> ```sh
+> claude setup-token                                                 # prints a token
+> python3 ~/.claude/skills/build-in-public/scripts/agent_auth.py set # paste it here, not in a chat
+> python3 ~/.claude/skills/build-in-public/scripts/agent_auth.py test
+> ```
+>
+> The nightly job passes it to `claude` as `CLAUDE_CODE_OAUTH_TOKEN`; it's never written to the repo, the schedule or the logs. `doctor.py` warns a month before it expires. An Anthropic API key works too (`set --kind anthropic-key`, billed per use). With the CLI, including on Windows: `buildinpublic agent-auth set`.
+
 > **No headless agent for the scheduled run?** The gist still arrives, built from what was found that day. Say **"build in public brief"** to your agent to get the story and the suggested posts. For the full brief at your gist time, set `"agent": "claude"` (needs the `claude` CLI) or `"agent": "codex"` in `.buildinpublic/config.json`.
 
 ### 💬 Things to say to your agent
@@ -442,7 +452,7 @@ The gist is a pipeline (schedule → collect → trends → your agent writes th
 | What you see | Where it stopped | Most common cause | Fix |
 |---|---|---|---|
 | No folder for that day | Schedule | The computer was off at gist time | `sh <skill>/scripts/nightly.sh "$PWD" <date>` reruns it |
-| `digest.md` and `trends.md`, no `brief.md` | The agent writing the brief | `OAuth session expired`: the terminal `claude` sign-in expired. Signing in to the desktop app doesn't renew it. | `claude`, then `/login` |
+| `digest.md` and `trends.md`, no `brief.md` | The agent writing the brief | `OAuth session expired`: the terminal `claude` sign-in expired. Signing in to the desktop app doesn't renew it. | So it stops happening: `claude setup-token`, then `agent_auth.py set`. Or just `claude`, then `/login` |
 | `brief.md`, no email, log says `via mail-app` | Apple Mail | Mail accepted it but didn't send it: stuck in the Outbox | Check Mail's Outbox and account, or switch to Gmail SMTP |
 | `brief.md`, no email, log ends in `SMTPServerDisconnected` | Gmail login | The saved password isn't a 16-letter app password | Create an [app password](https://myaccount.google.com/apppasswords) and save it with `security add-generic-password -U …` |
 | The log is always empty | Logging | Claude Code reads `CLAUDE.md`, not `AGENTS.md` | Put the rule, or `@AGENTS.md`, in `CLAUDE.md` |

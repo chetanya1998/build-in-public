@@ -55,6 +55,8 @@ RUN = [
     ("Setup", [
         ("Change when the gist arrives", "schedule.sh", [], [("Time, e.g. 19:00", "--time", True, None)]),
         ("Stop the daily gist", "schedule.sh", ["--remove"], []),
+        ("Let the nightly agent sign in without you (claude setup-token first)", "agent_auth.py", ["set"], []),
+        ("Is the nightly sign-in set, and when does it expire?", "agent_auth.py", ["status"], []),
         ("Log every commit (git hook)", "init.sh", ["--hook"], []),
         ("Add approved posts and images to your commits", "init.sh", ["--share"], []),
     ]),

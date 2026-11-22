@@ -89,7 +89,8 @@ This step runs your agent with no window and nobody at the keyboard, so anything
 
 | Line in `nightly.log` | Cause | Fix |
 |---|---|---|
-| `Failed to authenticate: OAuth session expired and could not be refreshed` | The terminal `claude` sign-in expired. **Signing in to the Claude desktop app doesn't renew it**: they're separate sign-ins. | In a terminal: `claude`, then `/login`, finish in the browser, then `/exit` |
+| `Failed to authenticate: OAuth session expired and could not be refreshed` | The terminal `claude` sign-in expired. **Signing in to the Claude desktop app doesn't renew it**: they're separate sign-ins. | For good: `claude setup-token`, then `python3 <skill>/scripts/agent_auth.py set` (the user pastes it in their terminal). Quick fix: `claude`, then `/login`, finish in the browser, then `/exit` |
+| `OAuth access token is invalid` (and the log says `Using the token saved with agent_auth.py`) | The saved token expired or was revoked | `claude setup-token`, then `agent_auth.py set` again. `agent_auth.py status` shows when it was saved |
 | `API Error: Unable to connect to API (ConnectionRefused)` | Offline at gist time | Rerun the day once you're online |
 | `Request timed out` | The agent call took too long | Rerun the day |
 | `requires usage credits` / `usage limit` | The agent's plan ran out at gist time | Check your usage, or set a different model or `"agent_command"` in `config.json` |

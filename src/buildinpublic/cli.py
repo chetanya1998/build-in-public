@@ -10,7 +10,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from . import __version__, brief, integrations, journal, notify, nudge, readers, research, scheduler, shots
+from . import __version__, agent_auth, brief, integrations, journal, notify, nudge, readers, research, scheduler, shots
 from .core import (agent_dirs, app_home, fmt_minutes, load_config, os_name, python_cmd, save_config,
                    set_config_value, state, today)
 
@@ -279,6 +279,23 @@ def cmd_uninstall(a):
     print(f"Your journal is still in {app_home()}. Delete that folder to remove it too.")
 
 
+def cmd_agent_auth(a):
+    if a.action == "set":
+        where = agent_auth.set_token(a.kind)
+        print(f"Saved in {where}. " + " · ".join(agent_auth.status()[1:]))
+        print("Check it works: buildinpublic agent-auth test")
+    elif a.action == "remove":
+        agent_auth.remove()
+        print("Removed. Agent runs go back to your normal sign-in.")
+    elif a.action == "test":
+        good, said = agent_auth.test()
+        print(("✓ Works: scheduled drafts can sign in." if good else f"✗ claude said: {said}"))
+        if not good:
+            sys.exit(1)
+    else:
+        print("\n".join(agent_auth.status()))
+
+
 def cmd_doctor(a):
     ok = lambda b: "✓" if b else "✗"
     print(f"Build Your Product in Public {__version__} · {platform.system()} {platform.release()} · Python {platform.python_version()}")
@@ -312,6 +329,10 @@ def cmd_doctor(a):
     except ImportError:
         ps = False
     print(f"  {ok(ps)} psutil (best localhost detection; optional)")
+    kind = agent_auth.active_kind()
+    _, left = agent_auth.expiry()
+    print(f"  {ok(bool(kind) and (left is None or left > 0))} sign-in for scheduled drafts: "
+          + ("; ".join(agent_auth.status()) if kind else "your normal sign-in (can expire) → buildinpublic agent-auth set"))
     cfg = load_config()
     if "email" in cfg["channels"]:
         es = notify.email_settings()
@@ -363,6 +384,11 @@ def main(argv=None):
     s = sub.add_parser("doctor", help="check that everything works on this machine")
     s.add_argument("--test", action="store_true", help="send a test notification/email")
     s.set_defaults(fn=cmd_doctor)
+
+    s = sub.add_parser("agent-auth", help="save a long-lived token so scheduled drafts can sign in to claude")
+    s.add_argument("action", nargs="?", choices=["status", "set", "test", "remove"], default="status")
+    s.add_argument("--kind", choices=list(agent_auth.KINDS), default="claude-token")
+    s.set_defaults(fn=cmd_agent_auth)
 
     s = sub.add_parser("hook", help=argparse.SUPPRESS)
     s.add_argument("event", choices=["claude-end", "codex-stop", "session-start"])

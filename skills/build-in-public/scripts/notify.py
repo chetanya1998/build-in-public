@@ -144,8 +144,9 @@ def gist(repo, day):
 FIXES = (  # what the agent printed -> what to do about it
     (r"usage credits|usage limit|rate limit|quota|credit balance", "Your agent ran out of usage. Check your plan, "
      "or set a different model or agent for the gist in .buildinpublic/config.json."),
-    (r"authenticat|log ?in|logged in|oauth|token|unauthori[sz]ed|401", "Your agent is signed out. In a terminal, run "
-     "claude, then /login (signing in to the desktop app doesn't renew it)."),
+    (r"authenticat|log ?in|logged in|oauth|token|unauthori[sz]ed|401", "Your agent is signed out. So it stops "
+     "happening: run claude setup-token, then python3 {skill}/scripts/agent_auth.py set (once a year). "
+     "Or just sign in again: claude, then /login."),
     (r"not found on PATH|command not found|No such file", "The agent's command wasn't found when the gist ran. "
      "Check it's installed, or set agent_command in .buildinpublic/config.json."),
 )
@@ -160,6 +161,7 @@ def agent_failure(out):
     agent = next((l.split(":", 1)[1].strip() for l in lines if l.startswith("agent:")), "your agent")
     said = " ".join(l.strip() for l in lines if not l.startswith(("agent:", "exit:")))[:300]
     fix = next((msg for pat, msg in FIXES if re.search(pat, said, re.I)), "Check nightly.log in the same folder.")
+    fix = fix.replace("{skill}", str(Path(__file__).resolve().parent.parent).replace(str(Path.home()), "~"))
     return {"agent": agent, "said": said, "fix": fix}
 
 

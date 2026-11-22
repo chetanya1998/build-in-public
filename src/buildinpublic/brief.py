@@ -10,7 +10,7 @@ import shutil
 import subprocess
 from pathlib import Path
 
-from . import journal, notify, nudge, research
+from . import agent_auth, journal, notify, nudge, research
 from .core import app_home, fmt_minutes, load_config, state, today
 from .shots import pending as pending_shots
 
@@ -60,7 +60,7 @@ def write_drafts(day: dt.date, picks: list[dict], cfg: dict) -> tuple[list[dict]
                   "Never post anything.")
         try:
             subprocess.run([prompt if c == "{prompt}" else c for c in cmd], cwd=str(app_home()),
-                           capture_output=True, text=True, timeout=900)
+                           capture_output=True, text=True, timeout=900, env=agent_auth.agent_env())
             how = cmd[0]
         except (OSError, subprocess.SubprocessError):
             cmd = None

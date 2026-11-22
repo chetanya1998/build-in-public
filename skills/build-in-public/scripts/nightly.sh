@@ -21,6 +21,10 @@ PROMPT="Use the build-in-public skill. Run the Daily gist mode for $DAY using th
 # The agent writes the brief. If it fails (signed out, out of credits, not installed), save why,
 # so the email says so instead of arriving with no posts and no explanation.
 AOUT="$OUT/agent-output.txt"; rm -f "$OUT/agent-error.txt"; RAN=1; RC=0
+# A long-lived token saved with agent_auth.py, so the agent can sign in with nobody at the keyboard.
+# It goes straight into the environment: never into the log.
+AUTH_ENV="$(python3 "$SKILL_DIR/scripts/agent_auth.py" env 2>/dev/null)"
+[ -n "$AUTH_ENV" ] && eval "$AUTH_ENV" && echo "Using the token saved with agent_auth.py" >> "$LOG"
 if [ -n "$CUSTOM" ]; then
   sh -c "$CUSTOM \"$PROMPT\"" > "$AOUT" 2>&1; RC=$?
 elif [ "$AGENT" = "claude" ] && command -v claude >/dev/null; then

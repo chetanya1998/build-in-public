@@ -49,6 +49,8 @@ MENU: list[tuple[str, list[tuple[str, list[str], list[Q]]]]] = [
         ("Run setup again (questions, hooks, schedule)", ["setup"], []),
         ("Background jobs: are they scheduled?", ["schedule", "status"], []),
         ("Show your settings", ["config", "show"], []),
+        ("Save a token so scheduled drafts can sign in (claude setup-token first)", ["agent-auth", "set"], []),
+        ("Is the scheduled sign-in set, and when does it expire?", ["agent-auth"], []),
         ("Download the browser used for screenshots", ["install-browser"], []),
         ("Uninstall: remove hooks, skill and schedule (keeps your journal)", ["uninstall"], []),
     ]),
