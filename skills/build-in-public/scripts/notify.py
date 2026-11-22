@@ -92,9 +92,13 @@ def gist(repo, day):
     """The day's gist as plain pieces: headline, shipped lines, suggested posts, notes."""
     out = repo / ".buildinpublic" / "daily" / str(day)
     brief = out / "brief.md"
-    g = {"repo": repo.name, "day": day, "link": posts_url(repo), "shipped": [], "posts": [], "notes": []}
+    g = {"repo": repo.name, "day": day, "link": posts_url(repo), "shipped": [], "posts": [], "notes": [],
+         "saved": str(out.resolve()).replace(str(Path.home()), "~")}
     if brief.exists():
         text = brief.read_text()
+        if text.startswith("<!-- written without an agent"):
+            g["fallback"] = True
+            g["problem"] = agent_failure(out)
         today = brieflib.section(text, "Today in one line")
         g["headline"] = brieflib.to_text(today.splitlines()[0]).strip() if today else "Your brief is ready"
         g["shipped"] = brieflib.block_lines(brieflib.section(text, "What you shipped"))
@@ -186,10 +190,16 @@ def screenshot_line(f):
 def render_text(g):
     """Plain text with no Markdown symbols, for every mail app (Apple Mail sends only this)."""
     L = []
-    if g.get("problem"):
+    if g.get("fallback"):
+        pr = g.get("problem")
+        L += ["WRITTEN WITHOUT YOUR AGENT: " + (f"{pr['agent']} stopped" + (f' with "{pr["said"]}"' if pr["said"] else "") + ". "
+              + pr["fix"] if pr else "No agent is set up to write the brief.")]
+        L += ["These posts were made on your computer from today's sessions, commits and articles. Edit them before posting.",
+              f"Everything is saved in {g['saved']} (gist.html, brief.md). Every day's gist: {Path(g['saved']).parent}/index.html", ""]
+    elif g.get("problem"):
         pr = g["problem"]
         L += [f"THE BRIEF WASN'T WRITTEN: {pr['agent']} stopped" + (f' with "{pr["said"]}"' if pr["said"] else "") + ".",
-              pr["fix"], ""]
+              pr["fix"], f"What was found today is saved in {g['saved']}.", ""]
     if g.get("dead_links"):
         L += [f"CHECK BEFORE POSTING: {len(g['dead_links'])} link(s) in this brief don't load:"]
         L += [f"  {u}" for u in g["dead_links"]] + [""]
@@ -227,6 +237,8 @@ def render_text(g):
         L.append(f"Your approved posts and images: {g['link']}")
     if g.get("attached"):
         L += ["", "The full brief is attached."]
+    if g.get("saved"):
+        L += [f"Saved on this computer: {g['saved']}/gist.html"]
     return "\n".join(L).strip() + "\n"
 
 
@@ -241,11 +253,22 @@ def render_html(g):
         out.insert(1, '<div style="margin:0 0 16px;padding:10px 14px;border-radius:10px;background:#f4f6fb;border:1px solid #e2e5ea">'
                       f'<strong>Open before posting:</strong> {len(g["unchecked_links"])} link(s) couldn\'t be checked:'
                       + "".join(f'<br><span style="font-size:13px;word-break:break-all">{e(u)}</span>' for u in g["unchecked_links"]) + "</div>")
-    if g.get("problem"):
+    saved = e(g.get("saved", ""))
+    if g.get("fallback"):
+        pr = g.get("problem")
+        why = (f'{e(pr["agent"])} stopped' + (f' with <em>{e(pr["said"])}</em>' if pr["said"] else "") + f'. {e(pr["fix"])}'
+               if pr else "No agent is set up to write the brief.")
+        out.insert(1, '<div style="margin:0 0 16px;padding:10px 14px;border-radius:10px;background:#fdecec;border:1px solid #f0a8a8">'
+                      f'<strong>Written without your agent.</strong> {why}<br>These posts were made on your computer from '
+                      "today's sessions, commits and articles. Edit them before posting.<br>"
+                      f'Everything is saved in <code>{saved}</code> (gist.html, brief.md). Every day\'s gist: '
+                      f'<code>{e(str(Path(g.get("saved", ".")).parent))}/index.html</code></div>')
+    elif g.get("problem"):
         pr = g["problem"]
         out.insert(1, '<div style="margin:0 0 16px;padding:10px 14px;border-radius:10px;background:#fdecec;border:1px solid #f0a8a8">'
                       f'<strong>The brief wasn\'t written.</strong> {e(pr["agent"])} stopped'
-                      + (f' with <em>{e(pr["said"])}</em>' if pr["said"] else "") + f'.<br>{e(pr["fix"])}</div>')
+                      + (f' with <em>{e(pr["said"])}</em>' if pr["said"] else "") + f'.<br>{e(pr["fix"])}<br>'
+                      f'What was found today is saved in <code>{saved}</code>.</div>')
     if g.get("dead_links"):
         out.insert(1, '<div style="margin:0 0 16px;padding:10px 14px;border-radius:10px;background:#fff4e5;border:1px solid #f2c97d">'
                       f'<strong>Check before posting:</strong> {len(g["dead_links"])} link(s) in this brief don\'t load:'
@@ -293,8 +316,36 @@ def render_html(g):
         out.append(f'<p style="margin:8px 0">Your approved posts and images: <a href="{e(g["link"], quote=True)}" style="color:#2c4bd4">open on GitHub</a></p>')
     if g.get("attached"):
         out.append('<p style="margin:16px 0 0;color:#5a616d;font-size:13px">The full brief is attached.</p>')
+    if g.get("saved"):
+        out.append(f'<p style="margin:6px 0 0;color:#5a616d;font-size:13px">Saved on this computer: <code>{e(g["saved"])}/gist.html</code></p>')
     out.append("</div>")
     return "\n".join(out)
+
+
+def save_local(repo, day, g, subject_line):
+    """Keep the gist on this computer exactly as emailed (gist.html, gist.txt), plus daily/index.html
+    listing every day, so nothing depends on the email arriving."""
+    out = repo / ".buildinpublic" / "daily" / str(day)
+    out.mkdir(parents=True, exist_ok=True)
+    page = ('<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width">'
+            f'<title>{html.escape(subject_line)}</title></head><body style="margin:24px;background:#fff">'
+            f'{render_html(g)}</body></html>\n')
+    (out / "gist.html").write_text(page)
+    (out / "gist.txt").write_text(f"{subject_line}\n\n{render_text(g)}")
+    rows = []
+    for d in sorted((p for p in out.parent.iterdir() if p.is_dir() and re.fullmatch(r"\d{4}-\d\d-\d\d", p.name)), reverse=True):
+        title = ""
+        if (d / "gist.txt").exists():
+            title = (d / "gist.txt").read_text(errors="ignore").splitlines()[0].split(": ", 1)[-1]
+        links = " · ".join(f'<a href="{d.name}/{f}">{f}</a>' for f in ("gist.html", "brief.md", "digest.md") if (d / f).exists())
+        rows.append(f"<tr><td style='padding:6px 14px 6px 0;white-space:nowrap'>{d.name}</td>"
+                    f"<td style='padding:6px 14px 6px 0'>{html.escape(title)}</td><td>{links}</td></tr>")
+    (out.parent / "index.html").write_text(
+        '<!doctype html><html><head><meta charset="utf-8"><title>Your daily gists</title></head>'
+        '<body style="font:15px/1.5 -apple-system,Segoe UI,Helvetica,Arial,sans-serif;margin:32px;color:#14161a">'
+        f'<h1 style="font-size:22px">Your daily gists · {html.escape(repo.name)}</h1>'
+        f'<table style="border-collapse:collapse">{"".join(rows)}</table></body></html>\n')
+    return out / "gist.html"
 
 
 def subject(repo, day, headline):
@@ -455,6 +506,9 @@ def main():
 
     g = gist(repo, day)
     headline, body = g["headline"], render_text(g)
+    if not a.dry_run:
+        saved = save_local(repo, day, g, subject(repo, day, headline))
+        print(f"Gist saved to {saved}")
     notify = project.get("notify", True)
     if notify not in (False, "off") and not a.no_desktop and not a.dry_run:
         desktop("Build Your Product in Public", f"{day}: {headline}")

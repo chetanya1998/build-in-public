@@ -108,10 +108,11 @@ class AgentFailureTest(Repo):
         self.assertIn("OAuth session expired", (out / "nightly.log").read_text())
         g = notify.gist(self.repo, TODAY)
         text, page = notify.render_text(g), notify.render_html(g)
-        self.assertTrue(text.startswith("THE BRIEF WASN'T WRITTEN: claude stopped"), text[:200])
+        # the gist still comes, written without the agent, and says why and where it's saved
+        self.assertTrue(text.startswith("WRITTEN WITHOUT YOUR AGENT: claude stopped"), text[:200])
         self.assertIn("signed out", text)
-        self.assertIn("The brief wasn't written.", page)
-        self.assertIn("No posts today", notify.subject(self.repo, TODAY, g["headline"]))
+        self.assertIn("Written without your agent.", page)
+        self.assertIn(f"Everything is saved in {g['saved']}", text)
 
     def test_out_of_credits(self):
         out = self.nightly('echo "Fable 5.1 requires usage credits. Switch to another model."; exit 1')

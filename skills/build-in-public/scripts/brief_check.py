@@ -67,7 +67,8 @@ def check(text, offline=False, link_check=check_link, limits=None):
         if f"## {name}" not in text:
             errors.append(f"Missing section: ## {name}")
     posts = brieflib.suggested_posts(text)
-    if "## Suggested posts" in text and not posts:
+    quiet = text.startswith("<!-- written without an agent") and "_No story to post today" in text
+    if "## Suggested posts" in text and not posts and not quiet:
         errors.append("No suggested posts found (use '### 1. Title' with **Field:** lines, as in templates/brief.md)")
     for p in posts:
         name = f"Post {p['n']} ({p['title'][:40]})"

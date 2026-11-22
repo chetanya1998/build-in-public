@@ -66,6 +66,7 @@ schedule (launchd / cron / Task Scheduler)
 | Symptom | Cause | Fix |
 |---|---|---|
 | No folder at all for a day | The Mac was **off** at gist time. launchd runs a missed job when a sleeping Mac wakes, but not if it was shut down. | Rerun that day with `nightly.sh "$PWD" <date>` |
+| The gist arrives hours late, at a different time each day | The Mac was **asleep** at gist time. launchd started the job during a short background wake, and the Mac slept again seconds later, freezing it. `nightly.sh` now holds the Mac awake (`caffeinate`) while it runs, but it can't wake it. | Wake it daily 5 minutes before the gist: `sudo pmset repeat wakeorpoweron MTWRFSU 18:55:00` (doctor prints yours). On a laptop, keep it on power with the lid open. |
 | `nightly.log` stops after the digest with no error | The Mac went to sleep in the middle of the run | Rerun that day |
 | doctor ✗ `Scheduled script … no longer exists` | You moved or deleted the folder the schedule points to | `sh <skill>/scripts/schedule.sh --time 19:00` from the project |
 | Not sure whether it's scheduled | | macOS: `launchctl list \| grep buildinpublic`. Linux: `crontab -l`. Windows: `buildinpublic schedule status` |
@@ -97,7 +98,7 @@ This step runs your agent with no window and nobody at the keyboard, so anything
 | `The 'claude' command wasn't found on PATH` | `claude` / `codex` isn't on the `PATH` the schedule recorded | Rerun `schedule.sh` from a terminal where the command works |
 | `No headless agent configured` | `agent` is `none` | Set `"agent"` in `config.json` |
 
-When this step fails, the gist email now says so at the top ("The brief wasn't written"), with the agent's own words and the fix. The reason is saved in `daily/<date>/agent-error.txt`.
+When this step fails (or runs past `agent_timeout_minutes`, default 30), `fallback_brief.py` writes the posts without an agent from that day's sessions, commits and articles, and the gist email says so at the top ("The brief wasn't written"), with the agent's own words and the fix. The reason is saved in `daily/<date>/agent-error.txt`.
 
 Check this step on its own, without spending a full run:
 

@@ -86,6 +86,8 @@ Before the email goes out, `brief_check.py` holds every post to its platform's l
 
 The Copy post button opens a small page on this project's site that copies the post. The post travels in the link's `#` part, which browsers never send to the server. Set `"copy_page": ""` in `config.json` to leave the button out.
 
+**It comes even when your agent can't run.** If the agent is signed out, out of credits, stuck (it's stopped after `agent_timeout_minutes`, default 30) or not set up, the posts are written without it from that day's sessions, commits and articles, and the email says so at the top. Every gist is also saved on your computer exactly as emailed: `.buildinpublic/daily/<date>/gist.html`, with every day listed in `.buildinpublic/daily/index.html`.
+
 **The trends come from your project and your day.** Searches are built from three places: today's log entries and commits, the topics you gave during setup, and your stack (read from `package.json`, `requirements.txt`, `pyproject.toml`, `go.mod`, `Cargo.toml` or `Gemfile`). The script checks Hacker News, Reddit, GitHub and dev.to. Then your agent searches the web for what people are discussing on X, LinkedIn and in the news this week. A strong story with no trend beats a forced tie-in.
 
 ## 🐙 Your posts on GitHub
@@ -452,7 +454,8 @@ The gist is a pipeline (schedule → collect → trends → your agent writes th
 | What you see | Where it stopped | Most common cause | Fix |
 |---|---|---|---|
 | No folder for that day | Schedule | The computer was off at gist time | `sh <skill>/scripts/nightly.sh "$PWD" <date>` reruns it |
-| `digest.md` and `trends.md`, no `brief.md` | The agent writing the brief | `OAuth session expired`: the terminal `claude` sign-in expired. Signing in to the desktop app doesn't renew it. | So it stops happening: `claude setup-token`, then `agent_auth.py set`. Or just `claude`, then `/login` |
+| The gist arrives hours after your gist time | Schedule | The Mac was asleep: the job started during a short background wake and froze when it slept again. It now holds the Mac awake while it runs, but can't wake it. | Wake it daily just before: `sudo pmset repeat wakeorpoweron MTWRFSU 18:55:00` (5 minutes before yours; `doctor.py` prints it) |
+| The email says "Written without your agent" | The agent writing the brief | `OAuth session expired`: the terminal `claude` sign-in expired. Signing in to the desktop app doesn't renew it. | So it stops happening: `claude setup-token`, then `agent_auth.py set`. Or just `claude`, then `/login` |
 | `brief.md`, no email, log says `via mail-app` | Apple Mail | Mail accepted it but didn't send it: stuck in the Outbox | Check Mail's Outbox and account, or switch to Gmail SMTP |
 | `brief.md`, no email, log ends in `SMTPServerDisconnected` | Gmail login | The saved password isn't a 16-letter app password | Create an [app password](https://myaccount.google.com/apppasswords) and save it with `security add-generic-password -U …` |
 | The log is always empty | Logging | Claude Code reads `CLAUDE.md`, not `AGENTS.md` | Put the rule, or `@AGENTS.md`, in `CLAUDE.md` |

@@ -120,12 +120,14 @@ class NightlyUsesToken(unittest.TestCase):
             return repo / ".buildinpublic" / "daily" / day
 
         out = nightly()
-        self.assertFalse((out / "brief.md").exists())          # no token: signed out, as before
+        self.assertTrue((out / "brief.md").read_text().startswith("<!-- written without an agent"))  # no token: signed out
         self.assertTrue((out / "agent-error.txt").exists())
         subprocess.run([sys.executable, str(skill / "scripts" / "agent_auth.py"), "set"], input=TOKEN,
                        env=env, capture_output=True, text=True, check=True)
         out = nightly()
-        self.assertTrue((out / "brief.md").exists())           # with it: the brief is written
+        brief = (out / "brief.md").read_text()                # with it: the agent writes the brief,
+        self.assertIn("Signed in.", brief)                    # replacing the no-agent one
+        self.assertNotIn("written without an agent", brief)
         self.assertFalse((out / "agent-error.txt").exists())
         log = (out / "nightly.log").read_text()
         self.assertIn("Using the token saved with agent_auth.py", log)

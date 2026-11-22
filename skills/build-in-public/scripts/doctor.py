@@ -246,6 +246,8 @@ def check_schedule(repo):
         target = re.search(r"<string>([^<]*nightly\.sh)</string>", text)
         if target and not Path(target.group(1)).exists():
             fail("Scheduled script", f"{target.group(1)} no longer exists: rerun schedule.sh")
+        if h and m:
+            check_wake(int(h.group(1)), int(m.group(1)))
     else:
         line = next((l for l in run("crontab", "-l").splitlines() if l.endswith(f"# {job}")), "")
         if line:
@@ -253,6 +255,20 @@ def check_schedule(repo):
             ok("Scheduled", f"daily at {int(h):02d}:{int(m):02d} (cron)")
         else:
             warn("Scheduled", "no nightly brief scheduled (optional): sh <skill>/scripts/schedule.sh")
+
+
+def check_wake(hour, minute):
+    """A Mac asleep at gist time only runs the job during short background wakes, so the gist can
+    arrive hours late. A daily wake a few minutes before fixes that; it needs an admin password."""
+    sched = run("pmset", "-g", "sched")
+    rep = re.search(r"Repeating power events:(.*?)(?:\n\S|\Z)", sched, re.S)
+    t = (dt.datetime(2000, 1, 1, hour, minute) - dt.timedelta(minutes=5)).strftime("%H:%M:00")
+    cmd = f"sudo pmset repeat wakeorpoweron MTWRFSU {t}"
+    if rep and re.search(r"wake", rep.group(1), re.I):
+        ok("Wake for the gist", rep.group(1).strip().splitlines()[0].strip())
+    else:
+        warn("Wake for the gist", f"none set, so if the Mac is asleep at {hour:02d}:{minute:02d} the gist can arrive hours late. "
+             f"To wake it daily just before (asks for your password): {cmd}")
 
 
 def check_sessions(repo, today):
