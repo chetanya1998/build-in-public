@@ -199,6 +199,11 @@ def build(repo, day, reason=""):
     refs = articles(trends)
     context = readme_context(repo)
     caps = [l[2:] for l in section(digest, "Approved captures").splitlines() if l.startswith("- ")]
+    try:
+        import capture
+        waiting = [cid for cid, _ in capture.pending(repo, dt.date.fromisoformat(str(day)))]
+    except Exception:  # noqa: BLE001
+        waiting = []
 
     L = [MARK, f"# Daily Gist · {day}", "", "## Today in one line"]
     L.append(f"{stories[0]['title'].rstrip('.')}." if stories else "A quiet day: no sessions, commits or log entries found.")
@@ -209,7 +214,13 @@ def build(repo, day, reason=""):
         for platform in platforms[:2]:
             n += 1
             text = post_text(s, platform, cfg, repo, context, n - 1)
-            shot = caps[0].split(" · ")[-1].split(",")[0].strip() if caps else "No screenshot"
+            if caps:
+                shot = caps[(n - 1) % len(caps)].split(" · ")[-1].split(",")[0].strip()
+            elif waiting:
+                shot = (f"No screenshot yet. Screenshot {waiting[(n - 1) % len(waiting)]} from today's session could fit: "
+                        f"approve it first (see gist.html)")
+            else:
+                shot = "No screenshot"
             L += [f"### {n}. {s['title'].rstrip('.')}", f"**Platform:** {platform}", "**Post:**", "```text", text, "```",
                   f"**Screenshot:** {shot}",
                   f"**Angle:** What you built today, told plainly.",

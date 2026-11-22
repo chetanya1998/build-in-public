@@ -149,7 +149,7 @@ pre{{margin:0;padding:18px 22px 22px;color:#d7dae0;font:14px/1.5 "SF Mono",Menlo
 {ansi_to_html(body_ansi)}</pre></div>"""
 
 
-def render_png(page_html, target, selector="body"):
+def render_png(page_html, target, selector="body", scale=2):
     try:
         from playwright.sync_api import sync_playwright
     except ImportError:
@@ -157,7 +157,7 @@ def render_png(page_html, target, selector="body"):
     try:
         with sync_playwright() as p:
             browser = p.chromium.launch()
-            page = browser.new_page(device_scale_factor=2)
+            page = browser.new_page(viewport={"width": 1400, "height": 900}, device_scale_factor=scale)
             page.set_content(page_html)
             page.locator(selector).screenshot(path=str(target))
             browser.close()
@@ -208,6 +208,63 @@ def cmd_terminal(a, repo, day):
         print(problem)
 
 
+# ---------- framing: screenshots that look good in a post ----------
+
+BACKDROPS = {
+    "ocean": "linear-gradient(135deg,#0f2027 0%,#203a43 50%,#2c5364 100%)",
+    "dusk": "linear-gradient(135deg,#1f1c2c 0%,#6a3093 55%,#a044ff 100%)",
+    "sunrise": "linear-gradient(135deg,#f6d365 0%,#fda085 100%)",
+    "mint": "linear-gradient(135deg,#43e97b 0%,#38f9d7 100%)",
+    "mono": "linear-gradient(135deg,#232526 0%,#414345 100%)",
+}
+
+
+def image_size(path):
+    """(width, height) of a PNG or JPEG, read from its header, or None."""
+    b = Path(path).read_bytes()[:64 * 1024]
+    if b[:8] == b"\x89PNG\r\n\x1a\n":
+        return int.from_bytes(b[16:20], "big"), int.from_bytes(b[20:24], "big")
+    i = 2
+    while b[:2] == b"\xff\xd8" and i + 9 < len(b):
+        if b[i] != 0xFF:
+            break
+        marker, size = b[i + 1], int.from_bytes(b[i + 2:i + 4], "big")
+        if marker in (0xC0, 0xC1, 0xC2):
+            return int.from_bytes(b[i + 7:i + 9], "big"), int.from_bytes(b[i + 5:i + 7], "big")
+        i += 2 + size
+    return None
+
+
+def frame_html(src, label="", backdrop="ocean"):
+    """A browser window (or a phone, for tall images) on a gradient, around the screenshot."""
+    import base64
+    data = base64.b64encode(Path(src).read_bytes()).decode()
+    mime = "image/png" if Path(src).suffix.lower() == ".png" else "image/jpeg"
+    size = image_size(src)
+    tall = bool(size) and size[1] > size[0] * 1.35
+    img = f'<img src="data:{mime};base64,{data}" style="display:block;width:100%">'
+    if tall:
+        inner = (f'<div style="width:390px;border-radius:44px;padding:14px;background:#0b0b0c;'
+                 f'box-shadow:0 30px 60px rgba(0,0,0,.45)"><div style="border-radius:32px;overflow:hidden">{img}</div></div>')
+    else:
+        dots = "".join(f'<span style="width:12px;height:12px;border-radius:50%;background:{c}"></span>'
+                       for c in ("#ff5f57", "#febc2e", "#28c840"))
+        bar = (f'<span style="margin-left:14px;flex:1;background:#fff;border-radius:8px;padding:6px 12px;'
+               f'font:13px -apple-system,Segoe UI,sans-serif;color:#5f6368">{html.escape(label)}</span>' if label else "")
+        width = min(1100, max(560, size[0] if size else 1100))  # never enlarge (it blurs)
+        inner = (f'<div style="width:{width}px;border-radius:12px;overflow:hidden;background:#fff;'
+                 f'box-shadow:0 30px 60px rgba(0,0,0,.4),0 0 0 1px rgba(0,0,0,.08)">'
+                 f'<div style="display:flex;align-items:center;gap:8px;padding:12px 14px;background:#f1f3f4">{dots}{bar}</div>'
+                 f'{img}</div>')
+    return (f'<!doctype html><html><body style="margin:0"><div id="frame" style="display:inline-block;padding:64px;'
+            f'background:{BACKDROPS.get(backdrop, BACKDROPS["ocean"])}">{inner}</div></body></html>')
+
+
+def frame_png(src, dst, label="", backdrop="ocean"):
+    """Write a framed copy of src to dst. Returns None, or why it couldn't (Playwright missing)."""
+    return render_png(frame_html(src, label, backdrop), dst, selector="#frame", scale=1)
+
+
 # ---------- browser ----------
 
 def cmd_browser(a, repo, day):
@@ -233,9 +290,10 @@ def cmd_browser(a, repo, day):
             page = browser.new_page(viewport=vp, device_scale_factor=2)
             try:
                 page.goto(url, wait_until="networkidle", timeout=20000)
-                f = f"{cid}-browser-{slug(url.split('//')[-1])}-{name}.png"
-                page.screenshot(path=str(d / f), full_page=a.full_page)
-                files[name] = f
+                raw = f"{cid}-browser-{slug(url.split('//')[-1])}-{name}-raw.png"
+                page.screenshot(path=str(d / raw), full_page=a.full_page)
+                framed = raw.replace("-raw.png", ".png")
+                files[name] = raw if a.no_frame or frame_png(d / raw, d / framed, "" if name == "mobile" else url) else framed
             except Exception as e:
                 print(f"skip {name}: {e}", file=sys.stderr)
             finally:
@@ -283,11 +341,14 @@ def cmd_approve(a, repo, day):
     approve_or_stop(f"Use {names} in today's story?", a.approved, repo)
     d, m = out_dir(repo, day), load_manifest(repo, day)
     for cid, p in chosen:
-        f = f"{cid}-screenshot-{p.name}"
-        shutil.copy2(p, d / f)
-        m["captures"].append({"id": cid, "kind": "screenshot", "title": p.stem, "note": a.note or "",
-                              "source": str(p), "files": {"image": f}, "time": dt.datetime.now().strftime("%H:%M")})
-        print(f"Approved {cid}: {d / f}")
+        raw = f"{cid}-screenshot-raw{p.suffix.lower()}"
+        shutil.copy2(p, d / raw)
+        framed = f"{cid}-screenshot.png"
+        problem = None if a.no_frame else frame_png(d / raw, d / framed, a.label or "")
+        files = {"image": raw} if a.no_frame or problem else {"image": framed, "raw": raw}
+        m["captures"].append({"id": cid, "kind": "screenshot", "title": a.note or p.stem, "note": a.note or "",
+                              "source": str(p), "files": files, "time": dt.datetime.now().strftime("%H:%M")})
+        print(f"Approved {cid}: {d / files['image']}" + (f"  ({problem})" if problem else ""))
     save_manifest(repo, day, m)
 
 
@@ -328,6 +389,7 @@ def main():
     b.add_argument("--note")
     b.add_argument("--mobile", action="store_true")
     b.add_argument("--full-page", action="store_true")
+    b.add_argument("--no-frame", action="store_true", help="keep the plain screenshot, without the window frame")
     b.add_argument("--approved", action="store_true")
 
     sub.add_parser("candidates")
@@ -335,6 +397,8 @@ def main():
     ok = sub.add_parser("approve")
     ok.add_argument("ids", nargs="+")
     ok.add_argument("--note")
+    ok.add_argument("--label", help="text for the window's address bar, e.g. localhost:3000/billing")
+    ok.add_argument("--no-frame", action="store_true", help="keep the plain screenshot, without the window frame")
     ok.add_argument("--approved", action="store_true")
     no = sub.add_parser("reject")
     no.add_argument("ids", nargs="+")

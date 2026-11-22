@@ -93,7 +93,7 @@ def gist(repo, day):
     out = repo / ".buildinpublic" / "daily" / str(day)
     brief = out / "brief.md"
     g = {"repo": repo.name, "day": day, "link": posts_url(repo), "shipped": [], "posts": [], "notes": [],
-         "saved": str(out.resolve()).replace(str(Path.home()), "~")}
+         "saved": str(out.resolve()).replace(str(Path.home()), "~"), **screenshots(repo, day)}
     if brief.exists():
         text = brief.read_text()
         if text.startswith("<!-- written without an agent"):
@@ -154,6 +154,34 @@ FIXES = (  # what the agent printed -> what to do about it
     (r"not found on PATH|command not found|No such file", "The agent's command wasn't found when the gist ran. "
      "Check it's installed, or set agent_command in .buildinpublic/config.json."),
 )
+
+
+def screenshots(repo, day):
+    """Approved captures with an image (attached to the email), and screenshots from today's sessions
+    still waiting for a yes or no (shown with their ids, never attached)."""
+    out = repo / ".buildinpublic" / "daily" / str(day) / "captures"
+    shots = []
+    try:
+        for c in json.loads((out / "captures.json").read_text()).get("captures", []):
+            f = (c.get("files") or {})
+            img = f.get("image") or f.get("desktop") or f.get("mobile")
+            if img and (out / img).exists():
+                shots.append({"id": c["id"], "title": c.get("title", ""), "path": out / img})
+    except (OSError, ValueError):
+        pass
+    try:
+        import capture
+        waiting = [{"id": cid, "path": p} for cid, p in capture.pending(repo, day)]
+    except Exception:  # noqa: BLE001 - the gist must still go out
+        waiting = []
+    return {"shots": shots, "waiting": waiting}
+
+
+def approve_hint(g):
+    skill = str(Path(__file__).resolve().parent).replace(str(Path.home()), "~")
+    ids = " ".join(w["id"] for w in g["waiting"][:3])
+    return (f"Keep one for a post (it gets a window frame): python3 {skill}/capture.py approve {ids.split()[0] if ids else 'ID'}"
+            f" --date {g['day']}, or tell your agent \"use screenshot {ids.split()[0] if ids else 'ID'}\".")
 
 
 def agent_failure(out):
@@ -233,6 +261,14 @@ def render_text(g):
     L += g["notes"] + ([""] if g["notes"] else [])
     if g.get("pick"):
         L += ["PICK ONE", g["pick"]]
+    if g.get("shots") or g.get("waiting"):
+        L += ["SCREENSHOTS"]
+        L += [f"- {s['id']}  {s['title'] or s['path'].name}  (attached)" for s in g.get("shots", [])]
+        if g.get("waiting"):
+            L += [f"{len(g['waiting'])} screenshot(s) from today's sessions are waiting for your OK: "
+                  + ", ".join(w["id"] for w in g["waiting"]) + f". See them in {g['saved']}/gist.html.",
+                  approve_hint(g)]
+        L.append("")
     if g["link"]:
         L.append(f"Your approved posts and images: {g['link']}")
     if g.get("attached"):
@@ -242,7 +278,7 @@ def render_text(g):
     return "\n".join(L).strip() + "\n"
 
 
-def render_html(g):
+def render_html(g, local=False):
     """The same gist as a simple HTML email (inline styles, as mail apps need)."""
     e = html.escape
     H2 = 'style="font:600 12px/1 ui-monospace,Menlo,monospace;letter-spacing:.08em;text-transform:uppercase;color:#5a616d;margin:26px 0 10px"'
@@ -312,6 +348,22 @@ def render_html(g):
     out += [f'<p style="margin:12px 0">{e(n)}</p>' for n in g["notes"]]
     if g.get("pick"):
         out.append(f'<p style="margin:18px 0 6px;padding:12px 14px;background:#f4f6fb;border-radius:10px">{e(g["pick"])}</p>')
+    if g.get("shots") or g.get("waiting"):
+        out.append(f"<h2 {H2}>Screenshots</h2>")
+        thumb = ('<figure style="display:inline-block;margin:0 10px 12px 0;vertical-align:top;width:{w}px">'
+                 '<img src="{src}" style="width:100%;height:{h}px;object-fit:cover;object-position:top;border-radius:8px;border:1px solid #e2e5ea">'
+                 '<figcaption style="font:12px ui-monospace,Menlo,monospace;color:#5a616d">{cap}</figcaption></figure>')
+        for sh in g.get("shots", []):
+            if local:
+                out.append(thumb.format(w=300, h=200, src=e(sh["path"].resolve().as_uri(), quote=True), cap=e(f"{sh['id']} · approved")))
+            else:
+                out.append(f'<p style="margin:4px 0">{e(sh["id"])} · {e(sh["title"] or sh["path"].name)} (attached)</p>')
+        if g.get("waiting"):
+            out.append(f'<p style="margin:8px 0">{len(g["waiting"])} screenshot(s) from today\'s sessions are waiting for your OK'
+                       + ("" if local else f': see them in <code>{e(g["saved"])}/gist.html</code>') + '.</p>')
+            if local:
+                out += [thumb.format(w=200, h=140, src=e(w["path"].resolve().as_uri(), quote=True), cap=e(w["id"])) for w in g["waiting"]]
+            out.append(f'<p style="margin:4px 0;color:#5a616d;font-size:13px">{e(approve_hint(g))}</p>')
     if g["link"]:
         out.append(f'<p style="margin:8px 0">Your approved posts and images: <a href="{e(g["link"], quote=True)}" style="color:#2c4bd4">open on GitHub</a></p>')
     if g.get("attached"):
@@ -329,7 +381,7 @@ def save_local(repo, day, g, subject_line):
     out.mkdir(parents=True, exist_ok=True)
     page = ('<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width">'
             f'<title>{html.escape(subject_line)}</title></head><body style="margin:24px;background:#fff">'
-            f'{render_html(g)}</body></html>\n')
+            f'{render_html(g, local=True)}</body></html>\n')
     (out / "gist.html").write_text(page)
     (out / "gist.txt").write_text(f"{subject_line}\n\n{render_text(g)}")
     rows = []
@@ -424,7 +476,7 @@ def smtp_password(user):
              "or remove smtp_host/method from email.json to send through your mail app instead.")
 
 
-def compose(cfg, repo, day, headline, body, html_body=None):
+def compose(cfg, repo, day, headline, body, html_body=None, images=()):
     msg = EmailMessage()
     msg["Subject"] = subject(repo, day, headline)
     msg["From"] = cfg.get("from") or cfg.get("smtp_user") or cfg["to"]
@@ -435,6 +487,11 @@ def compose(cfg, repo, day, headline, body, html_body=None):
     brief = repo / ".buildinpublic" / "daily" / str(day) / "brief.md"
     if brief.exists():
         msg.add_attachment(brief.read_bytes(), maintype="text", subtype="markdown", filename=f"brief-{day}.md")
+    for img in list(images)[:4]:  # approved screenshots only, never the ones still waiting
+        img = Path(img)
+        if img.exists() and img.stat().st_size < 8_000_000:
+            sub = "png" if img.suffix.lower() == ".png" else "jpeg"
+            msg.add_attachment(img.read_bytes(), maintype="image", subtype=sub, filename=img.name)
     return msg
 
 
@@ -517,7 +574,7 @@ def main():
     if not cfg:
         print(f"Gist ready ({headline}). Email is optional and not set up.")
         return
-    msg = compose(cfg, repo, day, headline, body, render_html(g))
+    msg = compose(cfg, repo, day, headline, body, render_html(g), [s["path"] for s in g.get("shots", [])])
     if a.dry_run:
         print(f"(would send via {method(cfg)})\n{msg}")
         return

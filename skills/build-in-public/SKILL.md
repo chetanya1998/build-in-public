@@ -106,7 +106,7 @@ When something worth showing just happened (tests going green after a fight, a b
    python3 <skill-dir>/scripts/capture.py browser --url http://localhost:3000/onboarding --mobile --approved
    ```
    Terminal captures keep the redacted text and render a terminal-window PNG. Browser captures take a desktop (and optionally mobile) screenshot. Without `--approved`, the script refuses when it isn't on a terminal.
-3. **Screenshots your agents took** (Playwright MCP, test reports, Antigravity) are candidates. Run `capture.py candidates`, show the list, and ask which to keep. Then run `capture.py approve <ids> --approved` and `capture.py reject <ids>`.
+3. **Screenshots your agents took** (Playwright MCP, test reports, Antigravity, and the browser-pane screenshots in this project's Claude Code sessions) are candidates. Run `capture.py candidates`, open the images to see which are worth posting, and ask the user which to keep. Then run `capture.py approve <ids> --approved` (add `--label localhost:3000/page` for the window's address bar; it saves a framed copy for the post) and `capture.py reject <ids>`.
 4. Add the capture id to the matching log entry (`- **Capture:** a1b2c3`).
 
 ---
@@ -134,7 +134,7 @@ The default day is today, or yesterday if it's before 4am.
      No labels, no Markdown and nothing addressed to the user inside the block: only the post. For an X thread, start each post with `1/`, `2/` and so on. The screenshot goes in the `**Screenshot:**` line (an approved capture's file, or "No screenshot"), not in the post. Below the block, the detail lines explain how the post was made: the angle, which anecdote it uses and where it came from, where the context came from, the trend (with link) or "no trend", and why it works.
    - `## The story`: one short paragraph on where today moves the product arc.
    - `## Nearest trends`: 3 to 5 items with links, each tied to a line of today's work.
-   - `## Screenshots to review`: candidates from the digest that look useful, with their ids, so the user can approve them.
+   - `## Screenshots to review`: candidates from the digest that look useful, with their ids, so the user can approve them. When a post has no approved capture but a candidate fits it, say so in its **Screenshot:** line ("candidate <id> would fit: approve it first"); never present a candidate as attached.
    - `## Capture tomorrow`: 1 or 2 moments worth capturing next time.
    Before you finish, hold every post to these rules, because the user may post it as written:
    - **Within the platform's limit.** X: 280 characters per post, with every link counted as 23. LinkedIn: at most 3,000 characters and 300 words, and a hook under 210 characters so it shows above "...see more". Threads and Mastodon: 500. Bluesky: 300. The user can change these with `"post_limits"` in `config.json`, for example `{"linkedin": {"chars": 3000, "words": 250}}`.

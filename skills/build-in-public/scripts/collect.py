@@ -274,6 +274,36 @@ def git_info(repo, day, fetch=True):
 SCREENSHOT_DIRS = (".playwright-mcp", "test-results", "playwright-report", "screenshots", "cypress/screenshots")
 
 
+IMAGES = {".png", ".jpg", ".jpeg", ".webp"}
+MAX_SESSION_SHOTS = 12
+
+
+def claude_media(repo, day):
+    """Screenshots taken in this repo's Claude Code sessions that day (browser pane, Playwright,
+    images the agent looked at). Claude Code keeps them next to the session file, in
+    <session>/tool-results/. Small crops and exact duplicates are skipped; newest first."""
+    base = HOME / ".claude" / "projects"
+    if not base.is_dir():
+        return []
+    # Claude Code names the folder after the path it was started in; on macOS that may be the
+    # /var/... spelling while git reports /private/var/..., or the other way round
+    spellings = {str(repo), str(Path(repo).resolve()), re.sub(r"^/private(?=/)", "", str(Path(repo).resolve()))}
+    encs = {re.sub(r"[^A-Za-z0-9]", "-", x) for x in spellings}
+    found = []
+    for d in base.iterdir():
+        if d.is_dir() and any(d.name == enc or d.name.startswith(enc + "-") for enc in encs):
+            for res in d.glob("*/tool-results"):
+                found += [f for f in res.iterdir() if f.suffix.lower() in IMAGES and modified_on(f, day)
+                          and f.stat().st_size > 30_000]
+    seen, out = set(), []
+    for f in sorted(found, key=lambda f: f.stat().st_mtime, reverse=True):
+        key = (f.stat().st_size, f.read_bytes()[-4096:])
+        if key not in seen:
+            seen.add(key)
+            out.append(f)
+    return out[:MAX_SESSION_SHOTS]
+
+
 def find_candidates(repo, day, sessions):
     """Screenshots agents and browser tests produced that day. They are only candidates:
     nothing is used in a post until the user approves it (see capture.py)."""
@@ -284,7 +314,9 @@ def find_candidates(repo, day, sessions):
             found += [f for f in p.rglob("*") if f.suffix.lower() in MEDIA and modified_on(f, day)]
     for s in sessions:
         found += [Path(m) for m in s.get("media", [])]
-    return sorted(set(found))[:40]
+    found += claude_media(repo, day)
+    uniq = list(dict.fromkeys(found))
+    return sorted(uniq, key=lambda f: f.stat().st_mtime if f.exists() else 0, reverse=True)[:40]
 
 
 def read_manifest(out_dir):
