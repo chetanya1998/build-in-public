@@ -149,17 +149,12 @@ def set_secret(name: str, value: str) -> str:
     if o == "windows":
         # DPAPI-protected file, readable only by this Windows user
         from .core import app_home
-        # The value goes in this one process's environment (only you can read it), not on the command
-        # line, and not on stdin, which powershell -Command doesn't reliably pass to the script.
-        target = str(app_home() / ("secret-" + name)).replace("'", "''")
-        enc = ("$ErrorActionPreference = 'Stop'; "
-               "$s = ConvertTo-SecureString $env:BIP_SECRET_VALUE -AsPlainText -Force; "
-               f"ConvertFrom-SecureString $s | Set-Content -Path '{target}'")
-        r = _ps(enc, env={"BIP_SECRET_VALUE": value})
-        if r and r.returncode == 0:
-            return "Windows DPAPI"
-        detail = ((r.stderr or r.stdout).strip().splitlines() or [""])[-1][:200] if r else "PowerShell didn't start"
-        raise RuntimeError(f"Couldn't save it with Windows DPAPI: {detail}")
+        try:
+            blob = _dpapi(value.encode("utf-16-le"), protect=True)
+        except OSError as e:
+            raise RuntimeError(f"Couldn't save it with Windows DPAPI: {e}") from None
+        (app_home() / ("secret-" + name)).write_text(blob.hex(), encoding="ascii")
+        return "Windows DPAPI"
     raise RuntimeError("No secure store available. Install `keyring` (pip install keyring) "
                        "or set the BUILDINPUBLIC_SMTP_PASSWORD environment variable.")
 
@@ -188,11 +183,34 @@ def get_secret(name: str) -> str | None:
         from .core import app_home
         f = app_home() / f"secret-{name}"
         if f.exists():
-            r = _ps(f"$s = Get-Content '{f}' | ConvertTo-SecureString; "
-                    "[Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($s))")
-            if r and r.returncode == 0:
-                return r.stdout.strip()
+            try:
+                return _dpapi(bytes.fromhex(f.read_text(encoding="ascii").strip()), protect=False).decode("utf-16-le")
+            except (OSError, ValueError):
+                return None
     return None
+
+
+def _dpapi(data: bytes, protect: bool) -> bytes:
+    """Windows DPAPI (CryptProtectData / CryptUnprotectData) for the current user, called directly:
+    no PowerShell, whose secure-string commands fail to load when started from PowerShell 7.
+    The file holds the hex blob of the UTF-16 text, the same format ConvertFrom-SecureString wrote,
+    so secrets saved by older versions still read."""
+    import ctypes
+    from ctypes import wintypes
+
+    class BLOB(ctypes.Structure):
+        _fields_ = [("cbData", wintypes.DWORD), ("pbData", ctypes.POINTER(ctypes.c_char))]
+
+    buf = ctypes.create_string_buffer(data, len(data))
+    src, out = BLOB(len(data), ctypes.cast(buf, ctypes.POINTER(ctypes.c_char))), BLOB()
+    crypt32, kernel32 = ctypes.windll.crypt32, ctypes.windll.kernel32
+    fn = crypt32.CryptProtectData if protect else crypt32.CryptUnprotectData
+    if not fn(ctypes.byref(src), None, None, None, None, 0x1, ctypes.byref(out)):  # 0x1: never show UI
+        raise ctypes.WinError()
+    try:
+        return ctypes.string_at(out.pbData, out.cbData)
+    finally:
+        kernel32.LocalFree(out.pbData)
 
 # ---------------------------------------------------------------- email
 
