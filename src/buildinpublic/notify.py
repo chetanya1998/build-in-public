@@ -28,9 +28,12 @@ def _run(cmd: list[str], timeout: int = 20, **kw) -> subprocess.CompletedProcess
         return None
 
 
-def _ps(script: str, timeout: int = 90, stdin: str | None = None) -> subprocess.CompletedProcess | None:
+def _ps(script: str, timeout: int = 90, stdin: str | None = None,
+        env: dict | None = None) -> subprocess.CompletedProcess | None:
     exe = shutil.which("powershell") or shutil.which("pwsh") or "powershell"
     kw = {"input": stdin} if stdin is not None else {}
+    if env:
+        kw["env"] = {**os.environ, **env}
     return _run([exe, "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", script], timeout=timeout, **kw)
 
 
@@ -146,11 +149,17 @@ def set_secret(name: str, value: str) -> str:
     if o == "windows":
         # DPAPI-protected file, readable only by this Windows user
         from .core import app_home
-        enc = ("$v = [Console]::In.ReadToEnd().Trim(); $s = ConvertTo-SecureString $v -AsPlainText -Force; "
-               f"ConvertFrom-SecureString $s | Set-Content -Path '{app_home() / ('secret-' + name)}'")
-        r = _ps(enc, stdin=value)
+        # The value goes in this one process's environment (only you can read it), not on the command
+        # line, and not on stdin, which powershell -Command doesn't reliably pass to the script.
+        target = str(app_home() / ("secret-" + name)).replace("'", "''")
+        enc = ("$ErrorActionPreference = 'Stop'; "
+               "$s = ConvertTo-SecureString $env:BIP_SECRET_VALUE -AsPlainText -Force; "
+               f"ConvertFrom-SecureString $s | Set-Content -Path '{target}'")
+        r = _ps(enc, env={"BIP_SECRET_VALUE": value})
         if r and r.returncode == 0:
             return "Windows DPAPI"
+        detail = ((r.stderr or r.stdout).strip().splitlines() or [""])[-1][:200] if r else "PowerShell didn't start"
+        raise RuntimeError(f"Couldn't save it with Windows DPAPI: {detail}")
     raise RuntimeError("No secure store available. Install `keyring` (pip install keyring) "
                        "or set the BUILDINPUBLIC_SMTP_PASSWORD environment variable.")
 
