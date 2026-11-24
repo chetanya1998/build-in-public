@@ -188,6 +188,34 @@ Every screenshot, pending ones first. **Clicking one opens the viewer:**
 - **Act on it:** Approve or Discard, or attach it to a draft.
 - **Every post that uses it, in full:** format, status, dates, the whole text and its numbers, with a link to the editor.
 
+### Screenshot templates
+
+**Style it…** (in Media, the viewer, and each image under a post's Images tab) opens the styler. On the left is a live preview; on the right you pick one of ten templates and set its options:
+
+| Template | What it does | Best for |
+|---|---|---|
+| Original | the capture as it is, optionally letterboxed to a size | anything |
+| macOS window | window frame with traffic lights and a title, on a backdrop | terminals, apps |
+| Browser | browser frame with the page address | web apps, landing pages |
+| Gradient | rounded screenshot floating on a gradient | anything |
+| Code card | only the code (the editor's sidebar and tabs are cropped away) in a dark card | code |
+| Social card | a headline and your handle above the screenshot | X and LinkedIn image posts |
+| Spotlight | dims everything except one area, with a label | pointing at the line or row that matters |
+| Before / after | two screenshots side by side (or stacked when tall), labelled | fixes and redesigns |
+| Phone | inside a phone frame, cropped to the interesting part | mobile-friendly pages |
+| Polaroid | a tilted photo with tape and a handwritten caption | casual, behind-the-scenes posts |
+
+The options depend on the template:
+- **size:** Natural, 16:9 for X, 1.91:1 for LinkedIn links, 1:1, or 4:5;
+- **background:** 8 swatches;
+- **text:** title, headline, caption, handle, address or label;
+- **padding, corners and shadow;**
+- **Before / after:** which screenshot goes on the "before" side.
+
+**Save as new image** keeps the original and adds the styled copy to Media, already approved because you made it. Opened from a post, it also attaches the copy to that post. The copy remembers its template and settings, so **Style it…** on it starts from where you left off. **Download PNG** exports at up to 2× (capped at 3,200px wide), entirely in the browser.
+
+**How it's built.** A template is an SVG frame with the capture embedded inside it ([shots.js](shots.js) in the mockup). It stays sharp at any size, the dashboard can redraw it whenever settings change, and exporting is just drawing the SVG onto a canvas. In the real tool the capture is the PNG from `shots/`. The Spotlight area is set per capture in the mockup; in the real tool you drag it over the image.
+
 ## Scheduling and reminders
 
 The scheduler already runs background jobs on each OS (launchd, systemd/cron, Task Scheduler) ([scheduler.py](../src/buildinpublic/scheduler.py)). Add one job:
