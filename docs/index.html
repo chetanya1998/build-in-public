@@ -348,6 +348,23 @@ footer nav { display: flex; gap: 18px; margin-left: auto; flex-wrap: wrap }
 @media (max-width: 760px) { .stats { grid-template-columns: 1fr } .stat { border-left: 0; border-top: 1px solid var(--line) } .stat:first-child { border-top: 0 } }
 
 /* dashboard preview + mascots */
+.dev-tag { display: inline-flex; align-items: center; gap: 8px; font: 500 12px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: #8a4f00; background: #fbefdc; padding: 6px 10px; border-radius: 999px; width: max-content }
+.dev-tag::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: #e08a00; animation: devpulse 2s ease-in-out infinite }
+@keyframes devpulse { 50% { opacity: .35 } }
+:root[data-theme="dark"] .dev-tag { color: #f0b45a; background: #2a1f0e }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .dev-tag { color: #f0b45a; background: #2a1f0e } }
+@media (prefers-reduced-motion: reduce) { .dev-tag::before { animation: none } }
+.start { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); gap: 36px; align-items: start; margin: 34px 0 6px }
+.start > * { min-width: 0 }
+.start h3 { font-size: 22px; margin-bottom: 10px }
+.start p { color: var(--muted); font-size: 16px }
+.start ol { margin: 16px 0 0; padding: 0; list-style: none; display: grid; gap: 12px; counter-reset: s }
+.start li { counter-increment: s; display: grid; grid-template-columns: 28px 1fr; gap: 6px; font-size: 15.5px }
+.start li::before { content: counter(s); width: 24px; height: 24px; border-radius: 50%; background: var(--ink-soft); color: var(--ink); display: grid; place-items: center; font: 600 12.5px/1 var(--mono) }
+.start .term { margin: 0 }
+.start .term + .term { margin-top: 12px }
+.start .note { margin-top: 12px; font-size: 13.5px; color: var(--muted) }
+@media (max-width: 860px) { .start { grid-template-columns: 1fr; gap: 22px } }
 .preview-tag { display: inline-flex; align-items: center; gap: 6px; font: 500 12px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--ink); background: var(--ink-soft); padding: 5px 9px; border-radius: 999px; width: max-content }
 .dash-hero { margin: 0; border: 1px solid var(--line); border-radius: 16px; overflow: hidden; background: var(--surface); box-shadow: 0 40px 90px -50px rgba(10, 14, 30, .45) }
 .dash-hero img { width: 100%; height: auto; display: block }
@@ -840,15 +857,40 @@ When it's done, tell me what it installed, and remind me to open a new terminal 
   <section id="dashboard">
     <div class="wrap">
       <div class="head" data-reveal>
-        <div class="preview-tag">Preview · coming next</div>
+        <div class="dev-tag">Under development</div>
         <div class="eyebrow">Dashboard</div>
         <h2>Every post, every project, <em>one calm place.</em></h2>
-        <p class="lede">Your gists, drafts, schedule and research, across every project, in one local page. <code>buildinpublic dashboard</code> opens it on your computer. It reads the same files as the CLI, so nothing new leaves your machine, and it never posts for you.</p>
+        <p class="lede">Your gists, drafts, schedule and research, across every project, in one local page. <code>buildinpublic dashboard</code> will open it on your computer. It reads the same files as the CLI, so nothing new leaves your machine, and it never posts for you.</p>
       </div>
       <figure class="dash-hero" data-reveal>
         <img class="light" src="assets/dash-today.webp" width="1500" height="968" alt="The dashboard's Today screen: a friendly mascot, three things that need you, tonight's post ideas and screenshots to review" loading="lazy">
         <img class="dark" src="assets/dash-today-dark.webp" width="1500" height="968" alt="The same Today screen in dark mode" loading="lazy">
       </figure>
+      <div class="start" data-reveal>
+        <div>
+          <h3>How you'll start it</h3>
+          <p>One command, from any folder. Nothing to configure, and nothing leaves your computer.</p>
+          <ol>
+            <li><span>Install or update the CLI. The <a href="#install">All projects (CLI)</a> command above does both.</span></li>
+            <li><span>Run <code>buildinpublic dashboard</code>. It opens in your browser on a free local port, with a private token in the address.</span></li>
+            <li><span>Press <code>Ctrl+C</code> in the terminal to stop it. It only runs while the command runs.</span></li>
+          </ol>
+          <p class="note"><b>Under development.</b> The command isn't in the released CLI yet, so running it today fails with an error. The screens above are a clickable mockup of the design.</p>
+        </div>
+        <div>
+          <div class="term"><pre><span class="d"># planned</span>
+<span class="p">$ </span><span class="h">buildinpublic dashboard</span>
+<span class="d">  Dashboard on http://127.0.0.1:4817  (Ctrl+C to stop)</span>
+
+<span class="d"># choose the port, or skip opening the browser</span>
+<span class="p">$ </span><span class="h">buildinpublic dashboard --port 4817 --no-open</span></pre></div>
+          <div class="term"><pre><span class="d"># try the clickable mockup today</span>
+<span class="p">$ </span><span class="h">git clone https://github.com/chetanya1998/build-in-public</span>
+<span class="p">$ </span><span class="h">cd build-in-public &amp;&amp; git switch dashboard-design</span>
+<span class="p">$ </span><span class="h">python3 -m http.server 4817 --bind 127.0.0.1 --directory design</span>
+<span class="d"># then open http://127.0.0.1:4817/dashboard-mockup.html</span></pre></div>
+        </div>
+      </div>
       <div class="fmts" data-reveal>
         <div><span class="lim">X · SHORT</span><b>Up to 280 characters</b><p>Blank lines become a thread. See each post's count, your hook length and hashtags, with links counted as 23.</p></div>
         <div><span class="lim">X · LONG</span><b>Up to 25,000 characters</b><p>See exactly what readers get before “Show more”, plus paragraphs and reading time.</p></div>
@@ -872,7 +914,7 @@ When it's done, tell me what it installed, and remind me to open a new terminal 
       </div>
       <div>
         <div class="head" data-reveal style="margin-bottom:0">
-          <div class="preview-tag">Preview · desk pet</div>
+          <div class="dev-tag">Under development · desk pet</div>
           <div class="eyebrow">Meet your buddy</div>
           <h2>A small friend on your screen <em>that never nags.</em></h2>
           <p class="lede">A tiny mascot sits on top of your active window while you build. It shows what your agent is doing, and one click captures a screenshot, jots a note, saves a link, or asks your agent for a draft. Choose between <b>Bip</b>, a soft 3D bunny-blob, and a charcoal felt <b>buddy</b>.</p>
