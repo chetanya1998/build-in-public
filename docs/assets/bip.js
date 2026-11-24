@@ -211,6 +211,7 @@
 
   // Sarthak's buddy (or Bip) in any container: <span> for an <img>, or the svg itself for Bip
   function mascot(el, o = {}) {
+    el.classList.toggle("is-img", o.who === "sarthak");
     if (o.who === "sarthak") {
       const src = `${Bip.assetBase}mascot/${POSE[o.mood] || "notebook"}.webp`;
       let img = el.querySelector("img.sarthak");
@@ -231,6 +232,8 @@
       const st = document.createElement("style");
       st.textContent = `.bip-live{transform-origin:50% 95%;animation:bip-breathe 2.8s ease-in-out infinite}
         @keyframes bip-breathe{50%{transform:scale(1.025,.972)}}
+        .bip-live.is-img{animation:bip-float 3.2s ease-in-out infinite}
+        @keyframes bip-float{50%{transform:translateY(-2.5%)}}
         .bip-live img.sarthak{width:100%;height:100%;object-fit:contain;display:block}
         :root[data-theme="dark"] img.sarthak{filter:drop-shadow(0 0 .6px rgba(255,255,255,.45)) drop-shadow(0 0 10px rgba(255,255,255,.06))}
         @media (prefers-color-scheme: dark){:root:not([data-theme="light"]) img.sarthak{filter:drop-shadow(0 0 .6px rgba(255,255,255,.45)) drop-shadow(0 0 10px rgba(255,255,255,.06))}}
