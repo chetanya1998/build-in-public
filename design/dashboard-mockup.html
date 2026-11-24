@@ -6,7 +6,7 @@
 <title>Build in Public Dashboard</title>
 <style>
 :root {
-  --bg: #fbfaf8; --card: #ffffff; --fg: #1c1b19; --muted: #85827b; --faint: #b9b6af; --line: #ecebe6; --hover: #f4f3ef;
+  --bg: #fbfaf8; --card: #ffffff; --fg: #1c1b19; --muted: #6b6860; --faint: #b9b6af; --line: #ecebe6; --hover: #f4f3ef;
   --accent: #3553d6; --accent-soft: #eef1fd; --scrim: rgba(20, 19, 17, .42);
   --s-suggested: #b9b6af; --s-draft: #c8892a; --s-approved: #4c6ef5; --s-scheduled: #8b5cf6; --s-posted: #3f9b63; --s-skipped: #d6d3cc;
   --ok: #3f9b63; --warn: #c8892a; --bad: #c4432f;
@@ -28,6 +28,7 @@
 :root[data-theme="light"] { color-scheme: light }
 
 * { box-sizing: border-box }
+[hidden] { display: none !important }
 html, body { margin: 0 }
 body { background: var(--bg); color: var(--fg); font: 400 14px/1.55 var(--sans); -webkit-font-smoothing: antialiased; min-height: 100vh }
 body.locked { overflow: hidden }
@@ -362,7 +363,7 @@ textarea.body:focus { outline: none }
 .viewer { display: grid; grid-template-columns: minmax(0, 1fr) 380px; height: 100% }
 .stage { position: relative; background: #0c0c0b; overflow: hidden; display: grid; place-items: center; cursor: zoom-in; touch-action: none }
 .stage.zoomed { cursor: grab } .stage.dragging { cursor: grabbing }
-.stage .img { height: 86%; width: auto; max-width: 92%; aspect-ratio: 16/10; transform-origin: 0 0; will-change: transform }
+.stage .img { position: absolute; inset: 5% 4% 9%; transform-origin: 0 0; will-change: transform }
 .stage .img svg { width: 100%; height: 100%; display: block; filter: drop-shadow(0 20px 40px rgba(0,0,0,.55)) }
 .stage .bar { position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); display: flex; gap: 2px; padding: 3px; border-radius: 10px; background: rgba(30,30,28,.85); color: #eee; align-items: center; backdrop-filter: blur(8px) }
 .stage .bar button { border: 0; background: none; color: inherit; height: 28px; min-width: 30px; padding: 0 8px; border-radius: 7px; cursor: pointer; font-size: 13px }
@@ -381,18 +382,21 @@ textarea.body:focus { outline: none }
 /* ---------- screenshot styler ---------- */
 .thumb.styled { background: var(--hover) }
 .sheet.sty { display: flex; flex-direction: column }
-.styler { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 360px }
-.sty-stage { position: relative; min-height: 0; overflow: hidden; display: grid; place-items: center; padding: 28px; background: repeating-conic-gradient(var(--hover) 0 25%, var(--bg) 0 50%) 0 0 / 22px 22px }
-.sty-stage svg { display: block; border-radius: 4px; box-shadow: 0 18px 50px -18px rgba(0,0,0,.35) }
-.sty-size { position: absolute; left: 14px; bottom: 10px; font: 11.5px var(--mono); color: var(--muted); background: var(--bg); padding: 2px 8px; border-radius: 6px }
-.sty-side { overflow: auto; padding: 18px 20px; border-left: 1px solid var(--line); display: grid; gap: 18px; align-content: start }
-.tpl-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px }
-.tpl-grid button { border: 1px solid var(--line); background: var(--card); border-radius: 10px; padding: 6px 6px 7px; cursor: pointer; display: grid; gap: 5px; text-align: left; font-size: 12px; color: var(--fg) }
-.tpl-grid button:hover { border-color: var(--faint) }
-.tpl-grid button[aria-pressed="true"] { border-color: var(--fg); box-shadow: 0 0 0 1px var(--fg) }
-.tpl-grid .mini { aspect-ratio: 16/10; border-radius: 6px; overflow: hidden; background: var(--hover) }
-.tpl-grid .mini svg { width: 100%; height: 100%; display: block }
-.tpl-d { font-size: 12.5px; color: var(--muted); margin-top: -8px }
+.styler { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 340px }
+.sty-main { display: grid; grid-template-rows: auto minmax(0, 1fr); min-height: 0; min-width: 0 }
+.tpl-strip { display: flex; gap: 6px; overflow-x: auto; padding: 10px 14px; border-bottom: 1px solid var(--line); scrollbar-width: thin }
+.tpl-strip button { flex: none; width: 96px; border: 1px solid transparent; background: none; border-radius: 10px; padding: 4px; display: grid; gap: 4px; font-size: 11.5px; color: var(--muted); cursor: pointer; text-align: center }
+.tpl-strip button:hover { background: var(--hover) }
+.tpl-strip button[aria-pressed="true"] { border-color: var(--fg); color: var(--fg); background: var(--card) }
+.tpl-strip .mini { aspect-ratio: 16/10; border-radius: 6px; overflow: hidden; background: var(--hover) }
+.tpl-strip .mini svg { width: 100%; height: 100%; display: block }
+.sty-stage { position: relative; min-height: 0; background: repeating-conic-gradient(var(--hover) 0 25%, var(--bg) 0 50%) 0 0 / 22px 22px }
+.sty-stage > svg { position: absolute; inset: 24px; width: calc(100% - 48px); height: calc(100% - 48px); filter: drop-shadow(0 14px 28px rgba(0,0,0,.28)) }
+.sty-size { position: absolute; left: 12px; bottom: 8px; font: 11.5px var(--mono); color: var(--muted); background: var(--bg); padding: 2px 8px; border-radius: 6px }
+.sty-side { overflow: auto; padding: 16px 20px; border-left: 1px solid var(--line); display: grid; gap: 18px; align-content: start }
+.sty-src { display: grid; grid-template-columns: 88px minmax(0, 1fr); gap: 12px; align-items: center; padding: 10px; border-radius: 12px; background: var(--hover); font-size: 12.5px; color: var(--muted) }
+.sty-src b { color: var(--fg); font-weight: 500; display: block; margin-bottom: 2px }
+.tpl-d { font-size: 12.5px; color: var(--muted); margin-top: -6px }
 .sw { display: flex; gap: 6px; flex-wrap: wrap }
 .sw button { width: 30px; height: 30px; border-radius: 8px; border: 1px solid var(--line); cursor: pointer; padding: 0 }
 .sw button[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--fg) }
@@ -402,12 +406,19 @@ textarea.body:focus { outline: none }
 .rng { display: grid; grid-template-columns: 64px 1fr 34px; gap: 10px; align-items: center; font-size: 12.5px; color: var(--muted) }
 .rng output { font: 12px var(--mono); text-align: right }
 .pickwrap { display: grid; gap: 4px }
-@media (max-width: 980px) { .styler { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(220px, 42%) minmax(0, 1fr) } .sty-side { border-left: 0; border-top: 1px solid var(--line) } }
+.confirm { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-right: auto; font-size: 13px }
+.dirty-dot { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--muted) }
+.dirty-dot i { width: 7px; height: 7px; border-radius: 50%; background: var(--warn) }
+.cap-chips { display: flex; gap: 6px; flex-wrap: wrap }
+.cap-chips button { border: 1px solid var(--line); background: var(--card); border-radius: 999px; height: 28px; padding: 0 12px; cursor: pointer; font-size: 12.5px; color: var(--muted) }
+.cap-chips button:hover { color: var(--fg); border-color: var(--faint) }
+@media (max-width: 980px) { .styler { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(260px, 44%) minmax(0, 1fr) } .sty-side { border-left: 0; border-top: 1px solid var(--line) } }
 
 /* ---------- toast ---------- */
 .toast { position: fixed; left: 50%; bottom: 28px; transform: translate(-50%, 12px); opacity: 0; display: flex; align-items: center; gap: 10px; background: var(--fg); color: var(--bg); padding: 8px 16px 8px 8px; border-radius: 999px; font-size: 13px; transition: .2s; pointer-events: none; z-index: 60; max-width: calc(100vw - 32px) }
 .toast .mascot { width: 34px; height: 32px }
 .toast.on { opacity: 1; transform: translate(-50%, 0) }
+body.locked .toast { bottom: auto; top: 18px; transform: translate(-50%, -12px) } body.locked .toast.on { transform: translate(-50%, 0) }
 
 /* ---------- responsive ---------- */
 @media (max-width: 1080px) { .brand .name { display: none } .top-in { gap: 20px } .tabs { gap: 18px } #proj-btn .lbl { max-width: 130px } }
@@ -726,9 +737,9 @@ $("#who").value = who;
 $("#who").onchange = e => { who = e.target.value; try { localStorage.setItem("bip-dash-who", who); } catch (err) {} route(); toast(who === "bip" ? "Bip is back" : "Say hi to Sarthak's buddy"); };
 
 // modal
-let modalLives = [], lastFocus = null, onModalKey = null;
+let modalLives = [], lastFocus = null, onModalKey = null, modalGuard = null;
 function openModal(html, { wide = false, label = "Dialog", wire, onKey, cls = "" } = {}) {
-  lastFocus = document.activeElement;
+  modalGuard = null; lastFocus = document.activeElement;
   const m = $("#modal"), s = $("#sheet");
   s.className = "sheet" + (wide ? " wide" : "") + (cls ? " " + cls : ""); s.setAttribute("aria-label", label); s.innerHTML = html;
   m.classList.add("on"); m.setAttribute("aria-hidden", "false"); document.body.classList.add("locked");
@@ -738,8 +749,10 @@ function openModal(html, { wide = false, label = "Dialog", wire, onKey, cls = ""
   wire?.(s);
   setTimeout(() => (s.querySelector("[autofocus]") || s.querySelector("input, select, textarea, button"))?.focus(), 30);
 }
-function closeModal() {
+function closeModal(force) {
   const m = $("#modal"); if (!m.classList.contains("on")) return;
+  if (!force && modalGuard && modalGuard()) return;
+  modalGuard = null;
   m.classList.remove("on"); m.setAttribute("aria-hidden", "true"); document.body.classList.remove("locked");
   modalLives.forEach(l => l.stop()); modalLives = []; onModalKey = null; lastFocus?.focus?.();
 }
@@ -822,7 +835,7 @@ function composeModal(pre = {}) {
     const make = gen => {
       const sid = s.querySelector("#c-src").value, when = s.querySelector("#c-when").value, se = sess(sid);
       const post = P({ id: (when || nowStamp()).slice(5, 10).replace("-", "") + "-" + uid(), title: se ? (se.hooks[0] || se.title).replace(/\.$/, "") : `Untitled ${FORMATS[fmt].full} post`, project: pk, sub: sk, format: fmt,
-        status: "draft", date: TODAY, session: sid || null, scheduled_for: when || undefined, body: "", attach: se?.shots.filter(x => SHOTS[x]?.state === "approved").slice(0, 1) || [] });
+        status: "draft", date: TODAY, session: sid || null, scheduled_for: when || undefined, body: "", attach: pre.attach || se?.shots.filter(x => SHOTS[x]?.state === "approved").slice(0, 1) || [] });
       POSTS.push(post);
       if (!gen) { closeModal(); location.hash = "#/post/" + post.id; return; }
       runGenerate(post, se);
@@ -1154,7 +1167,7 @@ const mediaList = () => Object.entries(SHOTS).filter(([, s]) => inFilter(s.proje
   .sort((a, b) => (a[1].state === "pending" ? -1 : 0) - (b[1].state === "pending" ? -1 : 0) || (b[1].day + b[1].at).localeCompare(a[1].day + a[1].at));
 function viewMedia() {
   const items = mediaList();
-  return `<div class="page-h"><h1>Media</h1><div class="right"><div class="toggle" role="group" aria-label="Filter">${["all", "pending", "approved"].map(f => `<button data-mf="${f}" aria-pressed="${mediaFilter === f}">${f[0].toUpperCase() + f.slice(1)}</button>`).join("")}</div></div></div>
+  return `<div class="page-h"><h1>Media</h1><div class="right"><button class="btn" data-capture>Capture a page</button><div class="toggle" role="group" aria-label="Filter">${["all", "pending", "approved"].map(f => `<button data-mf="${f}" aria-pressed="${mediaFilter === f}">${f[0].toUpperCase() + f.slice(1)}</button>`).join("")}</div></div></div>
     <p class="muted" style="margin-top:-28px">Click any screenshot to inspect it and read every post that uses it. Screenshots your agent took stay pending until you approve them.</p>
     ${items.length ? `<div class="media">${items.map(([id, s]) => { const used = POSTS.filter(p => p.attach.includes(id) && p.status !== "suggested");
       return `<div class="m">${thumbBtn(id)}<div>${esc(s.cap)}</div>
@@ -1172,7 +1185,7 @@ function openViewer(id) {
     zoom = { s: 1, x: 0, y: 0 };
     return { html: `<div class="viewer">
       <div class="stage" id="stage" tabindex="0" aria-label="Screenshot. Click to zoom, drag to pan.">
-        <div class="img" id="vimg" style="aspect-ratio:${Shots.render(s, id).w}/${Shots.render(s, id).h}">${thumb(id, true)}</div>
+        <div class="img" id="vimg">${thumb(id, true)}</div>
         ${ids.length > 1 ? `<button class="nav prev" data-vnav="${ids[(i - 1 + ids.length) % ids.length]}" aria-label="Previous">‹</button><button class="nav next" data-vnav="${ids[(i + 1) % ids.length]}" aria-label="Next">›</button>` : ""}
         <div class="bar"><button data-z="-1" aria-label="Zoom out">−</button><span class="z" id="zl">100%</span><button data-z="1" aria-label="Zoom in">+</button><button data-z="0">Fit</button></div>
       </div>
@@ -1181,7 +1194,7 @@ function openViewer(id) {
         <dl class="kv"><dt>Status</dt><dd>${s.state === "pending" ? `<span class="st"><span class="dot" style="background:var(--s-draft)"></span>Pending review</span>` : `<span class="st"><span class="dot" style="background:var(--ok)"></span>Approved</span>`}</dd>
           ${s.tpl ? `<dt>Template</dt><dd>${tplName(s.tpl)}, from <a href="#" data-vnav="${s.from}" style="text-decoration:underline">the original</a></dd>` : ""}<dt>Project</dt><dd>${pj(s.project)}</dd><dt>Captured</dt><dd>${fmtDay(s.day)}, ${s.at} · by ${s.by === "you" ? "you" : "your agent"}</dd><dt>Size</dt><dd>${s.size}</dd>
           ${se ? `<dt>Session</dt><dd><a href="#/timeline" data-close style="text-decoration:underline">${esc(se.title)}</a></dd>` : ""}<dt>File</dt><dd class="mono">shots/${id}.png</dd></dl>
-        <div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn" data-v-style="${id}">Style it…</button><button class="btn text" data-v-dl="${id}">Download PNG</button></div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn" data-v-style="${id}">Style it…</button><button class="btn" data-v-post="${id}">Create post</button><button class="btn text" data-v-dl="${id}">Download PNG</button></div>
         ${s.state === "pending" ? `<div style="display:flex;gap:6px"><button class="btn primary" data-v-ok="${id}">Approve</button><button class="btn" data-v-no="${id}">Discard</button></div>`
           : drafts.length ? `<label class="field"><span>Attach to a post</span><div style="display:flex;gap:6px"><select class="in" id="v-to">${drafts.map(p => `<option value="${p.id}">${FORMATS[p.format].full} · ${esc(p.title.slice(0, 40))}</option>`).join("")}</select><button class="btn" data-v-attach="${id}">Attach</button></div></label>` : ""}
         <div class="sec"><div class="sec-h"><h2>Used in ${used.length} post${used.length === 1 ? "" : "s"}</h2></div>
@@ -1214,6 +1227,7 @@ function openViewer(id) {
     s.querySelectorAll("[data-z]").forEach(b => b.onclick = () => zoomBy(+b.dataset.z));
     s.querySelectorAll("[data-vnav]").forEach(b => b.onclick = e => { e.preventDefault(); show(b.dataset.vnav); });
     const vs = s.querySelector("[data-v-style]"); if (vs) vs.onclick = () => openStyler(vs.dataset.vStyle, null, true);
+    const vp = s.querySelector("[data-v-post]"); if (vp) vp.onclick = () => { const sh = SHOTS[vp.dataset.vPost]; if (sh.state === "pending") return toast("Approve it first, then make a post", "confused"); closeModal(true); composeModal({ project: sh.project, session: sh.session, attach: [vp.dataset.vPost] }); };
     const vd = s.querySelector("[data-v-dl]"); if (vd) vd.onclick = () => downloadShot(vd.dataset.vDl);
     const ok = s.querySelector("[data-v-ok]"); if (ok) ok.onclick = () => { SHOTS[ok.dataset.vOk].state = "approved"; toast("Approved. It can go in posts now."); route(); show(ok.dataset.vOk); };
     const no = s.querySelector("[data-v-no]"); if (no) no.onclick = () => { const next = ids[(ids.indexOf(no.dataset.vNo) + 1) % ids.length]; delete SHOTS[no.dataset.vNo]; ids.splice(ids.indexOf(no.dataset.vNo), 1); toast("Discarded", "idle"); route(); ids.length ? show(next) : closeModal(); };
@@ -1229,72 +1243,111 @@ function downloadShot(id, comp) {
   Shots.png(r.svg, r.w, r.h, scale).then(b => { const a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = `${id}${s.tpl ? "" : "-original"}.png`; document.body.append(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500); toast(`Downloaded ${Math.round(r.w * scale)}×${Math.round(r.h * scale)} PNG`); })
     .catch(() => toast("Couldn't make the PNG in this browser", "confused"));
 }
+function captureModal() {
+  const presets = [["localhost:3000/billing", "s4"], ["localhost:3000/upload", "s6"], ["localhost:3000", "s5"]];
+  openModal(head("Capture a page") + `<div class="sheet-b">
+      <p class="muted" style="font-size:13px">Playwright opens the page in a headless browser at 1280×800 and takes a capture. It runs on your computer and nothing is uploaded. Then you pick a template and fit it.</p>
+      <label class="field"><span>Page address</span><input class="in" id="cp-url" value="localhost:3000/billing" autofocus></label>
+      <div class="cap-chips">${presets.map(([u]) => `<button data-url="${u}">${u}</button>`).join("")}</div>
+    </div><div class="sheet-f"><span class="left">Only pages on this computer, or ones you type in.</span><button class="btn text" data-close>Cancel</button><button class="btn primary" id="cp-go">Capture</button></div>`,
+  { label: "Capture a page", wire: s => {
+    s.querySelectorAll("[data-url]").forEach(b => b.onclick = () => { s.querySelector("#cp-url").value = b.dataset.url; });
+    const go = () => {
+      const url = s.querySelector("#cp-url").value.trim(); if (!url) return s.querySelector("#cp-url").focus();
+      const from = (presets.find(([u]) => url.includes(u.split("/")[1] || "\0")) || presets[2])[1];
+      openModal(head("Capturing") + `<div class="gen">${mascotHTML({ mood: "reading" })}<span>Playwright is opening ${esc(url)}…</span></div>`, { label: "Capturing" });
+      setTimeout(() => {
+        const nid = "c" + uid(), base = SHOTS[from];
+        SHOTS[nid] = { kind: "app", cap: url.replace(/^https?:\/\//, ""), project: base.project, day: TODAY, at: "21:30", state: "approved", session: base.session, by: "you · Playwright", size: "1280×800", from };
+        closeModal(true); route(); toast("Captured. Pick a template to fit it.", "curious"); openStyler(nid);
+      }, 1300);
+    };
+    s.querySelector("#cp-go").onclick = go; s.querySelector("#cp-url").onkeydown = e => { if (e.key === "Enter") go(); };
+  } });
+}
 function openStyler(id, postId, fromViewer) {
   const src = SHOTS[id]; if (!src) return;
-  const base = src.from || id, bs = SHOTS[base] || src;
-  let tpl = src.tpl || (src.kind === "code" ? "code" : src.kind === "app" ? "browser" : "macos");
-  let opts = Object.assign(Shots.defaults(bs, base, tpl), src.tpl === tpl ? src.opts || {} : {});
+  const base = src.from || id, bs = SHOTS[src.src0] || (src.tpl ? SHOTS[base] : src) || src, isCopy = !!src.tpl;
   const post = postId && POSTS.find(p => p.id === postId);
+  let tpl = src.tpl || (bs.kind === "code" ? "code" : bs.kind === "app" ? "browser" : "macos");
   const others = Object.keys(SHOTS).filter(k => !SHOTS[k].from && k !== base).sort((a, b) => (SHOTS[b].project === bs.project) - (SHOTS[a].project === bs.project));
-  if (!opts.other) opts.other = others[0];
+  const memo = {};
+  const optsFor = t => memo[t] ||= Object.assign(Shots.defaults(bs, base, t), t === src.tpl ? src.opts || {} : {}, { other: (memo._other ||= others[0]) });
+  let opts = optsFor(tpl), dirty = false, last = null;
   const T0 = () => Shots.TEMPLATES.find(t => t.key === tpl);
-  const comp = () => Shots.compose(base, tpl, opts);
-  const minis = Shots.TEMPLATES.map(t => { const o = Object.assign(Shots.defaults(bs, base, t.key), { aspect: t.key === "original" ? "auto" : "16:9", other: opts.other });
-    const r = Shots.compose(base, t.key, o); return `<button data-tpl="${t.key}" aria-pressed="${t.key === tpl}"><span class="mini">${r.svg.replace("<svg ", '<svg preserveAspectRatio="xMidYMid slice" ')}</span>${t.name}</button>`; }).join("");
+  const minis = Shots.TEMPLATES.map(t => { const o = Object.assign(Shots.defaults(bs, base, t.key), { aspect: t.key === "original" ? "auto" : "16:9", other: others[0] });
+    return `<button data-tpl="${t.key}" aria-pressed="${t.key === tpl}" title="${esc(t.d)}"><span class="mini">${Shots.compose(base, t.key, o).svg.replace("<svg ", '<svg preserveAspectRatio="xMidYMid slice" ')}</span>${t.name}</button>`; }).join("");
   const optsHTML = () => {
-    const T1 = T0(), f = [];
-    f.push(`<p class="tpl-d">${T1.d}</p>`);
+    const T1 = T0(), f = [`<p class="tpl-d">${T1.d}</p>`];
     if (T1.opts.includes("aspect")) f.push(`<div class="field"><span>Size<span class="faint" id="asp-note">${Shots.ASPECT_NOTES[opts.aspect]}</span></span><div class="asp">${Object.keys(Shots.ASPECTS).filter(k => tpl === "original" || k !== "auto").map(k => `<button data-asp="${k}" aria-pressed="${opts.aspect === k}">${k === "auto" ? "Natural" : k}</button>`).join("")}</div></div>`);
     if (T1.opts.includes("bg")) f.push(`<div class="field"><span>Background</span><div class="sw">${Object.entries(Shots.BG).map(([k, c]) => `<button data-bg="${k}" aria-pressed="${opts.bg === k}" aria-label="${k}" title="${k}" style="background:${c.length > 1 ? `linear-gradient(135deg, ${c[0]}, ${c[1]})` : c[0]}"></button>`).join("")}</div></div>`);
     const txt = (k, label, ph) => T1.opts.includes(k) ? f.push(`<label class="field"><span>${label}</span><input class="in" data-o="${k}" value="${esc(opts[k] || "")}" placeholder="${ph}"></label>`) : 0;
-    txt("title", tpl === "social" ? "Headline" : tpl === "polaroid" ? "Caption" : "Title", "Shown on the image");
-    txt("handle", "Handle", "@you");
-    txt("url", "Address", "example.com");
-    txt("label", "Label", "What to look at");
+    txt("title", tpl === "social" ? "Headline" : tpl === "polaroid" ? "Caption" : "Title", "Shown on the image"); txt("handle", "Handle", "@you"); txt("url", "Address", "example.com"); txt("label", "Label", "What to look at");
     if (T1.opts.includes("other")) f.push(`<label class="field"><span>Before</span><select class="in" data-o="other">${others.map(k => `<option value="${k}" ${opts.other === k ? "selected" : ""}>${esc(SHOTS[k].cap)}</option>`).join("")}</select></label>`);
     const rng = (k, label, min, max) => T1.opts.includes(k) ? f.push(`<label class="rng"><span>${label}</span><input type="range" min="${min}" max="${max}" data-o="${k}" value="${opts[k]}"><output>${opts[k]}</output></label>`) : 0;
     rng("pad", "Padding", 24, 180); rng("radius", "Corners", 0, 40);
     if (T1.opts.includes("shadow")) f.push(`<label style="display:flex;gap:8px;align-items:center;font-size:13px"><input type="checkbox" data-o="shadow" ${opts.shadow ? "checked" : ""}> Shadow</label>`);
-    if (tpl === "spotlight") f.push(`<p class="faint" style="font-size:12px;margin-top:-6px">The highlighted area is picked for each screenshot. In the real dashboard you drag it.</p>`);
+    if (tpl === "spotlight") f.push(`<p class="faint" style="font-size:12px;margin-top:-6px">The highlighted area is preset in this mockup. In the real dashboard you drag it over the image.</p>`);
     return f.join("");
   };
-  let lastComp = null;
+  const who0 = bs.by === "agent" ? "Captured by your agent" : bs.by && bs.by.includes("Playwright") ? "Captured with Playwright" : "Captured by you";
   const html = head("Style screenshot", `<span class="muted" style="font-size:12.5px;margin-right:8px">${esc(bs.cap)}</span>`) + `<div class="styler">
-      <div class="sty-stage" id="sty-stage"><span class="sty-size" id="sty-size"></span></div>
-      <div class="sty-side"><div class="field"><span>Template</span><div class="tpl-grid">${minis}</div></div><div id="sty-opts" style="display:grid;gap:16px">${optsHTML()}</div></div>
-    </div><div class="sheet-f"><span class="left">Saves a new image next to the original${post ? ` and attaches it to “${esc(post.title.slice(0, 40))}”` : ""}. The original stays as it was.</span><button class="btn" id="sty-dl">Download PNG</button><button class="btn primary" id="sty-save">Save as new image</button></div>`;
+      <div class="sty-main"><div class="tpl-strip" role="group" aria-label="Template">${minis}</div><div class="sty-stage" id="sty-stage"><span class="sty-size" id="sty-size"></span></div></div>
+      <div class="sty-side">
+        <div class="sty-src"><span class="thumb">${thumb(base, true)}</span><span><b>${esc(bs.cap)}</b>${who0}<br>${fmtDay(bs.day)}, ${bs.at} · ${bs.size}</span></div>
+        <div id="sty-opts" style="display:grid;gap:16px">${optsHTML()}</div>
+      </div>
+    </div><div class="sheet-f"><span class="dirty-dot" id="sty-dirty" hidden><i></i>Unsaved changes</span>
+      <span class="confirm" id="sty-confirm" hidden>Discard your changes? <button class="btn" id="sty-keep">Keep editing</button><button class="btn" id="sty-discard">Discard</button></span>
+      <span style="flex:1"></span>
+      <button class="btn text" id="sty-dl">Download PNG</button>
+      ${isCopy ? `<button class="btn text" id="sty-copy">Save as copy</button>` : ""}
+      <button class="btn" id="sty-save">${post ? "Save and attach" : isCopy ? "Update image" : "Save image"}</button>
+      ${post ? "" : `<button class="btn primary" id="sty-post">Create post →</button>`}
+    </div>`;
   openModal(html, { wide: true, cls: "sty", label: "Style screenshot", wire: s => {
     const stage = s.querySelector("#sty-stage");
     const draw = () => {
-      lastComp = comp();
+      last = Shots.compose(base, tpl, opts);
       stage.querySelector("svg")?.remove();
-      stage.insertAdjacentHTML("afterbegin", lastComp.svg);
-      const r = stage.getBoundingClientRect(), k = Math.min((r.width - 56) / lastComp.w, (r.height - 56) / lastComp.h), svg = stage.querySelector("svg");
-      svg.style.width = Math.max(40, lastComp.w * k) + "px"; svg.style.height = Math.max(25, lastComp.h * k) + "px";
-      s.querySelector("#sty-size").textContent = `${lastComp.w}×${lastComp.h} · ${tplName(tpl)}`;
+      // no sizing in script: the SVG keeps its viewBox and the browser scales it into the stage
+      stage.insertAdjacentHTML("afterbegin", last.svg.replace(/^<svg ([^>]*?)width="\d+" height="\d+"/, `<svg role="img" aria-label="Preview, ${tplName(tpl)}, ${last.w} by ${last.h}" $1`));
+      s.querySelector("#sty-size").textContent = `${last.w}×${last.h} · ${tplName(tpl)}`;
     };
+    const touch = () => { dirty = true; s.querySelector("#sty-dirty").hidden = false; draw(); };
+    modalGuard = () => { if (!dirty) return false; s.querySelector("#sty-dirty").hidden = true; s.querySelector("#sty-confirm").hidden = false; s.querySelector("#sty-keep").focus(); return true; };
+    s.querySelector("#sty-keep").onclick = () => { s.querySelector("#sty-confirm").hidden = true; s.querySelector("#sty-dirty").hidden = false; };
+    s.querySelector("#sty-discard").onclick = () => { dirty = false; closeModal(true); };
     const wireOpts = () => {
       const box = s.querySelector("#sty-opts");
-      box.querySelectorAll("[data-asp]").forEach(b => b.onclick = () => { opts.aspect = b.dataset.asp; box.querySelectorAll("[data-asp]").forEach(x => x.setAttribute("aria-pressed", x === b)); s.querySelector("#asp-note").textContent = Shots.ASPECT_NOTES[opts.aspect]; draw(); });
-      box.querySelectorAll("[data-bg]").forEach(b => b.onclick = () => { opts.bg = b.dataset.bg; box.querySelectorAll("[data-bg]").forEach(x => x.setAttribute("aria-pressed", x === b)); draw(); });
-      box.querySelectorAll("[data-o]").forEach(i => i.oninput = i.onchange = () => { const k = i.dataset.o; opts[k] = i.type === "checkbox" ? i.checked : i.value; const out = i.parentElement.querySelector("output"); if (out) out.textContent = i.value; draw(); });
+      box.querySelectorAll("[data-asp]").forEach(b => b.onclick = () => { opts.aspect = b.dataset.asp; box.querySelectorAll("[data-asp]").forEach(x => x.setAttribute("aria-pressed", x === b)); s.querySelector("#asp-note").textContent = Shots.ASPECT_NOTES[opts.aspect]; touch(); });
+      box.querySelectorAll("[data-bg]").forEach(b => b.onclick = () => { opts.bg = b.dataset.bg; box.querySelectorAll("[data-bg]").forEach(x => x.setAttribute("aria-pressed", x === b)); touch(); });
+      box.querySelectorAll("[data-o]").forEach(i => i.oninput = i.onchange = () => { const k = i.dataset.o; opts[k] = i.type === "checkbox" ? i.checked : i.value; if (k === "other") memo._other = i.value; const out = i.parentElement.querySelector("output"); if (out) out.textContent = i.value; touch(); });
     };
     s.querySelectorAll("[data-tpl]").forEach(b => b.onclick = () => {
+      if (tpl === b.dataset.tpl) return;
+      const keep = { title: opts.title, handle: opts.handle, label: opts.label };
       tpl = b.dataset.tpl; s.querySelectorAll("[data-tpl]").forEach(x => x.setAttribute("aria-pressed", x === b));
-      const keep = { title: opts.title, handle: opts.handle, label: opts.label, other: opts.other };
-      opts = Object.assign(Shots.defaults(bs, base, tpl), keep);
-      if (tpl === "original") opts.aspect = "auto";
-      s.querySelector("#sty-opts").innerHTML = optsHTML(); wireOpts(); draw();
+      opts = optsFor(tpl);   // each template remembers its own settings
+      ["title", "handle", "label"].forEach(k => { if (keep[k] && !memo[tpl]._edited) opts[k] = keep[k]; }); memo[tpl]._edited = true;
+      s.querySelector("#sty-opts").innerHTML = optsHTML(); wireOpts(); touch();
     });
-    wireOpts(); requestAnimationFrame(draw);
-    s.querySelector("#sty-dl").onclick = () => downloadShot(id, lastComp);
-    s.querySelector("#sty-save").onclick = () => {
-      const nid = `${base}-${tpl}-${uid()}`;
-      SHOTS[nid] = { kind: bs.kind, cap: `${bs.cap} · ${tplName(tpl)}`, project: bs.project, day: TODAY, at: "21:30", state: "approved", session: bs.session, by: "you", size: `${lastComp.w}×${lastComp.h}`, from: base, tpl, opts: Object.assign({}, opts) };
-      if (post) { post.attach = [nid]; post.history.push({ at: nowStamp(), by: "you", change: `Image styled (${tplName(tpl)})` }); }
-      closeModal(); route(); toast(post ? "Saved and attached to the post" : "Saved as a new image", "proud");
-      if (fromViewer || !post) setTimeout(() => openViewer(nid), 60);
+    wireOpts(); draw();
+    const persist = asNew => {
+      const nid = isCopy && !asNew ? id : `${base}-${tpl}-${uid()}`;
+      SHOTS[nid] = Object.assign(SHOTS[nid] || {}, { kind: bs.kind, cap: `${bs.cap} · ${tplName(tpl)}`, project: bs.project, day: TODAY, at: "21:30", state: "approved", session: bs.session, by: "you", size: `${last.w}×${last.h}`, from: base, src0: src.src0 || (isCopy ? base : id), tpl, opts: Object.assign({}, opts) });
+      dirty = false; return nid;
     };
+    s.querySelector("#sty-dl").onclick = () => downloadShot(id, last);
+    const cp = s.querySelector("#sty-copy"); if (cp) cp.onclick = () => { const nid = persist(true); closeModal(true); route(); toast("Saved as a copy", "proud"); openViewer(nid); };
+    s.querySelector("#sty-save").onclick = () => {
+      const nid = persist(false);
+      if (post) { post.attach = [nid]; post.history.push({ at: nowStamp(), by: "you", change: `Image styled (${tplName(tpl)})` }); }
+      closeModal(true); route(); toast(post ? "Saved and attached to the post" : isCopy ? "Image updated" : "Saved to Media", "proud");
+      if (!post) setTimeout(() => openViewer(nid), 60);
+    };
+    const mp = s.querySelector("#sty-post");
+    if (mp) mp.onclick = () => { const nid = persist(false); closeModal(true); route(); composeModal({ project: bs.project, session: bs.session, attach: [nid] }); };
   } });
 }
 
@@ -1318,7 +1371,7 @@ function route() {
   if (name === "calendar") wireCalendar();
   mountBips(v); brandBip.redraw();
 }
-window.addEventListener("hashchange", () => { if (!location.hash.startsWith("#/post/")) savedBody = null; closeModal(); route(); window.scrollTo(0, 0); });
+window.addEventListener("hashchange", () => { if (!location.hash.startsWith("#/post/")) savedBody = null; closeModal(true); route(); window.scrollTo(0, 0); });
 document.addEventListener("click", e => {
   const t = e.target.closest("button"); if (!t || t.closest("#sheet, #proj-pop")) return;
   const d = t.dataset, Pp = id => POSTS.find(p => p.id === id);
@@ -1327,6 +1380,7 @@ document.addEventListener("click", e => {
   else if (d.mf) { mediaFilter = d.mf; route(); }
   else if (d.view) openViewer(d.view);
   else if (d.style) openStyler(d.style, d.stylePost || null);
+  else if ("capture" in d) captureModal();
   else if ("new" in d) composeModal();
   else if (d.newFrom) { const s = sess(d.newFrom); composeModal({ project: s.project, session: s.id }); }
   else if (d.newSub) newSubModal(d.newSub);

@@ -188,9 +188,22 @@ Every screenshot, pending ones first. **Clicking one opens the viewer:**
 - **Act on it:** Approve or Discard, or attach it to a draft.
 - **Every post that uses it, in full:** format, status, dates, the whole text and its numbers, with a link to the editor.
 
-### Screenshot templates
+### Capture, fit, edit, post
 
-**Style it…** (in Media, the viewer, and each image under a post's Images tab) opens the styler. On the left is a live preview; on the right you pick one of ten templates and set its options:
+The path from a capture to a post is one flow:
+
+1. **Capture.** **Capture a page** (on Media) takes a URL, and Playwright opens it headlessly at 1280×800 and takes the screenshot, on your computer. Your agent's captures and screenshots from `buildinpublic shot` arrive in Media the same way.
+2. **Fit.** The styler opens straight away. A row of 10 template previews (each showing *your* capture) sits above a big live preview. Pick one, and the capture is fitted onto it.
+3. **Edit.** The options are in the side panel, with nothing to scroll past: size (Natural, 16:9, 1.91:1, 1:1, 4:5), background, the template's text, padding, corners, shadow. Each template remembers its own settings, so switching and coming back loses nothing. The panel also shows the original capture (who took it, when, its size).
+4. **Save or post.**
+   - **Save image** adds it to Media, approved because you made it. Opened on an image you already styled, it's **Update image**, which replaces it in place; **Save as copy** keeps both.
+   - **Create post →** saves the image and opens New post with the image already attached. Pick the format and sub-project, then generate or write the text.
+   - **Download PNG** exports at up to 2× (capped at 3,200px wide), entirely in the browser.
+   - Opened from inside a post, the button is **Save and attach**.
+
+If you've changed something, closing with Esc, ✕ or a click outside asks "Discard your changes?" first.
+
+### Screenshot templates
 
 | Template | What it does | Best for |
 |---|---|---|
@@ -208,13 +221,11 @@ Every screenshot, pending ones first. **Clicking one opens the viewer:**
 The options depend on the template:
 - **size:** Natural, 16:9 for X, 1.91:1 for LinkedIn links, 1:1, or 4:5;
 - **background:** 8 swatches;
-- **text:** title, headline, caption, handle, address or label;
+- **text:** title, headline, caption, handle, address or label, depending on the template;
 - **padding, corners and shadow;**
 - **Before / after:** which screenshot goes on the "before" side.
 
-**Save as new image** keeps the original and adds the styled copy to Media, already approved because you made it. Opened from a post, it also attaches the copy to that post. The copy remembers its template and settings, so **Style it…** on it starts from where you left off. **Download PNG** exports at up to 2× (capped at 3,200px wide), entirely in the browser.
-
-**How it's built.** A template is an SVG frame with the capture embedded inside it ([shots.js](shots.js) in the mockup). It stays sharp at any size, the dashboard can redraw it whenever settings change, and exporting is just drawing the SVG onto a canvas. In the real tool the capture is the PNG from `shots/`. The Spotlight area is set per capture in the mockup; in the real tool you drag it over the image.
+**How it's built.** A template is an SVG frame with the capture embedded inside it ([shots.js](shots.js) in the mockup). It stays sharp at any size, the dashboard can redraw it whenever settings change, and exporting is just drawing the SVG onto a canvas. In the real tool the capture is the PNG from `shots/`. The Spotlight area is set per capture in the mockup; in the real tool you drag it over the image. The preview is scaled by the browser (the SVG keeps its viewBox), so it never needs measuring and can't collapse. The ten small template previews must use a downscaled copy of the capture, not the full PNG.
 
 ## Scheduling and reminders
 
