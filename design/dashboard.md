@@ -44,17 +44,28 @@ The dashboard sits on top of the files that already exist. Three things there ne
   ---
   id: 1109-stripe-webhook-retries      # stable, set on first index
   status: scheduled
-  platform: x
+  format: x-short                      # x-short | x-long | linkedin
   project: build-in-public             # project key from projects.json
+  sub: cli                             # optional sub-project key
   date: 2026-11-09                     # day of the work it's about
   session: 2026-11-09-claude-3f2a91c0  # session folder it came from
   attach: [shots/code-webhook.png]     # approved images only
   trend: https://news.ycombinator.com/item?id=…
-  scheduled_for: 2026-11-10T09:30      # local time
-  posted_at:                           # set when you mark it posted
+  scheduled_for: 2026-11-10T09:30      # "post on": planned date, and the reminder time
+  posted_at:                           # set when you mark it posted, editable to backfill
   link:                                # the live post, once posted
+  metrics: {impressions: 4210, likes: 96, reposts: 12, replies: 18, bookmarks: 21}  # you type these in
   ---
   ```
+
+- **Sub-projects live in `projects.json`,** under each project:
+
+  ```json
+  "invoice-ai": { "mode": "content", "color": "#ef7d32",
+    "subs": [{ "key": "stripe", "name": "Stripe webhooks", "formats": ["x-short", "x-long", "linkedin"] }] }
+  ```
+
+  Removing a sub-project never deletes posts; they go back to the project.
 
 - **`posts.json` becomes a cache** that `index.rebuild()` can recreate at any time from every post folder:
   - `~/.buildinpublic/posts/*.md`
@@ -89,59 +100,93 @@ python3 -m http.server 4817 --bind 127.0.0.1 --directory design
 
 Then go to http://127.0.0.1:4817/dashboard-mockup.html.
 
-There's one page with a left rail. Every screen can be filtered by **project** and **date range**, and the filters live in the URL so a view can be bookmarked.
+**Look and feel: calm, minimal, mostly text.**
+- **Colour:** a warm paper background in light mode and near-black in dark mode, with hairline dividers instead of boxed cards. Colour appears only in small status dots and project dots; black is the only button colour.
+- **Type:** page titles in a serif, everything else in one sans at 14px.
+- **Navigation:** text tabs in a slim top bar.
+- **Quiet by default:** row actions appear when you hover (they're always shown on touch screens), and the post editor keeps its context (session, research, hooks, images, history) in tabs below the text instead of a third column.
+- **A mascot you choose** ([bip.html](bip.html)): **Bip**, a soft 3D bunny-blob, or **Sarthak's buddy**, a charcoal felt block. A switch in the top bar picks one. The mascot:
+  - greets you on Today, with a mood (or pose) that matches what's waiting;
+  - appears in empty states and in the confirmation toasts;
+  - is your avatar in post previews.
 
-### 1. Today (the landing screen)
+  Bip also wears the scarf colour of the selected project. Both are drawn by the same `bip.js` as the [desk pet](pet.md), so the choice applies everywhere.
 
-What needs you, in order:
+Five tabs: **Today, Posts, Calendar, Timeline, Media**. There's no Projects tab. The **project switcher** in the top bar picks a project or one of its sub-projects for every screen, creates sub-projects, and opens **Projects and settings**: each project's mode (content, journal only, ignored, the same as `buildinpublic project <name> <mode>`) and its sub-projects.
 
-- **Due now.** Scheduled posts whose time has come, each with a **Copy** button and **Mark posted**.
-- **Waiting for approval.** Drafts the agent wrote.
-- **Today's suggestions.** The suggested posts from each content project's latest `brief.md`, with **Draft this**. This opens your agent's prompt text ready to copy ("write post 2 for build-in-public"). The dashboard doesn't write posts itself; your agent does.
-- **Screenshots to review.** Pending captures (`pending_shots` in state), with Approve and Discard.
-- A one-line streak: "2 days since your last post."
+### Formats: X Short, X Long, LinkedIn
+
+Every post has one format, and each format has its own preview, limits and measures. Hard limits are the platforms'; guidelines are labelled as guidelines in the UI.
+
+| | X · Short | X · Long | LinkedIn |
+|---|---|---|---|
+| Limit | 280 characters a post; blank lines split it into a thread | 25,000 characters in one post (needs X Premium) | 3,000 characters |
+| Counting | links count as 23, most emoji as 2 | same | plain characters |
+| Preview | the thread, post by post, with a count on each | the post with “Show more” after 280 characters | the post with “…see more” after about 210 characters |
+| Measures | longest post, thread length, hook length, hashtags (0 to 2), image (up to 4) | length, what shows before “Show more”, paragraphs, reading time, hashtags, image | length, what shows before “…see more”, hashtags (3 to 5), paragraphs, reading time, image |
+| After posting | impressions, likes, reposts, replies, bookmarks | same as Short | impressions, reactions, comments, reposts |
+
+**Engagement rate** is interactions divided by impressions. You type the numbers from X or LinkedIn analytics; the dashboard never connects to your accounts.
+
+### Generate and edit
+
+- **New post** (on Posts and Today) asks for:
+  - a project and optional sub-project;
+  - a format (only the sub-project's formats are offered);
+  - what to write from (a session, or nothing);
+  - an optional post-on date.
+
+  **Generate draft** has your agent write it (`agent_command`, for example `claude -p`, or a request file it picks up at the next session). **Write it myself** opens an empty draft.
+- **Adapt for…** in the editor turns any post into another format, for example an X Long post into a LinkedIn one. It's a new draft in the same sub-project and on the same date.
+- An empty post (from a planned date) shows **Generate draft** above the editor.
+- Nothing is ever posted for you. Copy, post it yourself, then **Mark posted**.
+
+### Sub-projects and the trail
+
+A sub-project groups the posts about one thread of work: a feature, a launch, a series. Each one has its own set of formats. Picking one under Posts opens its **trail**, a dated timeline of everything planned and posted:
+
+- **Add a posting date:** pick a date and a format, and an empty draft appears on the trail, ready to generate or write.
+- Posted entries show their posted date and their numbers. Planned ones show "date passed" if the date went by without a post.
+- The posted date stays editable, so you can backfill posts you made by hand.
+
+### 1. Today
+
+What needs you: posts that are due (Copy, Mark posted), drafts to approve, approved posts to schedule, tonight's ideas (each with **Generate**), screenshots to review and what you built today. Each row shows its format.
 
 ### 2. Posts
 
-A board with one column per status: Suggested, Draft, Approved, Scheduled, Posted. Moving a card changes its status. There's also a list view you can sort by date, project or platform. Each card shows the title, project, platform, the first line, and an image thumbnail if it has one.
+A side list of projects and sub-projects. Above the posts, filters for **All, X · Short, X · Long, LinkedIn**, and three views:
+- **Board:** one column per status; drag a card to change it.
+- **List:** with each post's format, sub-project, dates, impressions and engagement.
+- **Trail:** for a sub-project.
 
 ### 3. Post
 
-The main editing screen, in three panes.
+The editor has the title and a quiet line of properties: status, format, project › sub-project, and post-on (or posted) date. Below the text are context tabs: Session, Research, Hooks, Images, History.
 
-```
-┌ Post ─────────────────────────┬ Preview ──────────────┬ Behind it ─────────────┐
-│ Title                          │ X · 231/280 ✓          │ Session  Nov 9, 21:02  │
-│ Platform [x ▾] Project [bip ▾] │ ┌────────────────────┐ │  "Fix Stripe retries"  │
-│ Status   [approved ▾]          │ │ rendered post +    │ │  12 files · 47 min     │
-│ Schedule [Nov 10 09:30]        │ │ attached image     │ │ Research (articles.md) │
-│ ┌────────────────────────────┐ │ └────────────────────┘ │  • HN: Idempotency…    │
-│ │ markdown editor            │ │ [Copy] [Copy as thread]│ Hooks (hooks.md)       │
-│ │                            │ │                        │ Screenshots ▦ ▦ ▦      │
-│ └────────────────────────────┘ │                        │ History  5 versions    │
-│ [Save] saved 21:14 · ⌘S        │                        │                        │
-└────────────────────────────────┴────────────────────────┴────────────────────────┘
-```
+The right column holds:
+- the format-aware preview;
+- Copy (or Copy thread);
+- **Measures** for the format;
+- **How it did**, once the post is posted.
 
-- **Preview** follows the platform rules: an X character count per post (and splitting into a thread), and the LinkedIn "see more" cutoff after two lines.
-- **Behind it** comes from the linked session folder: `summary.md`, `articles.md`, `hooks.md` and `shots/`. Clicking a screenshot attaches it. Only approved captures can be attached, the same rule the skill follows.
-- **Saving** checks the file's mtime first. If your agent changed the file since you opened it, the dashboard shows both versions instead of overwriting.
+**Saving** checks the file's mtime first. If your agent changed the file since you opened it, the dashboard shows both versions instead of overwriting.
 
 ### 4. Calendar
 
-A month and week view of scheduled and posted posts, with **sessions as faint marks** on the days you worked. You can see "I shipped a lot on Tuesday and posted nothing" at a glance. Dragging a post to another slot reschedules it.
+The month, showing every post with a planned or posted date, marked by platform and time, plus sessions as dots on the days you worked. Drag a planned post to another day to move it.
 
 ### 5. Timeline
 
-Your work log, newest first, from `journal.all_meta()`. Each session shows the time, the project, the agent, the minutes spent, its title and tags, and the files it changed. You can open it to read the summary, research, hooks and screenshots. Each session also lists the posts made from it, or offers **Suggest a post from this**, which gives you the agent prompt to copy. Search uses the existing `journal.search()`.
+Your work log, newest first. Each session opens to its summary, files, commands, research, screenshots and the posts made from it, with **New post from this**.
 
 ### 6. Media
 
-Every screenshot and recording across all projects, in a grid. Filter by project, date, and approved or pending. Each one shows which posts use it. Approving or discarding one updates the same state the CLI uses.
-
-### 7. Projects
-
-The rows of `projects.json`: name, path, mode (content, journal, ignore), last session, post count and last post. Changing the mode here is the same as `buildinpublic project <name> <mode>`.
+Every screenshot, pending ones first. **Clicking one opens the viewer:**
+- **Inspect:** the image large. Click or scroll to zoom up to 4×, drag to pan, and use ← and → to move between screenshots.
+- **Details:** status, project, when it was captured and by whom, its size and its session.
+- **Act on it:** Approve or Discard, or attach it to a draft.
+- **Every post that uses it, in full:** format, status, dates, the whole text and its numbers, with a link to the editor.
 
 ## Scheduling and reminders
 

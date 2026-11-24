@@ -1,4 +1,4 @@
-# Design: Bip, the desk pet
+# Design: the desk pet (Bip or Sarthak's buddy)
 
 Status: proposal · Related: [dashboard.md](dashboard.md) · Mockup: [pet-mockup.html](pet-mockup.html)
 
@@ -18,28 +18,63 @@ It keeps the project's promises:
 - **It doesn't watch your screen.** It reacts to the events the tool already sees (agent sessions and tool calls, commits, dev servers, reminders), plus where your windows and cursor are. It captures or records only when you ask.
 - **Nothing new leaves your machine.** It runs locally, voice notes are transcribed on your computer, and everything goes into the same `~/.buildinpublic` journal.
 
-## The character
+## Two mascots: you pick
 
-**Bip** is a squishy jelly blob with bunny ears and two little feet. It has tall shiny eyes, pink cheeks, long ears with pink insides, and a scarf in your project's colour.
+Build in Public ships two characters. You choose one in settings (`pet.mascot: bip | buddy`), and the desk pet, the dashboard and the gist all use it. A character sheet with both is in [bip.html](bip.html).
+
+| | **Bip** | **Sarthak's buddy** (name to be decided) |
+|---|---|---|
+| Look | a soft 3D jelly blob with bunny ears and little feet, peach by default | a charcoal felt block with a screen for a face and stubby arms and legs |
+| Made by | code ([bip.js](bip.js)): shapes with gradient shading, a felt texture and glossy eyes | seven 3D renders by Sarthak in `Mascot/`, with web copies in `design/mascot/` |
+| Moods | all 18, with ears, eyes, feet and props animating | each mood shows the closest of 7 poses; the pose breathes gently |
+| Accessories | project scarf, headphones, party hat, night cap, streak flower | none yet |
+| Colours | peach, mint, sky, lilac, charcoal | charcoal |
+
+How the buddy's poses map to moods:
+
+| Pose | Moods |
+|---|---|
+| notebook | idle, editing, has an idea |
+| shipped | proud, party |
+| excited | happy, surprised, giggle, petted |
+| thinking | thinking, waiting, listening, dizzy |
+| detective | reading, testing, curious |
+| grumpy | confused, aimed at the bug, never at you |
+| sleepy | sleepy |
+
+**Asset note.** Five of Sarthak's seven renders (the ones exported from Gemini) have a grey checkerboard painted into the pixels instead of real transparency, plus a small watermark. The web copies in `design/mascot/` had that removed by a script, which leaves slightly soft edges on the lit top of the body. Re-exporting those five as transparent PNGs would fix it. The two "Cheerful" renders are already clean.
+
+The rest of this document describes Bip. Everything about behaviour applies to both characters.
+
+## Bip
+
+**Bip** is a squishy jelly blob with bunny ears and two little feet. It has big glossy eyes, pink cheeks, long ears with pink insides, and a knitted scarf in your project's colour.
 
 ### How it's drawn
 
-Bip isn't hand-drawn frame by frame. It's built from **shapes** that are turned into pixels each frame:
-- **body:** a rounded "superellipse", taller on top and flatter underneath;
-- **two ears:** ellipses that rotate at their base;
-- **two feet:** small ellipses;
-- **accessories:** a scarf band, a hat, headphones.
+Bip looks like a small claymation toy but is drawn entirely in code, as SVG shapes:
+- **body:** a rounded blob, wider at the bottom;
+- **two ears:** that rotate at their base;
+- **two feet;**
+- **the face and props:** eyes, mouth, cheeks, a laptop, a book.
 
-Each shape gets a 1-pixel outline, so overlapping parts stay readable. The face (eyes, mouth, cheeks) and held props (a laptop, a book) are small hand-made pixel patterns placed on top.
+Each part is shaded like a 3D object, lit from the top left:
+- a gradient from a warm highlight to a deeper shade;
+- a soft shine on the forehead;
+- a darker band near the bottom;
+- a subtle felt texture;
+- a contact shadow under the feet.
 
-The grid is 30×27 pixels shown at 2×, so the body is about 48px across, as before but with twice the detail. Because everything is drawn from shapes:
+The eyes are glossy, with two catch-lights. Charcoal Bip borrows the buddy's big white eyes so it stays readable.
 
-- **Ears can take any angle** and still look like crisp pixel art.
-- **Squash and stretch is real.** The body is redrawn wider-and-shorter or narrower-and-taller, not a stretched picture. It breathes, squashes on every step, bounces on hops and boings when surprised.
+Because every part is a shape rather than a picture:
+
+- **Ears can take any angle,** so they do half the acting.
+- **Squash and stretch is real.** The body is redrawn wider-and-shorter or narrower-and-taller. It breathes, squashes on every step, bounces on hops and boings when surprised.
 - **The feet walk.** One lifts, then the other, as Bip wanders.
-- **New poses are cheap.** A mood is a list of settings (eyes, mouth, ear angles, prop), not new artwork.
+- **New poses are cheap.** A mood is a list of settings (eyes, mouth, ear angles, brows, prop), not new artwork.
 
-`scripts/build_sprites.py` runs the same drawing code in Python and writes every frame Bip needs as a GIF. That's about 150 small files (a few KB each). The app only plays them back.
+For the desk pet, `scripts/build_sprites.py` renders every frame Bip needs to a PNG with the same drawing code, using Playwright, which the screenshot feature already uses. That's about 150 frames at 2× size, around 8 KB each. The app only plays them back.
 
 ### Accessories
 
@@ -137,7 +172,7 @@ Every few minutes (randomly 3 to 6), when nothing is going on, Bip toddles 50 to
 
 ## Staying out of the way
 
-- **Small.** The body is about 48px, the whole window 60×54, and only Bip's own pixels show.
+- **Small.** The body is about 48px, the whole window 64×61, and only Bip's own pixels show.
 - **Never takes focus.** The window doesn't activate, so your typing never goes to it.
 - **Never covers what you're doing.** It sits above title bars, moves when your cursor heads its way, and steps out of the shot when you capture a window.
 - **Speech bubbles are rare and short.** One line, gone after 10 seconds. If you miss one, a small dot stays on Bip and the message waits in the chat.
@@ -240,12 +275,12 @@ Bip needs a small borderless window that stays on top, has a transparent backgro
 - `overrideredirect(True)`: no title bar or border.
 - `attributes("-topmost", True)`: stays above other windows.
 - Transparency:
-  - **Windows:** `-transparentcolor`, all-or-nothing per pixel. That's why Bip is pixel art.
+  - **Windows:** `-transparentcolor`, all-or-nothing per pixel. Soft 3D edges would get a fringe, so the Windows frames are rendered with a crisp 1px edge in the background's colour (see the open questions).
   - **macOS:** `-transparent` with a `systemTransparent` background.
   - **Linux:** `-alpha` on compositing desktops; otherwise a small rounded tile.
 - **Moving:** `geometry("+x+y")` on a timer.
 - **The cursor:** `winfo_pointerxy()`, about 20 times a second.
-- **Frames are GIFs,** because Tk 8.5 can't load PNG and Apple's system Python 3.9 still ships Tk 8.5. The installer uses whichever `python3` is on your PATH, so this case is common.
+- **Frames are PNGs with real transparency.** That needs Tk 8.6. Apple's system Python 3.9 still ships Tk 8.5, and the installer uses whichever `python3` is on your PATH, so `buildinpublic doctor` checks the Tk version. On Tk 8.5, Bip falls back to GIF frames on a small rounded tile, and doctor suggests installing Python from python.org.
 - **The menu, cards and chat** are small Tk `Toplevel` windows with the same no-focus-until-clicked behaviour. Only the chat text box takes focus, and only after you click it.
 
 ### Live agent states: hooks that cost nothing
@@ -282,8 +317,8 @@ src/buildinpublic/
     voice.py       optional: record + transcribe locally
     desktop.py     active window, full screen, Focus, cursor: per OS
     actions.py     capture / note / link / post-request / ask
-    sprites/       generated GIF frames
-scripts/build_sprites.py   shapes + face patterns → GIF frames
+    sprites/       generated PNG frames (GIF on Tk 8.5)
+scripts/build_sprites.py   bip.js → PNG frames (Playwright), plus GIFs for Tk 8.5
 ```
 
 - `brain.py`, `motion.py` and `chat.py` have no UI and are fully unit-tested.
@@ -310,13 +345,13 @@ scripts/build_sprites.py   shapes + face patterns → GIF frames
 ## Build order
 
 1. **Spike (3–4 days).** On macOS (Tk 8.5 and 8.6), Windows 11, and Ubuntu (X11 and Wayland), test:
-   - a transparent, always-on-top, non-focusing 60×54 GIF window;
+   - a transparent, always-on-top, non-focusing 64×61 PNG window;
    - `winfo_pointerxy`;
    - active-window bounds;
    - how smooth `geometry()` moves are;
    - how long the one-line hook takes.
 
-   Also generate the first sprite sheet with `build_sprites.py`.
+   Also generate the first sprite sheet with `build_sprites.py`, and see how the soft edges look on each OS's transparency.
 2. **Bip appears and leaves.** Idle, sleepy and editing moods, breathing, blinking, the corner home, drag/snap/peek, start and stop from hooks, the lock file, the doctor check.
 3. **The ring with Note and Link cards.**
 4. **Perching and motion.** The active window, following it, walking with feet, cursor look and dodge, petting, poke and dizzy.
@@ -332,13 +367,15 @@ scripts/build_sprites.py   shapes + face patterns → GIF frames
 - `brain.py`: rate limits, quiet hours, "Not now" ×3, mood priority (confused beats suggestions; waiting beats editing), milestones fire once, celebrations wait out Focus.
 - `motion.py`: perching, falling back, wander bounds and return, the dodge threshold and cooldown, freezing mid-walk, petting detection (needs back-and-forth, not a single swipe), three clicks → dizzy.
 - `chat.py`: every phrase in the table, `linkedin` not mistaken for `link`, URLs with and without a reason, and unknown text going to the agent.
-- `build_sprites.py`: every mood × frame renders inside the canvas, nothing clipped at any ear angle, outlines closed.
+- `build_sprites.py`: every mood × frame renders inside the frame, and nothing is clipped at any ear angle or hat.
 - `actions.py` and `voice.py`: write to a temp `BUILDINPUBLIC_HOME`, with the OS capture tool, microphone and model stubbed.
 - The hook one-liner: appends a valid line in under 10ms on each OS.
 - The Tk windows are smoke-tested where CI has a display; the rest is checked by hand on each OS.
 
 ## Open questions
 
+1. **What's the buddy's name?** And should it get accessories (a scarf, headphones) and more poses so it can show all 18 moods?
+1. **Soft edges on Windows.** Tk's transparency there is all-or-nothing, so Bip's soft 3D edges need a crisp outline on Windows. The spike decides if that looks good enough, or if the pet should use a small native window there instead.
 1. **Should Post write the draft right away?** With `agent_command` (for example `claude -p`), Bip could write drafts in the background and show *thinking* until they're ready. Off by default?
 2. **Should "Waiting for you" also bubble?** Your agent already notifies you, so it's off by default. Some people may want Bip to be the only signal.
 3. **Where should voice notes live?** Today's `notes.md` with the audio next to it, or a separate `voice/` folder per session?

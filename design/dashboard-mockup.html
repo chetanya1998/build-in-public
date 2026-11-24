@@ -6,598 +6,1024 @@
 <title>Build in Public Dashboard</title>
 <style>
 :root {
-  --bg: #f6f7f9; --surface: #ffffff; --surface-2: #f0f2f5; --fg: #101216; --muted: #5a616d; --line: #e2e5ea;
-  --ink: #2c4bd4; --ink-soft: #e9edfc; --ok: #1f8a4c; --ok-soft: #e4f4ea; --warn: #a15c00; --warn-soft: #fbefdc;
-  --bad: #b42318; --bad-soft: #fde8e6; --term: #0d0f13;
-  --display: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-  --serif: "Newsreader", Georgia, "Times New Roman", serif;
+  --bg: #fbfaf8; --card: #ffffff; --fg: #1c1b19; --muted: #85827b; --faint: #b9b6af; --line: #ecebe6; --hover: #f4f3ef;
+  --accent: #3553d6; --accent-soft: #eef1fd; --scrim: rgba(20, 19, 17, .42);
+  --s-suggested: #b9b6af; --s-draft: #c8892a; --s-approved: #4c6ef5; --s-scheduled: #8b5cf6; --s-posted: #3f9b63; --s-skipped: #d6d3cc;
+  --ok: #3f9b63; --warn: #c8892a; --bad: #c4432f;
+  --add: #2f8a57; --add-bg: #e8f5ec; --del: #b3412e; --del-bg: #fbe9e5;
+  --sans: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --serif: "Newsreader", "Iowan Old Style", Georgia, "Times New Roman", serif;
   --mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  --r: 12px;
 }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
-  --bg: #0a0b0d; --surface: #121419; --surface-2: #181b21; --fg: #eceef2; --muted: #8e95a2; --line: #22262d;
-  --ink: #93a6ff; --ink-soft: #181d33; --ok: #4cc584; --ok-soft: #10261a; --warn: #f0b45a; --warn-soft: #2a1f0e;
-  --bad: #ff8a80; --bad-soft: #2c1312; --term: #07080a; color-scheme: dark } }
+  --bg: #111110; --card: #171716; --fg: #ecebe6; --muted: #8f8c85; --faint: #5c5a55; --line: #252422; --hover: #1c1c1a;
+  --accent: #93a6ff; --accent-soft: #1b2038; --scrim: rgba(0, 0, 0, .6); --s-suggested: #5c5a55; --s-skipped: #3a3936;
+  --ok: #6fcf97; --warn: #f0b45a; --bad: #ff8f7c;
+  --add: #6fcf97; --add-bg: #13261b; --del: #ff8f7c; --del-bg: #2c1612; color-scheme: dark } }
 :root[data-theme="dark"] {
-  --bg: #0a0b0d; --surface: #121419; --surface-2: #181b21; --fg: #eceef2; --muted: #8e95a2; --line: #22262d;
-  --ink: #93a6ff; --ink-soft: #181d33; --ok: #4cc584; --ok-soft: #10261a; --warn: #f0b45a; --warn-soft: #2a1f0e;
-  --bad: #ff8a80; --bad-soft: #2c1312; --term: #07080a; color-scheme: dark }
+  --bg: #111110; --card: #171716; --fg: #ecebe6; --muted: #8f8c85; --faint: #5c5a55; --line: #252422; --hover: #1c1c1a;
+  --accent: #93a6ff; --accent-soft: #1b2038; --scrim: rgba(0, 0, 0, .6); --s-suggested: #5c5a55; --s-skipped: #3a3936;
+  --ok: #6fcf97; --warn: #f0b45a; --bad: #ff8f7c;
+  --add: #6fcf97; --add-bg: #13261b; --del: #ff8f7c; --del-bg: #2c1612; color-scheme: dark }
 :root[data-theme="light"] { color-scheme: light }
 
 * { box-sizing: border-box }
-html, body { margin: 0; height: 100% }
-body { background: var(--bg); color: var(--fg); font: 400 14px/1.5 var(--display); -webkit-font-smoothing: antialiased }
+html, body { margin: 0 }
+body { background: var(--bg); color: var(--fg); font: 400 14px/1.55 var(--sans); -webkit-font-smoothing: antialiased; min-height: 100vh }
+body.locked { overflow: hidden }
 button, input, select, textarea { font: inherit; color: inherit }
-a { color: inherit }
-em { font-family: var(--serif); font-style: italic; font-weight: 400 }
-.mono, code { font-family: var(--mono); font-size: 0.9em }
-:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; border-radius: 6px }
-h1, h2, h3 { margin: 0; letter-spacing: -0.025em; font-weight: 600; text-wrap: balance }
+a { color: inherit; text-decoration: none }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px }
+h1, h2, h3 { margin: 0; font-weight: 500; letter-spacing: -0.015em }
 p { margin: 0 }
+.muted { color: var(--muted) } .faint { color: var(--faint) }
+.mono { font-family: var(--mono); font-size: 12px }
+.mascot { display: block; position: relative; flex: none }
+.mascot svg.bip { width: 100%; height: 100%; display: block; overflow: visible }
 
-/* shell */
-.app { display: grid; grid-template-columns: 224px minmax(0, 1fr); min-height: 100vh }
-.rail { position: sticky; top: 0; height: 100vh; border-right: 1px solid var(--line); background: var(--surface); padding: 16px 12px; display: flex; flex-direction: column; gap: 4px }
-.brand { display: flex; align-items: center; gap: 10px; font-weight: 600; letter-spacing: -0.02em; padding: 4px 8px 16px }
-.mark { width: 22px; height: 22px; border-radius: 6px; background: var(--fg); position: relative; flex: none }
-.mark::after { content: ""; position: absolute; left: 5px; right: 5px; top: 6px; height: 2px; background: var(--bg); box-shadow: 0 4px 0 var(--bg), 0 8px 0 var(--bg); border-radius: 2px }
-.nav-i { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 8px; text-decoration: none; color: var(--muted); font-weight: 500 }
-.nav-i svg { width: 17px; height: 17px; flex: none }
-.nav-i:hover { color: var(--fg); background: var(--surface-2) }
-.nav-i[aria-current="page"] { color: var(--fg); background: var(--ink-soft) }
-.nav-i .count { margin-left: auto; font: 500 11px/1 var(--mono); background: var(--fg); color: var(--bg); border-radius: 999px; padding: 3px 6px }
-.rail-foot { margin-top: auto; font-size: 12px; color: var(--muted); padding: 8px 10px; border-top: 1px solid var(--line) }
-.rail-foot b { color: var(--fg); font-weight: 600 }
+/* ---------- top bar ---------- */
+.top { position: sticky; top: 0; z-index: 10; background: color-mix(in srgb, var(--bg) 90%, transparent); backdrop-filter: blur(12px); border-bottom: 1px solid var(--line) }
+.top-in { max-width: 1160px; margin: 0 auto; padding: 0 32px; height: 56px; display: flex; align-items: center; gap: 28px }
+.brand { display: flex; align-items: center; gap: 10px; font-weight: 500; white-space: nowrap; flex: none }
+.avatar { width: 30px; height: 30px; border-radius: 50%; background: var(--hover); overflow: hidden; position: relative; flex: none }
+.avatar .mascot { position: absolute; width: 44px; height: 42px; left: -7px; top: -3px }
+.tabs { display: flex; gap: 22px; min-width: 0; overflow-x: auto; scrollbar-width: none; height: 100%; align-items: stretch }
+.tabs::-webkit-scrollbar { display: none }
+.tabs a { display: flex; align-items: center; gap: 6px; color: var(--muted); white-space: nowrap; border-bottom: 1.5px solid transparent; margin-bottom: -1px }
+.tabs a:hover { color: var(--fg) }
+.tabs a[aria-current="page"] { color: var(--fg); border-bottom-color: var(--fg) }
+.tabs .n { font: 500 11px/1 var(--mono); color: var(--bg); background: var(--fg); border-radius: 999px; padding: 2px 5px }
+.top-r { margin-left: auto; display: flex; align-items: center; gap: 6px; flex: none; min-width: 0 }
+.quiet { border: 0; background: transparent; color: var(--muted); height: 32px; padding: 0 8px; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap }
+.quiet:hover, .quiet[aria-expanded="true"] { background: var(--hover); color: var(--fg) }
+select.quiet { padding-right: 4px; appearance: auto }
+.icon { width: 32px; padding: 0; justify-content: center }
+.icon svg { width: 16px; height: 16px }
+.icon .sun { display: none }
+:root[data-theme="dark"] .icon .sun { display: block } :root[data-theme="dark"] .icon .moon { display: none }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .icon .sun { display: block } :root:not([data-theme="light"]) .icon .moon { display: none } }
+.searchbox { display: none; height: 32px; border: 1px solid var(--line); border-radius: 8px; background: var(--card); padding: 0 10px; width: 200px }
+.searchbox.on { display: block }
+#proj-btn .lbl { max-width: 190px; overflow: hidden; text-overflow: ellipsis }
+#proj-btn .pj::before { width: 7px; height: 7px }
 
-.main { min-width: 0; display: flex; flex-direction: column }
-.top { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; gap: 10px; padding: 12px 24px; border-bottom: 1px solid var(--line); background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(10px) }
-.top h1 { font-size: 18px; margin-right: auto; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0 }
-.mock { font: 500 11px/1 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--warn); background: var(--warn-soft); padding: 5px 8px; border-radius: 6px; white-space: nowrap }
-.ctl { height: 34px; border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 0 10px }
-.ctl:hover { border-color: var(--muted) }
-select.ctl { padding-right: 6px }
-.search { width: 200px }
-.icon-btn { width: 34px; height: 34px; display: grid; place-items: center; padding: 0; cursor: pointer; flex: none }
-.icon-btn svg { width: 16px; height: 16px }
-.icon-btn .sun { display: none }
-:root[data-theme="dark"] .icon-btn .sun { display: block } :root[data-theme="dark"] .icon-btn .moon { display: none }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .icon-btn .sun { display: block } :root:not([data-theme="light"]) .icon-btn .moon { display: none } }
+/* popover */
+.pop { position: fixed; z-index: 30; width: 290px; max-height: min(520px, calc(100vh - 80px)); overflow: auto; background: var(--card); border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 20px 50px -20px rgba(0,0,0,.35); padding: 6px; display: none }
+.pop.on { display: block; animation: pop .14s ease-out }
+@keyframes pop { from { opacity: 0; transform: translateY(-4px) } }
+.pop .opt { display: flex; align-items: center; gap: 8px; width: 100%; border: 0; background: none; text-align: left; padding: 7px 10px; border-radius: 8px; cursor: pointer; font-size: 13.5px }
+.pop .opt:hover { background: var(--hover) }
+.pop .opt[aria-current="true"] { background: var(--hover); font-weight: 500 }
+.pop .opt.sub { padding-left: 28px; color: var(--muted); font-size: 13px }
+.pop .opt.sub[aria-current="true"] { color: var(--fg) }
+.pop .opt .n { margin-left: auto; color: var(--faint); font: 11px var(--mono) }
+.pop .opt .mode { margin-left: auto; color: var(--faint); font-size: 11.5px }
+.pop hr { border: 0; border-top: 1px solid var(--line); margin: 6px 4px }
 
-.view { padding: 24px; display: grid; gap: 24px; align-content: start; max-width: 1400px; width: 100% }
+/* ---------- page ---------- */
+.page { max-width: 1160px; margin: 0 auto; padding: 44px 32px 96px; display: grid; gap: 44px }
+.page-h { display: flex; align-items: flex-end; gap: 16px; flex-wrap: wrap }
+.page-h h1 { font: 400 32px/1.1 var(--serif); letter-spacing: -0.02em }
+.page-h h1 .crumb { color: var(--muted) }
+.page-h .right { margin-left: auto; display: flex; gap: 6px; align-items: center; flex-wrap: wrap }
+.sec { display: grid; gap: 10px }
+.sec-h { display: flex; align-items: baseline; gap: 10px; padding-bottom: 8px; border-bottom: 1px solid var(--line) }
+.sec-h h2 { font-size: 13px; font-weight: 500 }
+.sec-h .sub { font-size: 12.5px; color: var(--muted) }
+.sec-h .right { margin-left: auto; font-size: 12.5px }
+.link { color: var(--muted); cursor: pointer; border: 0; background: none; padding: 0 }
+.link:hover { color: var(--fg) }
+.btn { height: 30px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--card); cursor: pointer; font-size: 13px; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px }
+.btn:hover { border-color: var(--faint) }
+.btn.primary { background: var(--fg); color: var(--bg); border-color: var(--fg) }
+.btn.text { border-color: transparent; background: transparent; color: var(--muted); padding: 0 8px }
+.btn.text:hover { color: var(--fg); background: var(--hover) }
+.btn:disabled { opacity: .5; cursor: default }
+.dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; flex: none }
+.st { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--muted); white-space: nowrap }
+.pj { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap }
+.pj::before { content: ""; width: 6px; height: 6px; border-radius: 2px; background: var(--pc); flex: none }
+.meta { display: flex; gap: 6px 12px; flex-wrap: wrap; font-size: 12.5px; color: var(--muted); align-items: center }
+.fmt { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; color: var(--muted); white-space: nowrap }
+.fmt b { font: 600 10px/1 var(--sans); color: var(--bg); background: var(--fg); border-radius: 4px; padding: 3px 4px; letter-spacing: .01em }
+.fmt.li b { background: #0a66c2; color: #fff }
+.empty { display: flex; align-items: center; gap: 14px; padding: 18px 0; color: var(--muted) }
+.empty .mascot { width: 64px; height: 61px }
+.field { display: grid; gap: 6px; font-size: 12.5px; color: var(--muted) }
+.field > span { display: flex; justify-content: space-between }
+.in { width: 100%; height: 36px; border: 1px solid var(--line); border-radius: 9px; background: var(--card); padding: 0 11px; color: var(--fg); font-size: 14px }
+.in:focus { outline: 2px solid var(--accent); outline-offset: -1px; border-color: transparent }
+select.in { padding-right: 6px }
 
-/* building blocks */
-.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r) }
-.sec-h { display: flex; align-items: baseline; gap: 4px 10px; margin-bottom: 10px; flex-wrap: wrap }
-.today-grid > *, .editor > *, .view > *, section, .list > * { min-width: 0 }
-.sec-h h2 { font-size: 15px }
-.sec-h .sub { color: var(--muted); font-size: 13px }
-.sec-h .right { margin-left: auto }
-.btn { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); cursor: pointer; font-weight: 500; font-size: 13px; white-space: nowrap; text-decoration: none }
-.btn:hover { border-color: var(--fg) }
-.btn.solid { background: var(--fg); color: var(--bg); border-color: var(--fg) }
-.btn.ghost { border-color: transparent; background: transparent; color: var(--muted) }
-.btn.ghost:hover { color: var(--fg); border-color: var(--line) }
-.btn svg { width: 14px; height: 14px }
-.tag { display: inline-flex; align-items: center; gap: 5px; font: 500 11px/1 var(--mono); padding: 4px 7px; border-radius: 6px; background: var(--surface-2); color: var(--muted); white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis }
-.behind .blk > *, .sess-body > div > * { min-width: 0 }
-.st { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 500; white-space: nowrap }
-.st::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor }
-.st-suggested { color: var(--muted) } .st-draft { color: var(--warn) } .st-approved { color: var(--ink) }
-.st-scheduled { color: #8a4fd8 } .st-posted { color: var(--ok) } .st-skipped { color: var(--muted); opacity: .7 }
-:root[data-theme="dark"] .st-scheduled { color: #c3a1ff }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .st-scheduled { color: #c3a1ff } }
-.muted { color: var(--muted) }
-.row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap }
-.empty { padding: 20px; color: var(--muted); text-align: center; font-size: 13px }
+/* rows */
+.rows { display: grid }
+.r { display: flex; align-items: center; gap: 14px; padding: 12px 10px; margin: 0 -10px; border-top: 1px solid transparent }
+.r + .r { border-top-color: var(--line) }
+.r:hover { background: var(--hover); border-radius: 10px; border-top-color: transparent } .r:hover + .r { border-top-color: transparent }
+.r .main { flex: 1; min-width: 0 }
+.r .t { white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
+.r .acts { display: flex; gap: 4px; flex: none; opacity: 0; transition: opacity .12s }
+.r:hover .acts, .r:focus-within .acts, .r .acts.always { opacity: 1 }
+.r .lead { width: 44px; flex: none; color: var(--faint); font: 12px var(--mono) }
+.r .num { width: 20px; flex: none; color: var(--faint); font: 12px var(--mono) }
+@media (hover: none) { .r .acts { opacity: 1 } }
 
-/* today */
-.today-head { display: flex; align-items: flex-end; gap: 24px; flex-wrap: wrap }
-.today-head h2 { font-size: clamp(24px, 3vw, 32px); line-height: 1.1 }
-.stats { display: flex; gap: 10px; margin-left: auto; flex-wrap: wrap }
-.stat { padding: 10px 14px; min-width: 110px }
-.stat b { display: block; font-size: 20px; letter-spacing: -0.02em }
-.stat span { font-size: 12px; color: var(--muted) }
-.stat.alert b { color: var(--warn) }
-.today-grid { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 24px; align-items: start }
-.list { display: grid }
-.li { display: flex; gap: 12px; padding: 12px 14px; border-top: 1px solid var(--line); align-items: center }
-.li:first-child { border-top: 0 }
-.li .body { min-width: 0; flex: 1 }
-.li .t { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
-.li .t a { text-decoration: none } .li .t a:hover { text-decoration: underline }
-.li .meta { font-size: 12px; color: var(--muted); display: flex; gap: 8px; flex-wrap: wrap; margin-top: 2px }
-.li .acts { display: flex; gap: 6px; flex: none }
-.due { border-left: 3px solid #8a4fd8 }
-.num { font: 500 12px/1 var(--mono); width: 22px; height: 22px; border-radius: 6px; display: grid; place-items: center; background: var(--surface-2); color: var(--muted); flex: none }
-.shot-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; padding: 12px }
-
-/* thumbs */
-.thumb { border-radius: 8px; overflow: hidden; border: 1px solid var(--line); background: var(--surface-2); aspect-ratio: 16/10; display: block; width: 100% }
-.thumb svg { display: block; width: 100%; height: 100% }
-.shot { display: grid; gap: 6px; font-size: 12px }
+/* ---------- today ---------- */
+.hero { display: flex; align-items: center; gap: 28px }
+.hero .mascot { width: 136px; height: 129px }
+.hero h1 { font: 400 34px/1.15 var(--serif); letter-spacing: -0.02em; max-width: 22ch }
+.hero h1 i { color: var(--muted) }
+.hero .meta { margin-top: 10px; font-size: 13px }
+.cols { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 48px; align-items: start }
+.cols > * { min-width: 0 }
+.thumbs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px }
+.shot { display: grid; gap: 6px; font-size: 12.5px }
 .shot .cap { color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
-.shot .row { gap: 4px }
+.thumb { display: block; width: 100%; aspect-ratio: 16/10; border-radius: 8px; overflow: hidden; background: var(--hover) }
+.thumb svg { display: block; width: 100%; height: 100% }
+button.thumb-btn { border: 0; padding: 0; background: none; cursor: zoom-in; display: block; width: 100%; border-radius: 8px }
+button.thumb-btn:hover .thumb { box-shadow: 0 0 0 1px var(--faint) }
 
-/* board */
-.toolbar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap }
-.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--surface) }
-.seg button { border: 0; background: transparent; padding: 0 12px; height: 30px; cursor: pointer; color: var(--muted); font-weight: 500; font-size: 13px }
-.seg button[aria-pressed="true"] { background: var(--fg); color: var(--bg) }
-.board { display: grid; grid-template-columns: repeat(5, minmax(220px, 1fr)); gap: 12px; overflow-x: auto; padding-bottom: 6px }
-.col { background: var(--surface-2); border-radius: var(--r); padding: 10px; display: grid; gap: 8px; align-content: start; min-height: 240px; border: 1px dashed transparent }
-.col.over { border-color: var(--ink); background: var(--ink-soft) }
-.col-h { display: flex; align-items: center; gap: 8px; padding: 2px 4px 4px; font-size: 13px }
-.col-h .n { margin-left: auto; font: 500 11px/1 var(--mono); color: var(--muted) }
-.pc { padding: 10px; display: grid; gap: 6px; cursor: grab; text-decoration: none }
-.pc:hover { border-color: var(--muted) }
+/* ---------- posts ---------- */
+.posts { display: grid; grid-template-columns: 210px minmax(0, 1fr); gap: 40px; align-items: start }
+.side { position: sticky; top: 84px; display: grid; gap: 2px; font-size: 13.5px }
+.side h3 { font-size: 12px; font-weight: 400; color: var(--faint); padding: 14px 10px 6px }
+.side button { display: flex; align-items: center; gap: 8px; width: 100%; text-align: left; border: 0; background: none; padding: 6px 10px; border-radius: 8px; cursor: pointer; color: var(--muted) }
+.side button:hover { background: var(--hover); color: var(--fg) }
+.side button[aria-current="true"] { background: var(--hover); color: var(--fg); font-weight: 500 }
+.side button.subp { padding-left: 24px; font-size: 13px }
+.side button .n { margin-left: auto; color: var(--faint); font: 11px var(--mono) }
+.side .add { color: var(--faint); font-size: 12.5px }
+.side-select { display: none }
+.filters { display: flex; gap: 10px; align-items: center; flex-wrap: wrap }
+.chips { display: inline-flex; gap: 2px; padding: 2px; border-radius: 9px; background: var(--hover); flex-wrap: wrap }
+.chips button { border: 0; background: transparent; height: 26px; padding: 0 10px; border-radius: 7px; cursor: pointer; color: var(--muted); font-size: 12.5px; white-space: nowrap }
+.chips button[aria-pressed="true"] { background: var(--card); color: var(--fg); box-shadow: 0 1px 2px rgba(0,0,0,.06) }
+.chips .n { color: var(--faint); font: 11px var(--mono); margin-left: 3px }
+.toggle { display: inline-flex; gap: 2px; padding: 2px; border-radius: 9px; background: var(--hover) }
+.toggle button { border: 0; background: transparent; height: 26px; padding: 0 12px; border-radius: 7px; cursor: pointer; color: var(--muted); font-size: 13px }
+.toggle button[aria-pressed="true"] { background: var(--card); color: var(--fg); box-shadow: 0 1px 2px rgba(0,0,0,.06) }
+.sub-info { display: flex; gap: 8px 16px; flex-wrap: wrap; align-items: center; font-size: 12.5px; color: var(--muted); margin-top: -28px }
+.board { display: grid; grid-template-columns: repeat(5, minmax(190px, 1fr)); gap: 18px; overflow-x: auto; padding-bottom: 8px }
+.col { display: grid; gap: 10px; align-content: start; min-height: 240px; border-radius: 12px; padding: 4px; margin: -4px }
+.col.over { background: var(--accent-soft) }
+.col-h { display: flex; align-items: center; gap: 7px; font-size: 13px; padding: 0 2px 6px }
+.col-h .n { color: var(--faint); font: 12px var(--mono); margin-left: auto }
+.pc { display: grid; gap: 6px; padding: 12px 14px; border-radius: 10px; background: var(--card); border: 1px solid var(--line); cursor: grab }
+.pc:hover { border-color: var(--faint) }
 .pc.dragging { opacity: .4 }
-.pc .t { font-weight: 500; line-height: 1.3 }
-.pc .x { font-size: 12px; color: var(--muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden }
-.pc .thumb { aspect-ratio: 16/7 }
-.tbl { width: 100%; border-collapse: collapse; font-size: 13px }
-.tbl th { text-align: left; font-weight: 500; color: var(--muted); font-size: 12px; padding: 10px 14px; border-bottom: 1px solid var(--line); white-space: nowrap }
-.tbl td { padding: 10px 14px; border-top: 1px solid var(--line); vertical-align: middle }
-.tbl tr:first-child td { border-top: 0 }
-.tbl a { text-decoration: none; font-weight: 500 } .tbl a:hover { text-decoration: underline }
-.tbl-wrap { overflow-x: auto }
+.pc .t { line-height: 1.35 }
+.pc .x { font-size: 12.5px; color: var(--muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden }
+.pc .meta { font-size: 12px }
+.tbl { width: 100%; border-collapse: collapse; font-size: 13.5px }
+.tbl th { text-align: left; font-weight: 400; color: var(--muted); font-size: 12.5px; padding: 0 12px 10px; border-bottom: 1px solid var(--line); white-space: nowrap }
+.tbl td { padding: 12px; border-bottom: 1px solid var(--line); vertical-align: middle; white-space: nowrap }
+.tbl td:first-child { white-space: normal; min-width: 220px }
+.tbl tr:hover td { background: var(--hover) }
+.tbl-wrap { overflow-x: auto; margin: 0 -12px }
+.num-r { text-align: right; font-variant-numeric: tabular-nums }
 
-/* post editor */
-.crumbs { display: flex; gap: 6px; align-items: center; color: var(--muted); font-size: 13px }
-.crumbs a { text-decoration: none } .crumbs a:hover { color: var(--fg) }
-.editor { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr) 300px; gap: 16px; align-items: start }
-.pane { padding: 16px; display: grid; gap: 12px }
-.pane h3 { font-size: 13px; color: var(--muted); font-weight: 500; letter-spacing: 0 }
-.fields { display: grid; grid-template-columns: 1fr 1fr; gap: 10px }
-.field { display: grid; gap: 4px; font-size: 12px; color: var(--muted) }
-.field .ctl { width: 100%; color: var(--fg); font-size: 13px }
-.title-in { font-size: 18px; font-weight: 600; letter-spacing: -0.02em; border: 0; background: transparent; padding: 0; width: 100% }
+/* trail */
+.trail { display: grid; gap: 0; position: relative }
+.trail::before { content: ""; position: absolute; left: 107px; top: 6px; bottom: 6px; width: 1px; background: var(--line) }
+.tr { display: grid; grid-template-columns: 96px 22px minmax(0, 1fr); gap: 0 0; align-items: start; padding: 12px 0 }
+.tr .when { text-align: right; padding-right: 14px; font-size: 12.5px; color: var(--muted); line-height: 1.35 }
+.tr .when b { display: block; color: var(--fg); font-weight: 500; font-size: 13px }
+.tr .node { width: 11px; height: 11px; border-radius: 50%; margin: 4px 0 0 6px; background: var(--bg); border: 2px solid var(--pc, var(--faint)); position: relative; z-index: 1 }
+.tr .node.done { background: var(--pc) }
+.tr .card { padding: 12px 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--card); display: grid; gap: 6px; margin-left: 6px }
+.tr .card:hover { border-color: var(--faint) }
+.tr .card.slot { border-style: dashed; background: transparent }
+.tr .card .t { font-weight: 500 }
+.tr .card .x { font-size: 13px; color: var(--muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden }
+.perf-line { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums }
+.perf-line b { color: var(--fg); font-weight: 500 }
+.addrow { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; padding: 14px 16px; border-radius: 12px; background: var(--hover) }
+.addrow .in { height: 32px; width: auto; font-size: 13px }
+.addrow .lbl { font-size: 13px; color: var(--muted); margin-right: 4px }
+
+/* ---------- post editor ---------- */
+.crumbs { display: flex; gap: 8px; align-items: center; color: var(--muted); font-size: 13px; flex-wrap: wrap }
+.crumbs a:hover { color: var(--fg) }
+.editor { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 430px); gap: 48px; align-items: start }
+.editor > * { min-width: 0 }
+.title-in { width: 100%; border: 0; background: transparent; padding: 0; font: 400 30px/1.2 var(--serif); letter-spacing: -0.02em; resize: none; overflow: hidden }
 .title-in:focus { outline: none }
-textarea.md { width: 100%; min-height: 300px; resize: vertical; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); padding: 12px; font: 13px/1.6 var(--mono) }
-.savebar { display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--muted) }
-.savebar .btn { margin-left: auto }
-.dirty { color: var(--warn) }
-.pv-tabs { display: flex; gap: 4px }
-.pv { display: grid; gap: 10px }
-.tweet { border: 1px solid var(--line); border-radius: 10px; padding: 12px; display: grid; gap: 8px; background: var(--bg) }
-.tweet .who { display: flex; gap: 8px; align-items: center; font-size: 13px }
-.av { width: 30px; height: 30px; border-radius: 50%; background: linear-gradient(135deg, var(--ink), #8a4fd8); flex: none }
-.tweet .txt { white-space: pre-wrap; font-size: 14px; line-height: 1.45; overflow-wrap: anywhere }
-.tweet .cc { font: 500 11px/1 var(--mono); color: var(--muted); text-align: right }
-.tweet .cc.over { color: var(--bad) }
-.li-post .txt { white-space: pre-wrap; overflow-wrap: anywhere }
-.see-more { color: var(--muted); font-weight: 500 }
-.cut { border-top: 1px dashed var(--line); margin: 6px 0; font: 500 10px/1 var(--mono); color: var(--muted); padding-top: 4px; letter-spacing: .05em; text-transform: uppercase }
-.behind { display: grid; gap: 0 }
-.behind .blk { padding: 14px 16px; border-top: 1px solid var(--line); display: grid; gap: 8px; align-content: start; min-width: 0 }
-.behind .blk:first-child { border-top: 0 }
-.behind h3 { font-size: 12px; color: var(--muted); font-weight: 500; text-transform: uppercase; letter-spacing: .06em; font-family: var(--mono) }
-.art { display: grid; gap: 2px; font-size: 13px; text-decoration: none }
-.art:hover .at { text-decoration: underline }
-.art .src { font: 500 11px/1 var(--mono); color: var(--muted) }
-.hook { font-size: 13px; padding: 8px 10px; background: var(--surface-2); border-radius: 8px; cursor: pointer; border: 1px solid transparent; text-align: left; width: 100% }
-.hook:hover { border-color: var(--line) }
-.mini-shots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px }
-.mini-shots button { padding: 0; border: 0; background: none; cursor: pointer; position: relative }
-.mini-shots .on .thumb { outline: 2px solid var(--ink); outline-offset: 1px }
-.mini-shots .pend { opacity: .45; cursor: not-allowed }
-.hist { display: grid; gap: 0; font-size: 12px }
-.hist button { display: flex; gap: 8px; align-items: center; padding: 6px 4px; border: 0; background: none; cursor: pointer; text-align: left; border-radius: 6px; width: 100% }
-.hist button:hover, .hist button[aria-pressed="true"] { background: var(--surface-2) }
-.hist .by { font: 500 10px/1 var(--mono); color: var(--muted); margin-left: auto }
-.diff { font-size: 13px; line-height: 1.6; white-space: pre-wrap; padding: 10px; background: var(--bg); border: 1px solid var(--line); border-radius: 8px; max-height: 220px; overflow: auto; overflow-wrap: anywhere }
-.diff del { background: var(--bad-soft); color: var(--bad); text-decoration: line-through }
-.diff ins { background: var(--ok-soft); color: var(--ok); text-decoration: none }
+.props { display: flex; flex-wrap: wrap; gap: 4px 2px; margin: 14px 0 18px; align-items: center; font-size: 13px; color: var(--muted) }
+.props label { display: inline-flex; align-items: center; gap: 2px }
+.props select, .props input { border: 0; background: transparent; color: var(--fg); height: 30px; border-radius: 7px; padding: 0 6px; cursor: pointer; max-width: 230px }
+.props select:hover, .props input:hover { background: var(--hover) }
+.props .sep { color: var(--faint); padding: 0 4px }
+.gen-hint { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 12px; background: var(--hover); font-size: 13px; color: var(--muted); margin-bottom: 4px }
+.gen-hint .mascot { width: 48px; height: 46px }
+.gen-hint .btn { margin-left: auto }
+textarea.body { width: 100%; min-height: 340px; border: 0; border-top: 1px solid var(--line); background: transparent; padding: 20px 0; font: 15px/1.7 var(--sans); resize: vertical }
+textarea.body:focus { outline: none }
+.savebar { display: flex; align-items: center; gap: 10px; font-size: 12.5px; color: var(--muted); padding-top: 12px; border-top: 1px solid var(--line); flex-wrap: wrap }
+.savebar .right { margin-left: auto; display: flex; gap: 6px; align-items: center; flex-wrap: wrap }
+.unsaved { color: var(--s-draft) }
+.preview { position: sticky; top: 84px; display: grid; gap: 14px; max-height: calc(100vh - 100px); overflow: auto; padding-bottom: 8px; scrollbar-width: thin }
+.pv-h { display: flex; align-items: center; gap: 8px }
+.pv-h .lbl { font-size: 12.5px; color: var(--muted); margin-right: auto }
+.tw { padding: 14px 16px; border-radius: 12px; background: var(--card); border: 1px solid var(--line); display: grid; gap: 8px }
+.tw .who { display: flex; gap: 8px; align-items: center; font-size: 13px }
+.tw .av { width: 26px; height: 26px; border-radius: 50%; background: var(--hover); overflow: hidden; position: relative; flex: none }
+.tw .av .mascot { position: absolute; width: 40px; height: 38px; left: -7px; top: -3px }
+.tw .txt { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 14px; line-height: 1.5 }
+.tw .more { color: var(--accent); font-weight: 500 }
+.tw .cc { font: 11px var(--mono); color: var(--faint); text-align: right }
+.tw .cc.over { color: var(--bad) }
+.thread { display: grid }
+.thread .tw { border-radius: 0; border-top: 0 }
+.thread .tw:first-child { border-radius: 12px 12px 0 0; border-top: 1px solid var(--line) }
+.thread .tw:last-child { border-radius: 0 0 12px 12px }
+.thread .tw:only-child { border-radius: 12px }
+.cut { font: 11px var(--mono); color: var(--faint); border-top: 1px dashed var(--line); padding-top: 6px }
+.panel { border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; display: grid; gap: 12px; background: var(--card) }
+.panel h3 { font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 8px }
+.panel h3 .sub { margin-left: auto; font-weight: 400; color: var(--muted); font-size: 12px }
+.ms { display: grid; gap: 10px }
+.m-row { display: grid; grid-template-columns: 14px minmax(0, 1fr) auto; gap: 2px 8px; align-items: center; font-size: 13px }
+.m-row .ic { width: 8px; height: 8px; border-radius: 50%; background: var(--ok) }
+.m-row.warn .ic { background: var(--warn) } .m-row.bad .ic { background: var(--bad) } .m-row.info .ic { background: var(--faint) }
+.m-row .v { font: 12px var(--mono); color: var(--muted); font-variant-numeric: tabular-nums }
+.m-row .h { grid-column: 2 / -1; font-size: 12px; color: var(--muted); line-height: 1.4 }
+.meter { grid-column: 2 / -1; height: 4px; border-radius: 2px; background: var(--hover); overflow: hidden }
+.meter i { display: block; height: 100%; background: var(--ok); border-radius: 2px }
+.m-row.warn .meter i { background: var(--warn) } .m-row.bad .meter i { background: var(--bad) }
+.perf { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 10px }
+.perf label { display: grid; gap: 4px; font-size: 12px; color: var(--muted) }
+.perf .in { height: 32px; font-variant-numeric: tabular-nums }
+.er { font-size: 13px; display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap }
+.er b { font: 400 24px/1 var(--serif) }
+.ctx-tabs { display: flex; gap: 20px; border-bottom: 1px solid var(--line); overflow-x: auto; scrollbar-width: none }
+.ctx-tabs button { border: 0; background: none; padding: 0 0 10px; color: var(--muted); cursor: pointer; border-bottom: 1.5px solid transparent; margin-bottom: -1px; white-space: nowrap }
+.ctx-tabs button[aria-selected="true"] { color: var(--fg); border-bottom-color: var(--fg) }
+.ctx-tabs .n { color: var(--faint); font: 11px var(--mono); margin-left: 4px }
+.ctx { padding-top: 16px; display: grid; gap: 12px; font-size: 13.5px }
+.art { display: grid; gap: 1px; padding: 10px; margin: 0 -10px; border-radius: 8px }
+.art:hover { background: var(--hover) }
+.art .src { font-size: 12px; color: var(--muted) }
+.hook { text-align: left; border: 0; background: none; padding: 10px; margin: 0 -10px; border-radius: 8px; cursor: pointer; font: 400 16px/1.45 var(--serif); width: calc(100% + 20px) }
+.hook:hover { background: var(--hover) }
+.hook span { display: block; font: 12px var(--sans); color: var(--muted); margin-top: 2px }
+.pick { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 14px }
+.pick button { border: 0; background: none; padding: 0; text-align: left; cursor: pointer; display: grid; gap: 6px; font-size: 12.5px; color: var(--muted) }
+.pick button .thumb { outline: 2px solid transparent; outline-offset: 2px }
+.pick button[aria-pressed="true"] .thumb { outline-color: var(--accent) }
+.pick button[aria-pressed="true"] { color: var(--fg) }
+.pick button.pend { cursor: not-allowed; opacity: .5 }
+.ver { display: flex; gap: 12px; align-items: baseline; padding: 9px 10px; margin: 0 -10px; border-radius: 8px; border: 0; background: none; width: calc(100% + 20px); text-align: left; cursor: pointer; font-size: 13px }
+.ver:hover, .ver[aria-pressed="true"] { background: var(--hover) }
+.ver .by { margin-left: auto; font: 11px var(--mono); color: var(--faint) }
+.ver:disabled { cursor: default; color: var(--muted) } .ver:disabled:hover { background: none }
+.diff { font-size: 14px; line-height: 1.7; white-space: pre-wrap; padding: 14px 16px; background: var(--card); border: 1px solid var(--line); border-radius: 10px; max-height: 260px; overflow: auto; overflow-wrap: anywhere }
+.diff del { background: var(--del-bg); color: var(--del); text-decoration: line-through; border-radius: 3px }
+.diff ins { background: var(--add-bg); color: var(--add); text-decoration: none; border-radius: 3px }
 
-/* calendar */
-.cal-h { display: flex; gap: 8px; align-items: center; flex-wrap: wrap }
-.cal-h h2 { font-size: 18px; margin-right: auto }
-.cal { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); border-left: 1px solid var(--line); border-top: 1px solid var(--line); border-radius: var(--r); overflow: hidden; background: var(--surface) }
-.cal .dow { font: 500 11px/1 var(--mono); color: var(--muted); padding: 8px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); text-transform: uppercase; letter-spacing: .05em }
-.day { min-height: 116px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 6px; display: grid; gap: 4px; align-content: start; min-width: 0 }
-.day.out { background: var(--surface-2); color: var(--muted) }
-.day.over { background: var(--ink-soft) }
-.day .dn { display: flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 500 }
-.day.today .dn b { background: var(--fg); color: var(--bg); border-radius: 999px; padding: 1px 7px }
-.work { display: flex; gap: 2px; margin-left: auto }
-.work i { width: 6px; height: 6px; border-radius: 2px; background: var(--line) }
-.work i.p0 { background: color-mix(in srgb, var(--ink) 55%, transparent) }
-.work i.p1 { background: color-mix(in srgb, #e0742a 60%, transparent) }
-.chip { font-size: 11px; padding: 3px 6px; border-radius: 5px; background: var(--surface-2); border-left: 3px solid var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-decoration: none; cursor: grab; display: block }
-.chip.scheduled { border-color: #8a4fd8 } .chip.posted { border-color: var(--ok) }
-.legend { display: flex; gap: 14px; font-size: 12px; color: var(--muted); flex-wrap: wrap; align-items: center }
-.legend .work { margin: 0 }
+/* ---------- calendar ---------- */
+.cal { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)) }
+.cal .dow { font-size: 12px; color: var(--faint); padding: 0 8px 10px; border-bottom: 1px solid var(--line) }
+.day { min-height: 112px; padding: 8px; border-bottom: 1px solid var(--line); display: grid; gap: 4px; align-content: start; min-width: 0 }
+.day:not(:nth-child(7n + 1)) { border-left: 1px solid var(--line) }
+.day.out .dn { color: var(--faint) }
+.day.over { background: var(--accent-soft) }
+.dn { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--muted) }
+.day.today .dn b { background: var(--fg); color: var(--bg); border-radius: 999px; padding: 0 7px; font-weight: 500 }
+.dn b { font-weight: 400 }
+.work { display: flex; gap: 3px; margin-left: auto }
+.work i { width: 5px; height: 5px; border-radius: 50%; background: var(--pc) }
+.chip { display: flex; align-items: center; gap: 6px; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 2px 4px; margin: 0 -4px; border-radius: 5px; cursor: grab }
+.chip:hover { background: var(--hover) }
+.chip .t { overflow: hidden; text-overflow: ellipsis }
+.chip .tm { color: var(--faint); font: 11px var(--mono) }
+.nudge-line { font-size: 13.5px; color: var(--muted) }
+.nudge-line b { color: var(--fg); font-weight: 500 }
 
-/* timeline */
-.tl-day { display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 16px }
-.tl-date { position: sticky; top: 70px; align-self: start; padding-top: 12px }
-.tl-date b { display: block; font-size: 15px }
-.tl-date span { font-size: 12px; color: var(--muted) }
-.sess { overflow: hidden }
-.sess + .sess { margin-top: 10px }
-.sess summary { list-style: none; display: grid; grid-template-columns: 54px minmax(0, 1fr) auto; gap: 12px; padding: 12px 14px; cursor: pointer; align-items: start }
+/* ---------- timeline ---------- */
+.tl { display: grid; gap: 36px }
+.tl-day h3 { font: 400 20px/1.2 var(--serif); display: flex; align-items: baseline; gap: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--line) }
+.tl-day h3 span { font: 12.5px var(--sans); color: var(--muted) }
+.sess summary { list-style: none; cursor: pointer; display: flex; gap: 14px; align-items: baseline; padding: 12px 10px; margin: 0 -10px; border-top: 1px solid transparent }
 .sess summary::-webkit-details-marker { display: none }
-.sess .time { font: 500 12px/1.6 var(--mono); color: var(--muted) }
-.sess .t { font-weight: 500 }
-.sess .meta { font-size: 12px; color: var(--muted); display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; align-items: center }
-.pdot { width: 8px; height: 8px; border-radius: 2px; display: inline-block }
-.sess-body { border-top: 1px solid var(--line); display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); }
-.sess-body > div { padding: 14px; display: grid; gap: 10px; align-content: start; min-width: 0 }
-.sess-body > div + div { border-left: 1px solid var(--line) }
-.sess-body h3 { font: 500 11px/1 var(--mono); color: var(--muted); text-transform: uppercase; letter-spacing: .06em }
-.files { font: 12px/1.7 var(--mono); color: var(--muted); overflow-wrap: anywhere }
-.cmd { font: 12px/1.6 var(--mono); background: var(--term); color: #d7dbe3; border-radius: 8px; padding: 8px 10px; overflow-x: auto; white-space: pre }
-.linked { display: flex; gap: 6px; flex-wrap: wrap }
+.sess + .sess summary { border-top-color: var(--line) }
+.sess summary:hover { background: var(--hover); border-radius: 10px; border-top-color: transparent }
+.sess .time { width: 44px; flex: none; color: var(--faint); font: 12px var(--mono) }
+.sess .main { flex: 1; min-width: 0 }
+.sess .end { display: flex; gap: 8px; flex: none }
+.sess-body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 32px; padding: 6px 0 22px 58px }
+.sess-body > div { display: grid; gap: 12px; align-content: start; min-width: 0 }
+.sess-body h4 { margin: 0; font-size: 12px; font-weight: 400; color: var(--muted) }
+.files { font: 12px/1.8 var(--mono); color: var(--muted); overflow-wrap: anywhere }
+.cmd { font: 12px/1.7 var(--mono); color: var(--muted); white-space: pre-wrap; overflow-wrap: anywhere }
+.tagline { display: flex; gap: 6px; flex-wrap: wrap }
+.tag { font: 11.5px var(--mono); color: var(--muted) }
 
-/* media */
-.media { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px }
-.mcard { padding: 10px; display: grid; gap: 8px }
-.mcard .cap { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
-.mcard .meta { font-size: 12px; color: var(--muted) }
-.badge-pend { color: var(--warn); background: var(--warn-soft) }
-.badge-ok { color: var(--ok); background: var(--ok-soft) }
+/* ---------- media ---------- */
+.media { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 32px 24px }
+.m { display: grid; gap: 8px; font-size: 13px }
+.m .meta { font-size: 12px }
+.m .used { font-size: 12px; color: var(--muted) }
 
-/* toast */
-.toast { position: fixed; left: 50%; bottom: 24px; transform: translate(-50%, 20px); opacity: 0; background: var(--fg); color: var(--bg); padding: 10px 16px; border-radius: 10px; font-size: 13px; transition: .2s; pointer-events: none; z-index: 50; max-width: calc(100vw - 32px) }
+/* ---------- modal + viewer ---------- */
+.modal { position: fixed; inset: 0; z-index: 40; background: var(--scrim); display: none; align-items: center; justify-content: center; padding: 24px }
+.modal.on { display: flex; animation: fade .15s ease-out }
+@keyframes fade { from { opacity: 0 } }
+.sheet { width: min(560px, 100%); max-height: calc(100vh - 48px); overflow: auto; background: var(--bg); border-radius: 18px; box-shadow: 0 40px 100px -30px rgba(0,0,0,.5); display: grid; align-content: start }
+.sheet.wide { width: min(1120px, 100%); height: min(760px, calc(100vh - 48px)); overflow: hidden }
+.sheet-h { display: flex; align-items: center; gap: 10px; padding: 16px 20px; border-bottom: 1px solid var(--line); position: sticky; top: 0; background: var(--bg); z-index: 1 }
+.sheet-h h2 { font: 400 20px/1.2 var(--serif); letter-spacing: -0.01em }
+.sheet-h .right { margin-left: auto; display: flex; gap: 4px; align-items: center }
+.sheet-b { padding: 20px; display: grid; gap: 16px }
+.sheet-f { padding: 14px 20px; border-top: 1px solid var(--line); display: flex; gap: 8px; align-items: center; justify-content: flex-end; flex-wrap: wrap; position: sticky; bottom: 0; background: var(--bg) }
+.sheet-f .left { margin-right: auto; font-size: 12.5px; color: var(--muted); max-width: 46ch }
+.fmt-pick { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px }
+.fmt-pick button { border: 1px solid var(--line); background: var(--card); border-radius: 12px; padding: 12px; text-align: left; cursor: pointer; display: grid; gap: 4px }
+.fmt-pick button[aria-pressed="true"] { border-color: var(--fg); box-shadow: 0 0 0 1px var(--fg) }
+.fmt-pick button:disabled { opacity: .4; cursor: not-allowed }
+.fmt-pick .d { font-size: 12px; color: var(--muted); line-height: 1.35 }
+.checks { display: flex; gap: 14px; flex-wrap: wrap; font-size: 13.5px }
+.checks label { display: inline-flex; gap: 6px; align-items: center; cursor: pointer }
+.gen { display: grid; place-items: center; gap: 12px; padding: 34px 0; color: var(--muted) }
+.gen .mascot { width: 96px; height: 91px }
+.mrow { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px 16px; align-items: center; padding: 14px 0; border-top: 1px solid var(--line) }
+.mrow:first-child { border-top: 0 }
+.mrow b { font-weight: 500 }
+.mrow .subs { grid-column: 1 / -1; display: flex; gap: 6px; flex-wrap: wrap; align-items: center }
+.subchip { display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 4px 0 10px; border-radius: 999px; background: var(--hover); font-size: 12.5px }
+.subchip .fm { color: var(--faint); font-size: 11px }
+.subchip button { border: 0; background: none; color: var(--faint); cursor: pointer; width: 20px; height: 20px; border-radius: 50%; line-height: 1 }
+.subchip button:hover { background: var(--line); color: var(--fg) }
+.mrow select { border: 0; background: var(--hover); color: var(--fg); height: 30px; border-radius: 8px; padding: 0 8px; cursor: pointer }
+.dates { display: grid; gap: 6px }
+.dates .row { display: flex; gap: 6px; align-items: center }
+.dates .in { height: 32px; font-size: 13px }
+
+.viewer { display: grid; grid-template-columns: minmax(0, 1fr) 380px; height: 100% }
+.stage { position: relative; background: #0c0c0b; overflow: hidden; display: grid; place-items: center; cursor: zoom-in; touch-action: none }
+.stage.zoomed { cursor: grab } .stage.dragging { cursor: grabbing }
+.stage .img { width: 92%; max-height: 92%; aspect-ratio: 16/10; transform-origin: 0 0; will-change: transform }
+.stage .img svg { width: 100%; height: 100%; display: block; border-radius: 6px; box-shadow: 0 20px 60px -20px rgba(0,0,0,.8) }
+.stage .bar { position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); display: flex; gap: 2px; padding: 3px; border-radius: 10px; background: rgba(30,30,28,.85); color: #eee; align-items: center; backdrop-filter: blur(8px) }
+.stage .bar button { border: 0; background: none; color: inherit; height: 28px; min-width: 30px; padding: 0 8px; border-radius: 7px; cursor: pointer; font-size: 13px }
+.stage .bar button:hover { background: rgba(255,255,255,.12) }
+.stage .bar .z { font: 12px var(--mono); min-width: 44px; text-align: center; color: #bbb }
+.stage .nav { position: absolute; top: 50%; transform: translateY(-50%); width: 36px; height: 36px; border-radius: 50%; border: 0; background: rgba(30,30,28,.75); color: #eee; cursor: pointer; font-size: 16px }
+.stage .nav:hover { background: rgba(60,60,56,.9) }
+.stage .prev { left: 14px } .stage .next { right: 14px }
+.vside { overflow: auto; display: grid; align-content: start; gap: 20px; padding: 20px; border-left: 1px solid var(--line) }
+.vside h3 { font: 400 20px/1.25 var(--serif) }
+.kv { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; font-size: 13px }
+.kv dt { color: var(--muted) } .kv dd { margin: 0 }
+.usedpost { border: 1px solid var(--line); border-radius: 12px; padding: 14px; display: grid; gap: 8px; background: var(--card) }
+.usedpost .txt { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 13.5px; line-height: 1.55 }
+
+/* ---------- toast ---------- */
+.toast { position: fixed; left: 50%; bottom: 28px; transform: translate(-50%, 12px); opacity: 0; display: flex; align-items: center; gap: 10px; background: var(--fg); color: var(--bg); padding: 8px 16px 8px 8px; border-radius: 999px; font-size: 13px; transition: .2s; pointer-events: none; z-index: 60; max-width: calc(100vw - 32px) }
+.toast .mascot { width: 34px; height: 32px }
 .toast.on { opacity: 1; transform: translate(-50%, 0) }
 
-/* responsive */
-@media (max-width: 1180px) {
-  .editor { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) }
-  .editor .behind-card { grid-column: 1 / -1 }
-  .behind { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)) }
-  .behind .blk { border-top: 0; border-left: 1px solid var(--line) }
-}
-@media (max-width: 1120px) { .today-grid { grid-template-columns: minmax(0, 1fr) } }
-@media (max-width: 960px) {
-  .sess-body { grid-template-columns: minmax(0, 1fr) }
-  .sess-body > div + div { border-left: 0; border-top: 1px solid var(--line) }
-}
-@media (max-width: 820px) {
-  .app { grid-template-columns: minmax(0, 1fr) }
-  .rail { position: fixed; top: auto; bottom: 0; left: 0; right: 0; height: auto; z-index: 20; flex-direction: row; padding: 6px 8px calc(6px + env(safe-area-inset-bottom, 0px)); border-right: 0; border-top: 1px solid var(--line); overflow-x: auto; gap: 2px }
-  .rail .brand, .rail-foot { display: none }
-  .nav-i { flex-direction: column; gap: 3px; font-size: 11px; padding: 6px 10px; flex: 1 0 auto; position: relative }
-  .nav-i .count { position: absolute; top: 2px; right: 6px; margin: 0; padding: 2px 4px; font-size: 9px }
-  .main { padding-bottom: 72px }
-  .top { padding: 10px 16px; flex-wrap: wrap }
-  .search { display: none }
-  .view { padding: 16px }
+/* ---------- responsive ---------- */
+@media (max-width: 1080px) { .brand .name { display: none } .top-in { gap: 20px } .tabs { gap: 18px } #proj-btn .lbl { max-width: 130px } }
+@media (max-width: 980px) {
+  .cols { grid-template-columns: minmax(0, 1fr) }
   .editor { grid-template-columns: minmax(0, 1fr) }
-  .behind .blk { border-left: 0; border-top: 1px solid var(--line) }
-  .tl-day { grid-template-columns: minmax(0, 1fr); gap: 8px }
-  .tl-date { position: static; padding: 0 }
-  .tl-date b, .tl-date span { display: inline; margin-right: 8px }
-  .day { min-height: 64px; padding: 4px }
-  .chip { font-size: 0; padding: 0; height: 6px; border-left-width: 0; background: #8a4fd8 }
-  .chip.posted { background: var(--ok) } .chip.draft, .chip.approved { background: var(--muted) }
-  .work i { width: 4px; height: 4px }
-  .stats { margin-left: 0 }
-  .fields { grid-template-columns: 1fr }
+  .preview { position: static; max-height: none; overflow: visible }
+  .posts { grid-template-columns: minmax(0, 1fr); gap: 24px }
+  .side { display: none } .side-select { display: block; max-width: 340px }
+  .viewer { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(260px, 46%) minmax(0, 1fr) }
+  .vside { border-left: 0; border-top: 1px solid var(--line) }
 }
-@media (max-width: 520px) {
-  .li { flex-wrap: wrap }
-  .li .acts { width: 100%; padding-left: 34px }
-  .sess summary { grid-template-columns: 44px minmax(0, 1fr) }
-  .sess summary > :last-child { display: none }
-  .mock { display: none }
+@media (max-width: 720px) {
+  .top-in { padding: 0 16px; gap: 14px }
+  .top-r select.quiet, #search-btn { display: none }
+  #proj-btn .lbl { max-width: 90px }
+  .page { padding: 28px 16px 72px; gap: 36px }
+  .hero { gap: 16px; align-items: flex-start }
+  .hero .mascot { width: 72px; height: 68px }
+  .hero h1, .page-h h1 { font-size: 26px }
+  .day { min-height: 64px; padding: 5px }
+  .chip .t, .chip .tm { display: none }
+  .chip { padding: 2px; margin: 0 }
+  .sess-body { grid-template-columns: minmax(0, 1fr); padding-left: 0 }
+  .r { flex-wrap: wrap }
+  .r .acts { width: 100%; justify-content: flex-end }
+  .title-in { font-size: 24px }
+  .modal { padding: 0; align-items: flex-end }
+  .sheet { border-radius: 18px 18px 0 0; max-height: 92vh }
+  .sheet.wide { height: 92vh }
+  .fmt-pick { grid-template-columns: minmax(0, 1fr) }
+  .trail::before { left: 71px }
+  .tr { grid-template-columns: 60px 22px minmax(0, 1fr) }
+  .tr .when { padding-right: 8px; font-size: 11.5px }
 }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important } }
 </style>
 </head>
 <body>
-<div class="app">
-  <nav class="rail" aria-label="Sections">
-    <div class="brand"><span class="mark"></span>Build in Public</div>
-    <div id="nav"></div>
-    <div class="rail-foot">Local · 127.0.0.1:4817<br><b>Never posts.</b> You do.</div>
-  </nav>
-  <div class="main">
-    <header class="top">
-      <h1 id="title">Today</h1>
-      <span class="mock">Mockup · sample data</span>
-      <select class="ctl" id="proj" aria-label="Project"></select>
-      <input class="ctl search" id="q" type="search" placeholder="Search sessions…" aria-label="Search sessions">
-      <button class="ctl icon-btn" id="theme" aria-label="Switch light and dark">
-        <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
-        <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+<header class="top">
+  <div class="top-in">
+    <a class="brand" href="#/today" aria-label="Build in Public, Today"><span class="avatar"><span class="mascot" id="brand-bip"></span></span><span class="name">Build in Public</span></a>
+    <nav class="tabs" id="tabs" aria-label="Sections"></nav>
+    <div class="top-r">
+      <select class="quiet" id="who" aria-label="Mascot"><option value="bip">Bip</option><option value="sarthak" title="Sarthak's buddy">Buddy</option></select>
+      <input class="searchbox" id="q" type="search" placeholder="Search sessions…" aria-label="Search sessions">
+      <button class="quiet icon" id="search-btn" aria-label="Search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></button>
+      <button class="quiet" id="proj-btn" aria-haspopup="menu" aria-expanded="false"><span class="lbl" id="proj-lbl">All projects</span><svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.6"><path d="m2 3.5 3 3 3-3"/></svg></button>
+      <button class="quiet icon" id="theme" aria-label="Switch light and dark">
+        <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+        <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
       </button>
-    </header>
-    <main class="view" id="view"></main>
+    </div>
   </div>
-</div>
-<div class="toast" id="toast" role="status" aria-live="polite"></div>
+</header>
+<div class="pop" id="proj-pop" role="menu" aria-label="Projects"></div>
+<main class="page" id="view"></main>
+<div class="modal" id="modal" aria-hidden="true"><div class="sheet" id="sheet" role="dialog" aria-modal="true"></div></div>
+<div class="toast" id="toast" role="status" aria-live="polite"><span class="mascot" id="toast-bip"></span><span id="toast-t"></span></div>
 
+<script src="bip.js"></script>
 <script>
-/* ------------------------------------------------------------------ sample data
-   Shapes follow design/dashboard.md: posts mirror front matter, sessions mirror
-   meta.json, shots mirror pending_shots + session shots/. "Now" is fixed. */
+/* ======================================================================
+   SAMPLE DATA. Shapes follow design/dashboard.md: posts mirror front matter
+   (now with format, sub-project, post-on date and metrics), sessions mirror
+   meta.json, shots mirror pending_shots + session shots/. "Now" is fixed.
+   ====================================================================== */
 const NOW = new Date("2026-11-09T21:30");
 const TODAY = "2026-11-09";
-
 const PROJECTS = [
-  { key: "build-in-public", name: "build-in-public", path: "~/Projects/build-in-public", mode: "content", color: 0 },
-  { key: "invoice-ai", name: "invoice-ai", path: "~/Projects/invoice-ai", mode: "content", color: 1 },
-  { key: "dotfiles", name: "dotfiles", path: "~/dotfiles", mode: "journal", color: 2 },
-  { key: "scratch", name: "scratch", path: "~/tmp/scratch", mode: "ignore", color: 3 },
+  { key: "build-in-public", name: "build-in-public", path: "~/Projects/build-in-public", mode: "content", c: "#5b7bff", d: "#3651c9",
+    subs: [{ key: "site", name: "Site & dashboard", formats: ["x-short", "linkedin"] }, { key: "cli", name: "CLI & installs", formats: ["x-short", "x-long"] }] },
+  { key: "invoice-ai", name: "invoice-ai", path: "~/Projects/invoice-ai", mode: "content", c: "#ef7d32", d: "#b9581b",
+    subs: [{ key: "stripe", name: "Stripe webhooks", formats: ["x-short", "x-long", "linkedin"] }, { key: "parser", name: "PDF parser", formats: ["x-short", "linkedin"] }, { key: "launch", name: "Launch", formats: ["x-long", "linkedin"] }] },
+  { key: "dotfiles", name: "dotfiles", path: "~/dotfiles", mode: "journal", c: "#3f9b63", d: "#2c7a4b", subs: [] },
+  { key: "scratch", name: "scratch", path: "~/tmp/scratch", mode: "ignore", c: "#b9b6af", d: "#8f8c85", subs: [] },
 ];
-const PCOL = ["var(--ink)", "#e0742a", "#1f8a4c", "#8e95a2"];
-
+// Formats and their real limits. Hard limits are the platforms'; guidelines are marked as such.
+const FORMATS = {
+  "x-short":  { platform: "x", label: "Short", full: "X · Short", limit: 280, d: "Up to 280 characters a post. Blank lines split it into a thread." },
+  "x-long":   { platform: "x", label: "Long", full: "X · Long", limit: 25000, cut: 280, d: "One post up to 25,000 characters. Needs X Premium. Readers see the first 280 before “Show more”." },
+  "linkedin": { platform: "linkedin", label: "LinkedIn", full: "LinkedIn", limit: 3000, cut: 210, d: "Up to 3,000 characters. About 210 show before “…see more”." },
+};
 const SESSIONS = [
-  { id: "2026-11-09-claude-3f2a91c0", project: "build-in-public", agent: "claude", start: "2026-11-09T19:02", minutes: 47,
+  { id: "2026-11-09-claude-3f2a91c0", project: "build-in-public", agent: "Claude", start: "2026-11-09T19:02", minutes: 47,
     title: "Unify post statuses and scan repo post folders", tags: ["refactor", "data"],
     files: ["src/buildinpublic/nudge.py", "src/buildinpublic/index.py", "tests/test_index.py", "skills/build-in-public/SKILL.md"],
     commands: ["python -m unittest tests.test_index", "buildinpublic posts"],
     summary: "Found posts used two status lists (skill vs CLI) and that repo-local posts were never indexed. Made front matter the source of truth; posts.json is now a cache rebuilt from every post folder.",
-    articles: [
-      { src: "HN", t: "Plain text files beat databases for personal tools", u: "#" },
-      { src: "dev.to", t: "Front matter as a schema: lessons from static site generators", u: "#" },
-      { src: "Reddit", t: "r/SideProject: how do you track what you've posted?", u: "#" } ],
-    hooks: ["My tool had two opinions about whether a post was published. Both were wrong.", "I deleted a database today and the app got more reliable."],
-    shots: ["s1", "s2"] },
-  { id: "2026-11-09-codex-a81be2d4", project: "invoice-ai", agent: "codex", start: "2026-11-09T14:10", minutes: 92,
+    articles: [{ src: "Hacker News", t: "Plain text files beat databases for personal tools", u: "#" }, { src: "dev.to", t: "Front matter as a schema: lessons from static site generators", u: "#" }, { src: "Reddit", t: "r/SideProject: how do you track what you've posted?", u: "#" }],
+    hooks: ["My tool had two opinions about whether a post was published. Both were wrong.", "I deleted a database today and the app got more reliable."], shots: ["s1", "s2"] },
+  { id: "2026-11-09-codex-a81be2d4", project: "invoice-ai", agent: "Codex", start: "2026-11-09T14:10", minutes: 92,
     title: "Stripe webhook retries were double-charging", tags: ["bugfix", "war story"],
-    files: ["api/webhooks/stripe.ts", "api/lib/idempotency.ts", "api/webhooks/stripe.test.ts"],
-    commands: ["pnpm test webhooks", "stripe trigger invoice.paid"],
+    files: ["api/webhooks/stripe.ts", "api/lib/idempotency.ts", "api/webhooks/stripe.test.ts"], commands: ["pnpm test webhooks", "stripe trigger invoice.paid"],
     summary: "Webhook handler wasn't idempotent; Stripe's retry after a 504 created a second charge record. Added idempotency keys on event id and a unique index.",
-    articles: [
-      { src: "HN", t: "Idempotency keys: the most underrated API feature", u: "#" },
-      { src: "GitHub", t: "stripe-samples/webhook-idempotency", u: "#" } ],
-    hooks: ["A 504 cost one of my users $49 twice.", "Stripe retried. My code believed it."],
-    shots: ["s3", "s4"] },
-  { id: "2026-11-08-claude-77c01e9a", project: "build-in-public", agent: "claude", start: "2026-11-08T22:40", minutes: 35,
-    title: "Landing page: hero fits a laptop screen", tags: ["ui"],
-    files: ["docs/page.html", "scripts/build_pages.py"], commands: ["python scripts/build_pages.py"],
-    summary: "Tightened spacing so the hero and demo fit at 1366×768 without scrolling.",
-    articles: [{ src: "dev.to", t: "Designing landing pages for developer tools", u: "#" }],
-    hooks: ["Most people never scroll. So I made the whole pitch fit one laptop screen."], shots: ["s5"] },
-  { id: "2026-11-07-antigravity-1c9e", project: "invoice-ai", agent: "antigravity", start: "2026-11-07T11:15", minutes: 128,
-    title: "PDF invoice parser: line items from scanned receipts", tags: ["feature", "demo"],
-    files: ["parser/ocr.py", "parser/line_items.py", "web/app/upload/page.tsx"], commands: ["pytest parser", "pnpm dev"],
-    summary: "OCR + layout heuristics pull line items from scanned PDFs; upload page shows extracted rows live.",
-    articles: [{ src: "HN", t: "Show HN: Table extraction from scanned PDFs", u: "#" }],
-    hooks: ["I fed it a coffee-stained receipt. It got 11 of 12 line items."], shots: ["s6", "s7"] },
-  { id: "2026-11-06-claude-0b44", project: "dotfiles", agent: "claude", start: "2026-11-06T09:05", minutes: 18,
-    title: "zsh startup from 900ms to 120ms", tags: ["perf"], files: [".zshrc", ".zsh/lazy.zsh"], commands: ["hyperfine 'zsh -i -c exit'"],
-    summary: "Lazy-loaded nvm and pyenv.", articles: [], hooks: [], shots: [] },
-  { id: "2026-11-05-codex-9d2f", project: "build-in-public", agent: "codex", start: "2026-11-05T16:30", minutes: 64,
-    title: "Windows support: Task Scheduler jobs", tags: ["feature"], files: ["src/buildinpublic/scheduler.py", "install.ps1"], commands: ["buildinpublic schedule status"],
-    summary: "Background jobs now install via schtasks on Windows.", articles: [{ src: "Reddit", t: "Scheduling Python scripts on Windows without admin", u: "#" }],
-    hooks: ["Supporting Windows took 64 minutes. Testing it took three days."], shots: ["s8"] },
-  { id: "2026-11-04-claude-55aa", project: "invoice-ai", agent: "claude", start: "2026-11-04T20:00", minutes: 41,
-    title: "Pricing page and Stripe checkout", tags: ["feature"], files: ["web/app/pricing/page.tsx"], commands: [],
-    summary: "Three tiers, checkout session.", articles: [], hooks: [], shots: [] },
-  { id: "2026-11-03-claude-12ef", project: "build-in-public", agent: "claude", start: "2026-11-03T10:20", minutes: 55,
-    title: "All-projects CLI and reminders", tags: ["feature"], files: ["src/buildinpublic/cli.py", "src/buildinpublic/nudge.py"], commands: [],
-    summary: "Global journal across projects, nudge after 2 quiet days.", articles: [], hooks: [], shots: [] },
+    articles: [{ src: "Hacker News", t: "Idempotency keys: the most underrated API feature", u: "#" }, { src: "GitHub", t: "stripe-samples/webhook-idempotency", u: "#" }],
+    hooks: ["A 504 cost one of my users $49 twice.", "Stripe retried. My code believed it."], shots: ["s3", "s4"] },
+  { id: "2026-11-08-claude-77c01e9a", project: "build-in-public", agent: "Claude", start: "2026-11-08T22:40", minutes: 35, title: "Landing page: hero fits a laptop screen", tags: ["ui"],
+    files: ["docs/page.html", "scripts/build_pages.py"], commands: ["python scripts/build_pages.py"], summary: "Tightened spacing so the hero and demo fit at 1366×768 without scrolling.",
+    articles: [{ src: "dev.to", t: "Designing landing pages for developer tools", u: "#" }], hooks: ["Most people never scroll. So I made the whole pitch fit one laptop screen."], shots: ["s5"] },
+  { id: "2026-11-07-antigravity-1c9e", project: "invoice-ai", agent: "Antigravity", start: "2026-11-07T11:15", minutes: 128, title: "PDF invoice parser: line items from scanned receipts", tags: ["feature", "demo"],
+    files: ["parser/ocr.py", "parser/line_items.py", "web/app/upload/page.tsx"], commands: ["pytest parser", "pnpm dev"], summary: "OCR + layout heuristics pull line items from scanned PDFs; upload page shows extracted rows live.",
+    articles: [{ src: "Hacker News", t: "Show HN: Table extraction from scanned PDFs", u: "#" }], hooks: ["I fed it a coffee-stained receipt. It got 11 of 12 line items."], shots: ["s6", "s7"] },
+  { id: "2026-11-06-claude-0b44", project: "dotfiles", agent: "Claude", start: "2026-11-06T09:05", minutes: 18, title: "zsh startup from 900ms to 120ms", tags: ["perf"], files: [".zshrc", ".zsh/lazy.zsh"], commands: ["hyperfine 'zsh -i -c exit'"], summary: "Lazy-loaded nvm and pyenv.", articles: [], hooks: [], shots: [] },
+  { id: "2026-11-05-codex-9d2f", project: "build-in-public", agent: "Codex", start: "2026-11-05T16:30", minutes: 64, title: "Windows support: Task Scheduler jobs", tags: ["feature"], files: ["src/buildinpublic/scheduler.py", "install.ps1"], commands: ["buildinpublic schedule status"], summary: "Background jobs now install via schtasks on Windows.", articles: [{ src: "Reddit", t: "Scheduling Python scripts on Windows without admin", u: "#" }], hooks: ["Supporting Windows took 64 minutes. Testing it took three days."], shots: ["s8"] },
+  { id: "2026-11-04-claude-55aa", project: "invoice-ai", agent: "Claude", start: "2026-11-04T20:00", minutes: 41, title: "Pricing page and Stripe checkout", tags: ["feature"], files: ["web/app/pricing/page.tsx"], commands: [], summary: "Three tiers, checkout session.", articles: [], hooks: [], shots: [] },
+  { id: "2026-11-03-claude-12ef", project: "build-in-public", agent: "Claude", start: "2026-11-03T10:20", minutes: 55, title: "All-projects CLI and reminders", tags: ["feature"], files: ["src/buildinpublic/cli.py", "src/buildinpublic/nudge.py"], commands: [], summary: "Global journal across projects, nudge after 2 quiet days.", articles: [], hooks: [], shots: [] },
 ];
-
 const SHOTS = {
-  s1: { kind: "code", cap: "index.py · normalize_status", project: "build-in-public", day: "2026-11-09", state: "approved" },
-  s2: { kind: "term", cap: "buildinpublic posts (all folders)", project: "build-in-public", day: "2026-11-09", state: "pending" },
-  s3: { kind: "code", cap: "stripe.ts · idempotency key", project: "invoice-ai", day: "2026-11-09", state: "approved" },
-  s4: { kind: "app", cap: "localhost:3000/billing", project: "invoice-ai", day: "2026-11-09", state: "pending" },
-  s5: { kind: "app", cap: "Landing page at 1366×768", project: "build-in-public", day: "2026-11-08", state: "approved" },
-  s6: { kind: "app", cap: "Upload → extracted line items", project: "invoice-ai", day: "2026-11-07", state: "approved" },
-  s7: { kind: "code", cap: "line_items.py · row grouping", project: "invoice-ai", day: "2026-11-07", state: "approved" },
-  s8: { kind: "term", cap: "schtasks /query", project: "build-in-public", day: "2026-11-05", state: "approved" },
+  s1: { kind: "code", cap: "index.py · normalize_status", project: "build-in-public", day: "2026-11-09", at: "19:31", state: "approved", session: "2026-11-09-claude-3f2a91c0", by: "you", size: "1600×1000" },
+  s2: { kind: "term", cap: "buildinpublic posts (all folders)", project: "build-in-public", day: "2026-11-09", at: "19:44", state: "pending", session: "2026-11-09-claude-3f2a91c0", by: "agent", size: "1440×900" },
+  s3: { kind: "code", cap: "stripe.ts · idempotency key", project: "invoice-ai", day: "2026-11-09", at: "15:02", state: "approved", session: "2026-11-09-codex-a81be2d4", by: "you", size: "1600×1000" },
+  s4: { kind: "app", cap: "localhost:3000/billing", project: "invoice-ai", day: "2026-11-09", at: "15:20", state: "pending", session: "2026-11-09-codex-a81be2d4", by: "agent", size: "2880×1800" },
+  s5: { kind: "app", cap: "Landing page at 1366×768", project: "build-in-public", day: "2026-11-08", at: "23:05", state: "approved", session: "2026-11-08-claude-77c01e9a", by: "you", size: "2732×1536" },
+  s6: { kind: "app", cap: "Upload → extracted line items", project: "invoice-ai", day: "2026-11-07", at: "12:48", state: "approved", session: "2026-11-07-antigravity-1c9e", by: "you", size: "2880×1800" },
+  s7: { kind: "code", cap: "line_items.py · row grouping", project: "invoice-ai", day: "2026-11-07", at: "13:10", state: "approved", session: "2026-11-07-antigravity-1c9e", by: "agent", size: "1600×1000" },
+  s8: { kind: "term", cap: "schtasks /query", project: "build-in-public", day: "2026-11-05", at: "17:02", state: "approved", session: "2026-11-05-codex-9d2f", by: "you", size: "1440×900" },
 };
-
+const P = (o) => Object.assign({ attach: [], trend: "", history: [], metrics: null }, o);
 let POSTS = [
-  { id: "1109-two-status-lists", title: "My tool had two opinions about one post", project: "build-in-public", platform: "x", status: "draft",
-    date: "2026-11-09", session: "2026-11-09-claude-3f2a91c0", attach: ["s1"], trend: "HN: Plain text files beat databases",
+  P({ id: "1109-two-status-lists", title: "My tool had two opinions about one post", project: "build-in-public", sub: "cli", format: "x-short", status: "draft", date: "2026-11-09", session: "2026-11-09-claude-3f2a91c0", attach: ["s1"], trend: "Plain text files beat databases", scheduled_for: "2026-11-11T09:00",
     body: "My build-in-public tool had two opinions about whether a post was published.\n\nThe skill wrote status in each post's file. The CLI kept its own list in posts.json. Nothing kept them in sync.\n\nFix: the .md file is the truth. posts.json is just a cache I can rebuild any time.\n\nIf you can delete it and lose nothing, it's not a database. It's an index.\n\nWhat's the worst \"two sources of truth\" bug you've shipped?",
     history: [
-      { at: "2026-11-09T20:41", by: "agent", change: "created", text: "My build-in-public tool had two opinions about whether a post was published.\n\nThe skill and the CLI each tracked status. They disagreed.\n\nNow the file is the truth." },
-      { at: "2026-11-09T21:02", by: "dashboard", change: "edit", text: "My build-in-public tool had two opinions about whether a post was published.\n\nThe skill wrote status in each post's file. The CLI kept its own list in posts.json. Nothing kept them in sync.\n\nFix: the .md file is the truth. posts.json is just a cache.\n\nWhat's the worst \"two sources of truth\" bug you've shipped?" } ] },
-  { id: "1109-stripe-504", title: "A 504 cost one user $49 twice", project: "invoice-ai", platform: "x", status: "scheduled", scheduled_for: "2026-11-09T18:00",
-    date: "2026-11-09", session: "2026-11-09-codex-a81be2d4", attach: ["s3"], trend: "HN: Idempotency keys",
+      { at: "2026-11-09T20:41", by: "agent", change: "Created", text: "My build-in-public tool had two opinions about whether a post was published.\n\nThe skill and the CLI each tracked status. They disagreed.\n\nNow the file is the truth." },
+      { at: "2026-11-09T21:02", by: "you", change: "Edited", text: "My build-in-public tool had two opinions about whether a post was published.\n\nThe skill wrote status in each post's file. The CLI kept its own list in posts.json. Nothing kept them in sync.\n\nFix: the .md file is the truth. posts.json is just a cache.\n\nWhat's the worst \"two sources of truth\" bug you've shipped?" } ] }),
+  P({ id: "1109-stripe-504", title: "A 504 cost one user $49 twice", project: "invoice-ai", sub: "stripe", format: "x-short", status: "scheduled", scheduled_for: "2026-11-09T18:00", date: "2026-11-09", session: "2026-11-09-codex-a81be2d4", attach: ["s3"], trend: "Idempotency keys",
     body: "A 504 cost one of my users $49. Twice.\n\nStripe sent invoice.paid, my server timed out, Stripe retried. My handler happily recorded a second charge.\n\nThe fix was 6 lines: key every write on the Stripe event id, plus a unique index.\n\nIf you handle webhooks, assume every one arrives at least twice.",
-    history: [{ at: "2026-11-09T16:30", by: "agent", change: "created", text: "A 504 cost one of my users $49 twice. Stripe retried and my handler wasn't idempotent." }] },
-  { id: "1109-webhooks-li", title: "Webhooks arrive at least twice", project: "invoice-ai", platform: "linkedin", status: "approved",
-    date: "2026-11-09", session: "2026-11-09-codex-a81be2d4", attach: ["s3"], trend: "none",
-    body: "A customer paid $49 once and we recorded it twice.\nThe cause was one line we never wrote.\n\nStripe retries a webhook when your server doesn't answer in time. Ours timed out after a slow database call, so Stripe tried again, and our handler treated the retry as a new payment.\n\nThe fix: every write is keyed on the event id, with a unique index so the database refuses a duplicate.\n\nLesson: any message you don't control will eventually arrive twice. Design for it on day one.\n\nI'm building invoice-ai in public. Follow along if you like seeing the bugs too.",
-    history: [] },
-  { id: "1110-one-screen", title: "Make the whole pitch fit one laptop screen", project: "build-in-public", platform: "x", status: "scheduled", scheduled_for: "2026-11-10T09:30",
-    date: "2026-11-08", session: "2026-11-08-claude-77c01e9a", attach: ["s5"], trend: "none",
-    body: "Most visitors never scroll.\n\nSo I rebuilt my landing page until the headline, the demo and the install command all fit on a 1366×768 laptop.\n\nBefore → after 👇", history: [] },
-  { id: "1107-coffee-receipt", title: "Coffee-stained receipt, 11 of 12 line items", project: "invoice-ai", platform: "x", status: "posted", posted_at: "2026-11-07T18:20", link: "https://x.com/…",
-    date: "2026-11-07", session: "2026-11-07-antigravity-1c9e", attach: ["s6"], trend: "Show HN: Table extraction",
-    body: "I fed my invoice parser a coffee-stained, crumpled receipt.\n\nIt got 11 of 12 line items.\n\nThe one it missed? \"Misc.\" Fair.", history: [] },
-  { id: "1105-windows", title: "Windows took 64 minutes. Testing took 3 days.", project: "build-in-public", platform: "linkedin", status: "posted", posted_at: "2026-11-05T19:00", link: "https://linkedin.com/…",
-    date: "2026-11-05", session: "2026-11-05-codex-9d2f", attach: ["s8"], trend: "none",
-    body: "Adding Windows support took 64 minutes.\nTesting it took three days.\n\nScheduling a background job is one line on macOS and Linux. On Windows it's Task Scheduler, pythonw.exe, and a lot of quoting.", history: [] },
-  { id: "1103-all-projects", title: "One journal for every project", project: "build-in-public", platform: "x", status: "posted", posted_at: "2026-11-03T21:00", link: "https://x.com/…",
-    date: "2026-11-03", session: "2026-11-03-claude-12ef", attach: [], trend: "none",
-    body: "I work on 4 projects. My build log only knew about one.\n\nNow every AI coding session, in any repo, lands in one journal.", history: [] },
-  { id: "1104-pricing", title: "Three tiers, one afternoon", project: "invoice-ai", platform: "x", status: "skipped",
-    date: "2026-11-04", session: "2026-11-04-claude-55aa", attach: [], trend: "none", body: "Shipped a pricing page today.", history: [] },
+    history: [{ at: "2026-11-09T16:30", by: "agent", change: "Created", text: "A 504 cost one of my users $49 twice. Stripe retried and my handler wasn't idempotent." }] }),
+  P({ id: "1109-webhooks-li", title: "Webhooks arrive at least twice", project: "invoice-ai", sub: "stripe", format: "linkedin", status: "approved", date: "2026-11-09", session: "2026-11-09-codex-a81be2d4", attach: ["s3"], scheduled_for: "2026-11-10T08:30",
+    body: "A customer paid $49 once and we recorded it twice.\nThe cause was one line we never wrote.\n\nStripe retries a webhook when your server doesn't answer in time. Ours timed out after a slow database call, so Stripe tried again, and our handler treated the retry as a new payment.\n\nThe fix: every write is keyed on the event id, with a unique index so the database refuses a duplicate.\n\nLesson: any message you don't control will eventually arrive twice. Design for it on day one.\n\nI'm building invoice-ai in public. Follow along if you like seeing the bugs too.\n\n#buildinpublic #stripe #webdev" }),
+  P({ id: "1112-idempotency-long", title: "Idempotency, explained with one $49 bug", project: "invoice-ai", sub: "stripe", format: "x-long", status: "draft", date: "2026-11-09", session: "2026-11-09-codex-a81be2d4", attach: ["s3"], scheduled_for: "2026-11-12T10:00",
+    body: "Last week one of my users paid $49 once. My database said they paid twice. Here's the whole story, and the six lines that fixed it.\n\nThe setup: invoice-ai listens for Stripe's invoice.paid webhook. When it arrives, we record the charge and email a receipt.\n\nThe bug: our handler did a slow database call before answering. Stripe waits 10 seconds for a response. We took 12. So Stripe assumed the webhook was lost and sent it again. Our handler saw a \"new\" event and recorded a second charge.\n\nWhy it's easy to miss: in testing, webhooks arrive once. In production, the network, timeouts and deploys mean some arrive twice, and a few arrive out of order.\n\nThe fix: every write is keyed on Stripe's event id. Before recording anything we check whether we've seen that id; a unique index on the column makes the database refuse duplicates even if two retries race.\n\nThe lesson I'm keeping: any message you don't control will eventually arrive twice. Make handling it twice harmless, on day one.\n\nIf you've been bitten by this too, I'd love to hear how you found it." }),
+  P({ id: "1110-one-screen", title: "Make the whole pitch fit one laptop screen", project: "build-in-public", sub: "site", format: "x-short", status: "scheduled", scheduled_for: "2026-11-10T09:30", date: "2026-11-08", session: "2026-11-08-claude-77c01e9a", attach: ["s5"],
+    body: "Most visitors never scroll.\n\nSo I rebuilt my landing page until the headline, the demo and the install command all fit on a 1366×768 laptop.\n\nBefore → after 👇" }),
+  P({ id: "1107-coffee-receipt", title: "Coffee-stained receipt, 11 of 12 line items", project: "invoice-ai", sub: "parser", format: "x-short", status: "posted", posted_at: "2026-11-07T18:20", link: "https://x.com/…", date: "2026-11-07", session: "2026-11-07-antigravity-1c9e", attach: ["s6"], trend: "Show HN: Table extraction",
+    body: "I fed my invoice parser a coffee-stained, crumpled receipt.\n\nIt got 11 of 12 line items.\n\nThe one it missed? \"Misc.\" Fair.", metrics: { impressions: 4210, likes: 96, reposts: 12, replies: 18, bookmarks: 21 } }),
+  P({ id: "1108-parser-li", title: "What OCR gets wrong about receipts", project: "invoice-ai", sub: "parser", format: "linkedin", status: "posted", posted_at: "2026-11-08T08:45", link: "https://linkedin.com/…", date: "2026-11-07", session: "2026-11-07-antigravity-1c9e", attach: ["s7"],
+    body: "OCR reads the words on a receipt just fine.\nIt has no idea which words belong together.\n\nThat was the real problem in my invoice parser: grouping text into line items. Row height, column gaps and a lot of trial and error got it to 11 of 12 items on my worst scan.\n\nI'm building invoice-ai in public. Next: handwritten totals.", metrics: { impressions: 1870, reactions: 42, comments: 9, reposts: 2 } }),
+  P({ id: "1105-windows", title: "Windows took 64 minutes. Testing took 3 days.", project: "build-in-public", sub: "cli", format: "linkedin", status: "posted", posted_at: "2026-11-05T19:00", link: "https://linkedin.com/…", date: "2026-11-05", session: "2026-11-05-codex-9d2f", attach: ["s8"],
+    body: "Adding Windows support took 64 minutes.\nTesting it took three days.\n\nScheduling a background job is one line on macOS and Linux. On Windows it's Task Scheduler, pythonw.exe, and a lot of quoting.", metrics: { impressions: 2890, reactions: 64, comments: 11, reposts: 3 } }),
+  P({ id: "1103-all-projects", title: "One journal for every project", project: "build-in-public", sub: "cli", format: "x-short", status: "posted", posted_at: "2026-11-03T21:00", link: "https://x.com/…", date: "2026-11-03", session: "2026-11-03-claude-12ef",
+    body: "I work on 4 projects. My build log only knew about one.\n\nNow every AI coding session, in any repo, lands in one journal.", metrics: { impressions: 1320, likes: 31, reposts: 4, replies: 6, bookmarks: 5 } }),
+  P({ id: "1104-pricing", title: "Three tiers, one afternoon", project: "invoice-ai", sub: "launch", format: "x-long", status: "skipped", date: "2026-11-04", session: "2026-11-04-claude-55aa", body: "Shipped a pricing page today." }),
+  P({ id: "1120-launch-li", title: "Untitled LinkedIn post", project: "invoice-ai", sub: "launch", format: "linkedin", status: "draft", date: "2026-11-09", scheduled_for: "2026-11-20T09:00", body: "" }),
 ];
-
-// Today's brief suggestions (status: suggested), numbered as in brief.md
 const SUGGESTED = [
-  { n: 1, title: "Deleting posts.json made the app more reliable", project: "build-in-public", platform: "x", angle: "lesson", session: "2026-11-09-claude-3f2a91c0", hook: "I deleted a database today and the app got more reliable." },
-  { n: 2, title: "Stripe retried. My code believed it.", project: "invoice-ai", platform: "x", angle: "war story", session: "2026-11-09-codex-a81be2d4", hook: "Stripe retried. My code believed it." },
-  { n: 3, title: "Behind the scenes: how I review my agent's commits", project: "build-in-public", platform: "linkedin", angle: "behind the scenes", session: null, hook: "I let an AI write most of my code. Here's what I still read line by line." },
-  { n: 4, title: "Idempotency in 6 lines (code card)", project: "invoice-ai", platform: "x", angle: "demo", session: "2026-11-09-codex-a81be2d4", hook: "The whole fix fits in one screenshot." },
+  { n: 1, title: "Deleting posts.json made the app more reliable", project: "build-in-public", sub: "cli", format: "x-short", angle: "Lesson", session: "2026-11-09-claude-3f2a91c0", hook: "I deleted a database today and the app got more reliable." },
+  { n: 2, title: "Stripe retried. My code believed it.", project: "invoice-ai", sub: "stripe", format: "x-short", angle: "War story", session: "2026-11-09-codex-a81be2d4", hook: "Stripe retried. My code believed it." },
+  { n: 3, title: "How I review my agent's commits", project: "build-in-public", sub: "cli", format: "linkedin", angle: "Behind the scenes", session: null, hook: "I let an AI write most of my code. Here's what I still read line by line." },
+  { n: 4, title: "Idempotency in 6 lines", project: "invoice-ai", sub: "stripe", format: "x-short", angle: "Demo", session: "2026-11-09-codex-a81be2d4", hook: "The whole fix fits in one screenshot." },
 ];
-SUGGESTED.forEach(s => POSTS.push({ id: "sugg-" + s.n, title: s.title, project: s.project, platform: s.platform, status: "suggested",
-  date: TODAY, session: s.session, attach: [], trend: "", body: s.hook, history: [], n: s.n }));
+SUGGESTED.forEach(s => POSTS.push(P({ id: "sugg-" + s.n, title: s.title, project: s.project, sub: s.sub, format: s.format, status: "suggested", date: TODAY, session: s.session, body: s.hook, n: s.n })));
 
-/* ------------------------------------------------------------------ helpers */
+/* ====================================================================== helpers */
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const STATUSES = ["suggested", "draft", "approved", "scheduled", "posted", "skipped"];
 const BOARD = ["suggested", "draft", "approved", "scheduled", "posted"];
 const LABEL = { suggested: "Suggested", draft: "Draft", approved: "Approved", scheduled: "Scheduled", posted: "Posted", skipped: "Skipped" };
-const PLAT = { x: "X", linkedin: "LinkedIn", threads: "Threads", reddit: "Reddit", devto: "dev.to" };
-const proj = k => PROJECTS.find(p => p.key === k) || { name: k, color: 3 };
+const proj = k => PROJECTS.find(p => p.key === k) || PROJECTS[3];
+const subOf = (pk, sk) => proj(pk).subs.find(s => s.key === sk);
+const subName = p => subOf(p.project, p.sub)?.name || "No sub-project";
 const sess = id => SESSIONS.find(s => s.id === id);
 const fmtDay = d => new Date(d + (d.length === 10 ? "T12:00" : "")).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+const fmtLong = d => new Date(d + "T12:00").toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
 const fmtTime = d => new Date(d).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false });
-const fmtWhen = d => fmtDay(d.slice(0, 10)) + " · " + fmtTime(d);
-const st = s => `<span class="st st-${s}">${LABEL[s]}</span>`;
-const pTag = k => `<span class="tag"><span class="pdot" style="background:${PCOL[proj(k).color]}"></span>${esc(proj(k).name)}</span>`;
-let filter = { project: "all" };
+const fmtWhen = d => (d.slice(0, 10) === TODAY ? "Today" : fmtDay(d.slice(0, 10))) + ", " + fmtTime(d);
+const nowStamp = () => NOW.toISOString().slice(0, 16);
+const num = n => (n ?? 0).toLocaleString("en-US");
+const st = s => `<span class="st"><span class="dot" style="background:var(--s-${s})"></span>${LABEL[s]}</span>`;
+const pj = k => `<span class="pj" style="--pc:${proj(k).c}">${esc(proj(k).name)}</span>`;
+const fmtChip = f => FORMATS[f].platform === "x" ? `<span class="fmt"><b>X</b>${FORMATS[f].label}</span>` : `<span class="fmt li"><b>in</b>LinkedIn</span>`;
+const where = p => `${pj(p.project)}${p.sub ? `<span>${esc(subName(p))}</span>` : ""}`;
+let filter = { project: "all", sub: null };
 const inFilter = k => filter.project === "all" || k === filter.project;
-function toast(msg) { const t = $("#toast"); t.textContent = msg; t.classList.add("on"); clearTimeout(toast.h); toast.h = setTimeout(() => t.classList.remove("on"), 2200); }
-function copy(text, msg) { try { navigator.clipboard?.writeText(text); } catch (e) {} toast(msg || "Copied"); }
+const inFilterPost = p => inFilter(p.project) && (!filter.sub || p.sub === filter.sub);
+const uid = () => Math.random().toString(36).slice(2, 7);
 
-function thumb(id) {
+// engagement: X counts likes, reposts, replies and bookmarks; LinkedIn counts reactions, comments and reposts
+const METRICS = { x: [["impressions", "Impressions"], ["likes", "Likes"], ["reposts", "Reposts"], ["replies", "Replies"], ["bookmarks", "Bookmarks"]],
+  linkedin: [["impressions", "Impressions"], ["reactions", "Reactions"], ["comments", "Comments"], ["reposts", "Reposts"]] };
+function engagement(p) {
+  const m = p.metrics; if (!m || !m.impressions) return null;
+  const sum = METRICS[FORMATS[p.format].platform].slice(1).reduce((a, [k]) => a + (+m[k] || 0), 0);
+  return { sum, rate: sum / m.impressions * 100 };
+}
+const perfLine = p => { const e = engagement(p); if (!e) return ""; return `<div class="perf-line"><span><b>${num(p.metrics.impressions)}</b> impressions</span><span><b>${e.rate.toFixed(1)}%</b> engagement</span>${FORMATS[p.format].platform === "x" ? `<span>${num(p.metrics.likes)} likes</span><span>${num(p.metrics.replies)} replies</span>` : `<span>${num(p.metrics.reactions)} reactions</span><span>${num(p.metrics.comments)} comments</span>`}</div>`; };
+
+// mascots: every render registers its own and they are stopped on the next route; "who" picks Bip or Sarthak's buddy
+let who = "bip";
+try { who = localStorage.getItem("bip-dash-who") || "bip"; } catch (e) {}
+let lives = [];
+const bipOpts = {};
+const scarfFor = () => { const p = filter.project !== "all" ? proj(filter.project) : PROJECTS[0]; return { c: p.c, d: p.d }; };
+function bipEl(id) { return `<span class="mascot" data-bip="${id}" aria-hidden="true"></span>`; }
+function mascotHTML(opts) { const id = "m" + uid(); bipOpts[id] = Object.assign({ scarf: scarfFor() }, opts); return bipEl(id); }
+function mountBips(root = document) {
+  root.querySelectorAll(".mascot[data-bip]").forEach(c => { if (c._live) return; c._live = true; const o = bipOpts[c.dataset.bip] || {}; lives.push(Bip.live(c, () => Object.assign({ who }, o))); });
+}
+let toastBip = null;
+function toast(msg, mood = "happy") {
+  const t = $("#toast"); $("#toast-t").textContent = msg; t.classList.add("on");
+  toastBip?.stop(); toastBip = Bip.live($("#toast-bip"), () => ({ who, mood, scarf: scarfFor() }));
+  clearTimeout(toast.h); toast.h = setTimeout(() => { t.classList.remove("on"); toastBip?.stop(); }, 2600);
+}
+function copy(text, msg) { try { navigator.clipboard?.writeText(text); } catch (e) {} toast(msg || "Copied"); }
+function empty(text, mood = "sleepy") { return `<div class="empty">${mascotHTML({ mood })}<span>${text}</span></div>`; }
+
+function thumb(id, big) {
   const s = SHOTS[id]; if (!s) return "";
-  const hue = proj(s.project).color === 1 ? "#e0742a" : "#5b7bff";
+  const hue = s.project === "invoice-ai" ? "#ef7d32" : "#5b7bff";
   let inner;
   if (s.kind === "code") {
     const ws = [60, 110, 80, 140, 70, 120, 95, 50];
-    inner = `<rect width="320" height="200" fill="#0f1218"/><rect x="0" y="0" width="320" height="22" fill="#171b23"/>
-      <circle cx="14" cy="11" r="4" fill="#ff5f57"/><circle cx="28" cy="11" r="4" fill="#febc2e"/><circle cx="42" cy="11" r="4" fill="#28c840"/>` +
-      ws.map((w, i) => `<rect x="${24 + (i % 3) * 14}" y="${36 + i * 19}" width="${w}" height="7" rx="3" fill="${["#c792ea", hue, "#9aa3b2", "#7fd1a6"][i % 4]}" opacity=".85"/>
-      <rect x="${30 + w + (i % 3) * 14}" y="${36 + i * 19}" width="${w / 2}" height="7" rx="3" fill="#56606f"/>`).join("");
+    inner = `<rect width="320" height="200" fill="#16181d"/><rect width="320" height="16" fill="#1d2027"/><circle cx="10" cy="8" r="3" fill="#ff5f57"/><circle cx="20" cy="8" r="3" fill="#febc2e"/><circle cx="30" cy="8" r="3" fill="#28c840"/>` +
+      ws.map((w, i) => `<text x="8" y="${33 + i * 20}" font-family="monospace" font-size="7" fill="#4a5060">${i + 1}</text><rect x="${24 + (i % 3) * 14}" y="${26 + i * 20}" width="${w}" height="7" rx="3.5" fill="${["#c3a6f5", hue, "#8b93a3", "#7fd1a6"][i % 4]}" opacity=".8"/><rect x="${32 + w + (i % 3) * 14}" y="${26 + i * 20}" width="${w / 2}" height="7" rx="3.5" fill="#3f4552"/>`).join("");
   } else if (s.kind === "term") {
-    inner = `<rect width="320" height="200" fill="#07080a"/>` + [0,1,2,3,4,5,6].map(i =>
-      `<rect x="16" y="${20 + i * 24}" width="8" height="8" rx="2" fill="${i % 3 ? "#56606f" : "#4cc584"}"/><rect x="30" y="${20 + i * 24}" width="${90 + (i * 37) % 150}" height="8" rx="3" fill="#d7dbe3" opacity="${i % 3 ? .4 : .8}"/>`).join("");
+    inner = `<rect width="320" height="200" fill="#0d0e10"/>` + [0, 1, 2, 3, 4, 5, 6].map(i => `<rect x="20" y="${22 + i * 24}" width="7" height="7" rx="2" fill="${i % 3 ? "#3f4552" : "#4cc584"}"/><rect x="34" y="${22 + i * 24}" width="${90 + (i * 37) % 150}" height="7" rx="3.5" fill="#d7dbe3" opacity="${i % 3 ? .35 : .75}"/>`).join("");
   } else {
-    inner = `<rect width="320" height="200" fill="#eef1f6"/><rect width="320" height="24" fill="#dfe3ea"/><rect x="60" y="7" width="200" height="10" rx="5" fill="#fff"/>
-      <rect x="20" y="40" width="120" height="14" rx="4" fill="#101216"/><rect x="20" y="62" width="180" height="8" rx="4" fill="#9aa3b2"/>
-      <rect x="20" y="88" width="280" height="96" rx="8" fill="#fff"/>` + [0,1,2,3].map(i =>
-      `<rect x="32" y="${100 + i * 20}" width="150" height="8" rx="4" fill="#cdd3dc"/><rect x="250" y="${100 + i * 20}" width="36" height="8" rx="4" fill="${hue}"/>`).join("");
+    inner = `<rect width="320" height="200" fill="#f1f0ec"/><rect width="320" height="14" fill="#e3e1db"/><rect x="100" y="4" width="120" height="6" rx="3" fill="#fff"/><rect x="22" y="30" width="110" height="12" rx="6" fill="#1c1b19"/><rect x="22" y="52" width="170" height="7" rx="3.5" fill="#b9b6af"/><rect x="22" y="80" width="276" height="100" rx="10" fill="#fff"/>` +
+      [0, 1, 2, 3].map(i => `<rect x="38" y="${96 + i * 20}" width="150" height="7" rx="3.5" fill="#dcdad4"/><rect x="250" y="${96 + i * 20}" width="32" height="7" rx="3.5" fill="${hue}"/>`).join("");
   }
-  return `<span class="thumb"><svg viewBox="0 0 320 200" preserveAspectRatio="xMidYMid slice" role="img" aria-label="${esc(s.cap)}">${inner}</svg></span>`;
+  const svg = `<svg viewBox="0 0 320 200" preserveAspectRatio="xMidYMid ${big ? "meet" : "slice"}" role="img" aria-label="${esc(s.cap)}">${inner}</svg>`;
+  return big ? svg : `<span class="thumb">${svg}</span>`;
+}
+const thumbBtn = id => `<button class="thumb-btn" data-view="${id}" aria-label="Open ${esc(SHOTS[id].cap)}">${thumb(id)}</button>`;
+
+/* ====================================================================== measures
+   Real platform rules. X counts every link as 23 characters and most emoji as 2. */
+const URL_RE = /https?:\/\/\S+/g, EMOJI_RE = /\p{Extended_Pictographic}/gu;
+function xLength(t) { let n = [...t.replace(URL_RE, "").replace(EMOJI_RE, "")].length; n += (t.match(URL_RE) || []).length * 23 + (t.match(EMOJI_RE) || []).length * 2; return n; }
+const words = t => (t.trim().match(/\S+/g) || []).length;
+const paragraphs = t => t.split(/\n\s*\n/).filter(s => s.trim()).length;
+const hashtags = t => (t.match(/(^|\s)#\w+/g) || []).length;
+const splitThread = t => t.split(/\n\s*\n/).map(s => s.trim()).filter(Boolean);
+function measures(p, body) {
+  const F = FORMATS[p.format], rows = [];
+  const row = (level, label, value, hint, ratio) => rows.push({ level, label, value, hint, ratio });
+  const read = Math.max(1, Math.round(words(body) / 230));
+  const tags = hashtags(body), imgs = p.attach.length;
+  if (!body.trim()) return [{ level: "info", label: "Nothing written yet", value: "", hint: "Generate a draft or start typing." }];
+  if (p.format === "x-short") {
+    const parts = splitThread(body), lens = parts.map(xLength), worst = Math.max(...lens);
+    row(worst > 280 ? "bad" : worst > 260 ? "warn" : "ok", parts.length > 1 ? "Longest post in the thread" : "Characters", `${worst} / 280`,
+      worst > 280 ? `Too long for one post. Shorten it, split it with a blank line, or switch to X · Long.` : "Links count as 23, most emoji as 2.", worst / 280);
+    row("info", "Thread", parts.length > 1 ? `${parts.length} posts` : "Single post", parts.length > 1 ? "Each blank line starts a new post in the thread." : "Add a blank line to split it into a thread.");
+    const hook = xLength(parts[0].split("\n")[0]);
+    row(hook <= 100 ? "ok" : "warn", "Hook (first line)", `${hook} chars`, hook <= 100 ? "Short enough to read at a glance." : "Guideline: under about 100 characters so it lands in one glance.", Math.min(1, hook / 100));
+    row(tags <= 2 ? "ok" : "warn", "Hashtags", `${tags}`, tags <= 2 ? "Guideline: 0 to 2 on X." : "Guideline: 0 to 2 on X; more reads as spam.");
+    row(imgs ? "ok" : "info", "Image", imgs ? `${imgs} of 4` : "None", imgs ? "Attached to the first post." : "Up to 4 images. Pick one under Images below.");
+  } else if (p.format === "x-long") {
+    const len = xLength(body);
+    row(len > 25000 ? "bad" : "ok", "Characters", `${num(len)} / 25,000`, "Needs X Premium to post more than 280.", len / 25000);
+    const first = [...body].slice(0, 280).join("");
+    row(len <= 280 ? "warn" : "ok", "Before “Show more”", "280 chars", len <= 280 ? "This fits in a short post. X · Short may suit it better." : `Readers see: “${first.replace(/\s+/g, " ").slice(0, 120)}…”`);
+    row(paragraphs(body) >= 3 ? "ok" : "warn", "Paragraphs", `${paragraphs(body)}`, paragraphs(body) >= 3 ? "Broken up for reading on a phone." : "Guideline: break long posts into short paragraphs.");
+    row("info", "Reading time", `${read} min`, `${num(words(body))} words`);
+    row(tags <= 2 ? "ok" : "warn", "Hashtags", `${tags}`, "Guideline: 0 to 2 on X.");
+    row(imgs ? "ok" : "info", "Image", imgs ? `${imgs} of 4` : "None", "Up to 4 images.");
+  } else {
+    const len = [...body].length;
+    row(len > 3000 ? "bad" : len > 2700 ? "warn" : "ok", "Characters", `${num(len)} / 3,000`, len > 3000 ? "Over LinkedIn's limit. Trim it or move the detail to a comment." : "LinkedIn's limit for a post.", len / 3000);
+    const lines = body.split("\n").slice(0, 3).join("\n"), cut = [...body].slice(0, 210).join("");
+    const cutLines = cut.split("\n").length;
+    row(cutLines <= 3 ? "ok" : "warn", "Before “…see more”", "~210 chars", `Readers see: “${cut.replace(/\s+/g, " ").slice(0, 110)}…”`);
+    row(tags >= 3 && tags <= 5 ? "ok" : "warn", "Hashtags", `${tags}`, tags >= 3 && tags <= 5 ? "Within the usual 3 to 5." : "Guideline: 3 to 5 at the end.");
+    row(paragraphs(body) >= 3 ? "ok" : "warn", "Paragraphs", `${paragraphs(body)}`, "Guideline: short paragraphs with a blank line between.");
+    row("info", "Reading time", `${read} min`, `${num(words(body))} words`);
+    row(imgs ? "ok" : "info", "Image", imgs ? "Attached" : "None", "Posts with an image usually stand out more in the feed.");
+  }
+  return rows;
+}
+const measuresHTML = (p, body) => `<div class="ms">${measures(p, body).map(r => `<div class="m-row ${r.level}"><span class="ic"></span><span>${r.label}</span><span class="v">${esc(r.value)}</span>
+  ${r.ratio != null ? `<span class="meter"><i style="width:${Math.min(100, Math.round(r.ratio * 100))}%"></i></span>` : ""}${r.hint ? `<span class="h">${esc(r.hint)}</span>` : ""}</div>`).join("")}</div>`;
+
+/* ====================================================================== generation (your agent writes; the dashboard never posts) */
+function genBody(format, s, pk) {
+  const p = proj(pk), hook = s?.hooks?.[0] || `Something I learned building ${p.name} this week.`;
+  const sum = s?.summary || `Small steps on ${p.name}.`, t = s?.title || p.name;
+  if (format === "x-short") return `${hook}\n\n${sum.split(". ").slice(0, 2).join(". ").replace(/\.?$/, ".")}\n\nWhat would you have done differently?`;
+  if (format === "x-long") return `${hook} Here's the whole story.\n\nWhat I was working on: ${t.toLowerCase()}.\n\nWhat went wrong: ${sum}\n\nWhat I tried first didn't work, and that's the part worth sharing: the obvious fix only moved the problem somewhere else.\n\nWhat finally worked was making the failure harmless instead of trying to prevent it.\n\nThe lesson I'm keeping: design for the second time something happens, not just the first.\n\nI'm building ${p.name} in public. Questions welcome.`;
+  return `${hook}\nHere's what it taught me.\n\n${sum}\n\nThe fix was small. Finding it wasn't.\n\nLesson: design for the second time something happens, not just the first.\n\nI'm building ${p.name} in public. Follow along if you like seeing the bugs too.\n\n#buildinpublic #devlog #${p.name.replace(/[^a-z0-9]/gi, "")}`;
 }
 
-/* ------------------------------------------------------------------ nav */
-const ICON = {
-  today: '<path d="M12 3v2M12 19v2M5 12H3M21 12h-2M6.3 6.3 4.9 4.9M19.1 19.1l-1.4-1.4M6.3 17.7l-1.4 1.4M19.1 4.9l-1.4 1.4"/><circle cx="12" cy="12" r="4"/>',
-  posts: '<rect x="3" y="4" width="5" height="16" rx="1.5"/><rect x="10" y="4" width="5" height="11" rx="1.5"/><rect x="17" y="4" width="4" height="7" rx="1.5"/>',
-  calendar: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
-  timeline: '<path d="M6 3v18"/><circle cx="6" cy="7" r="2"/><circle cx="6" cy="16" r="2"/><path d="M11 7h10M11 16h7"/>',
-  media: '<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m21 17-5-5-9 8"/>',
-  projects: '<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
+/* ====================================================================== chrome: tabs, project switcher, modals */
+const ROUTES = [["today", "Today"], ["posts", "Posts"], ["calendar", "Calendar"], ["timeline", "Timeline"], ["media", "Media"]];
+const dueNow = () => POSTS.filter(p => p.status === "scheduled" && new Date(p.scheduled_for) <= NOW && inFilterPost(p));
+function renderTabs(active) {
+  const counts = { today: dueNow().length + POSTS.filter(p => p.status === "draft" && p.body && inFilterPost(p)).length, media: Object.values(SHOTS).filter(s => s.state === "pending" && inFilter(s.project)).length };
+  $("#tabs").innerHTML = ROUTES.map(([k, l]) => `<a href="#/${k}" ${active === k ? 'aria-current="page"' : ""}>${l}${counts[k] ? `<span class="n">${counts[k]}</span>` : ""}</a>`).join("");
+}
+function projLabel() {
+  if (filter.project === "all") return "All projects";
+  const p = proj(filter.project), s = filter.sub && subOf(p.key, filter.sub);
+  return `<span class="pj" style="--pc:${p.c}">${esc(p.name)}${s ? ` › ${esc(s.name)}` : ""}</span>`;
+}
+function setFilter(project, sub = null) { filter = { project, sub }; $("#proj-lbl").innerHTML = projLabel(); closePop(); route(); }
+function openPop() {
+  const pop = $("#proj-pop"), b = $("#proj-btn").getBoundingClientRect();
+  const count = (pk, sk) => POSTS.filter(p => p.project === pk && (!sk || p.sub === sk) && p.status !== "suggested").length;
+  pop.innerHTML = `<button class="opt" data-pf="all" aria-current="${filter.project === "all"}">All projects</button><hr>` +
+    PROJECTS.filter(p => p.mode !== "ignore").map(p => `<button class="opt" data-pf="${p.key}" aria-current="${filter.project === p.key && !filter.sub}"><span class="pj" style="--pc:${p.c}">${esc(p.name)}</span>${p.mode === "journal" ? '<span class="mode">journal only</span>' : `<span class="n">${count(p.key)}</span>`}</button>` +
+      p.subs.map(s => `<button class="opt sub" data-pf="${p.key}" data-sf="${s.key}" aria-current="${filter.project === p.key && filter.sub === s.key}">${esc(s.name)}<span class="n">${count(p.key, s.key)}</span></button>`).join("")).join("") +
+    `<hr><button class="opt" data-act="new-sub">+ New sub-project</button><button class="opt" data-act="manage">Projects and settings…</button>`;
+  pop.style.top = (b.bottom + 6) + "px"; pop.style.left = Math.max(12, Math.min(b.right - 290, innerWidth - 302)) + "px";
+  pop.classList.add("on"); $("#proj-btn").setAttribute("aria-expanded", "true");
+  pop.querySelector('[aria-current="true"]')?.focus();
+}
+function closePop() { $("#proj-pop").classList.remove("on"); $("#proj-btn").setAttribute("aria-expanded", "false"); }
+$("#proj-btn").onclick = e => { e.stopPropagation(); $("#proj-pop").classList.contains("on") ? closePop() : openPop(); };
+$("#proj-pop").onclick = e => {
+  const b = e.target.closest("button"); if (!b) return;
+  if (b.dataset.pf) return setFilter(b.dataset.pf, b.dataset.sf || null);
+  closePop();
+  if (b.dataset.act === "new-sub") newSubModal(filter.project !== "all" ? filter.project : "invoice-ai");
+  if (b.dataset.act === "manage") manageModal();
 };
-const ROUTES = [["today", "Today"], ["posts", "Posts"], ["calendar", "Calendar"], ["timeline", "Timeline"], ["media", "Media"], ["projects", "Projects"]];
-function renderNav(active) {
-  const counts = {
-    today: dueNow().length + POSTS.filter(p => p.status === "draft" && inFilter(p.project)).length,
-    media: Object.values(SHOTS).filter(s => s.state === "pending" && inFilter(s.project)).length,
+document.addEventListener("click", e => { if (!e.target.closest("#proj-pop, #proj-btn")) closePop(); });
+$("#search-btn").onclick = () => { const q = $("#q"); q.classList.toggle("on"); if (q.classList.contains("on")) q.focus(); };
+$("#q").onkeydown = e => { if (e.key === "Enter") location.hash = "#/timeline?q=" + encodeURIComponent(e.target.value); if (e.key === "Escape") e.target.classList.remove("on"); };
+$("#theme").onclick = () => { const r = document.documentElement, dark = r.dataset.theme ? r.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches; r.dataset.theme = dark ? "light" : "dark"; try { localStorage.setItem("bip-dash-theme", r.dataset.theme); } catch (e) {} };
+try { const t = localStorage.getItem("bip-dash-theme"); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
+const brandBip = Bip.live($("#brand-bip"), () => ({ who, mood: "idle", scarf: scarfFor(), stage: 2 }));
+$("#who").value = who;
+$("#who").onchange = e => { who = e.target.value; try { localStorage.setItem("bip-dash-who", who); } catch (err) {} route(); toast(who === "bip" ? "Bip is back" : "Say hi to Sarthak's buddy"); };
+
+// modal
+let modalLives = [], lastFocus = null, onModalKey = null;
+function openModal(html, { wide = false, label = "Dialog", wire, onKey } = {}) {
+  lastFocus = document.activeElement;
+  const m = $("#modal"), s = $("#sheet");
+  s.className = "sheet" + (wide ? " wide" : ""); s.setAttribute("aria-label", label); s.innerHTML = html;
+  m.classList.add("on"); m.setAttribute("aria-hidden", "false"); document.body.classList.add("locked");
+  modalLives.forEach(l => l.stop()); modalLives = [];
+  s.querySelectorAll(".mascot[data-bip]").forEach(c => { const o = bipOpts[c.dataset.bip] || {}; modalLives.push(Bip.live(c, () => Object.assign({ who }, o))); });
+  onModalKey = onKey || null;
+  wire?.(s);
+  setTimeout(() => (s.querySelector("[autofocus]") || s.querySelector("input, select, textarea, button"))?.focus(), 30);
+}
+function closeModal() {
+  const m = $("#modal"); if (!m.classList.contains("on")) return;
+  m.classList.remove("on"); m.setAttribute("aria-hidden", "true"); document.body.classList.remove("locked");
+  modalLives.forEach(l => l.stop()); modalLives = []; onModalKey = null; lastFocus?.focus?.();
+}
+$("#modal").addEventListener("mousedown", e => { if (e.target.id === "modal") closeModal(); });
+document.addEventListener("keydown", e => {
+  if (!$("#modal").classList.contains("on")) { if (e.key === "Escape") closePop(); return; }
+  if (e.key === "Escape") { e.preventDefault(); return closeModal(); }
+  onModalKey?.(e);
+  if (e.key === "Tab") { const f = [...$("#sheet").querySelectorAll("button, input, select, textarea, a[href]")].filter(x => !x.disabled && x.offsetParent); if (!f.length) return;
+    const i = f.indexOf(document.activeElement); if (e.shiftKey && i <= 0) { e.preventDefault(); f[f.length - 1].focus(); } else if (!e.shiftKey && i === f.length - 1) { e.preventDefault(); f[0].focus(); } }
+});
+const head = (title, right = "") => `<div class="sheet-h"><h2>${title}</h2><div class="right">${right}<button class="quiet icon" data-close aria-label="Close">✕</button></div></div>`;
+document.addEventListener("click", e => { if (e.target.closest("[data-close]")) closeModal(); });
+
+/* ---------- new sub-project ---------- */
+function newSubModal(pk) {
+  const content = PROJECTS.filter(p => p.mode === "content");
+  openModal(head("New sub-project") + `<div class="sheet-b">
+      <p class="muted" style="font-size:13px">A sub-project groups posts about one thread of work (a feature, a launch, a series) and keeps a dated trail of what you planned and posted.</p>
+      <label class="field"><span>Project</span><select class="in" id="ns-proj">${content.map(p => `<option value="${p.key}" ${p.key === pk ? "selected" : ""}>${esc(p.name)}</option>`).join("")}</select></label>
+      <label class="field"><span>Name</span><input class="in" id="ns-name" placeholder="e.g. Stripe webhooks, Launch week, PDF parser" autofocus></label>
+      <div class="field"><span>Formats for this sub-project</span><div class="checks">${Object.entries(FORMATS).map(([k, f]) => `<label><input type="checkbox" value="${k}" ${k !== "x-long" ? "checked" : ""}> ${f.full}</label>`).join("")}</div></div>
+      <div class="field"><span>Posting dates <span class="faint">optional, add as many as you like</span></span><div class="dates" id="ns-dates"></div><button class="btn text" id="ns-add" style="justify-self:start;margin-left:-8px">+ Add a date</button></div>
+    </div><div class="sheet-f"><span class="left">Each date becomes an empty draft on the trail, ready to generate or write.</span><button class="btn text" data-close>Cancel</button><button class="btn primary" id="ns-go">Create</button></div>`,
+  { label: "New sub-project", wire: s => {
+    const dates = s.querySelector("#ns-dates");
+    const addDate = (v = "") => { const fmts = [...s.querySelectorAll(".checks input:checked")].map(i => i.value); const r = document.createElement("div"); r.className = "row";
+      r.innerHTML = `<input class="in" type="datetime-local" value="${v}" aria-label="Posting date"><select class="in" style="width:auto" aria-label="Format">${Object.entries(FORMATS).map(([k, f]) => `<option value="${k}" ${k === (fmts[0] || "x-short") ? "selected" : ""}>${f.full}</option>`).join("")}</select><button class="quiet icon" aria-label="Remove date">✕</button>`;
+      r.querySelector("button").onclick = () => r.remove(); dates.append(r); };
+    s.querySelector("#ns-add").onclick = () => addDate("2026-11-1" + (dates.children.length + 2) + "T09:00");
+    s.querySelector("#ns-go").onclick = () => {
+      const name = s.querySelector("#ns-name").value.trim(); if (!name) return s.querySelector("#ns-name").focus();
+      const pkey = s.querySelector("#ns-proj").value, fmts = [...s.querySelectorAll(".checks input:checked")].map(i => i.value);
+      if (!fmts.length) return toast("Pick at least one format", "confused");
+      const key = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "sub-" + uid();
+      proj(pkey).subs.push({ key, name, formats: fmts });
+      [...dates.querySelectorAll(".row")].forEach(r => { const [d, f] = r.querySelectorAll(".in"); if (d.value) POSTS.push(P({ id: d.value.slice(5, 10).replace("-", "") + "-" + uid(), title: `Untitled ${FORMATS[f.value].full} post`, project: pkey, sub: key, format: f.value, status: "draft", date: TODAY, scheduled_for: d.value, body: "" })); });
+      closeModal(); postsMode = "trail"; filter = { project: pkey, sub: key }; $("#proj-lbl").innerHTML = projLabel();
+      location.hash = "#/posts"; route(); toast(`“${name}” created`, "proud");
+    };
+  } });
+}
+/* ---------- projects and settings (what the old Projects tab did) ---------- */
+function manageModal() {
+  const render = () => PROJECTS.map(p => { const ss = SESSIONS.filter(s => s.project === p.key).length, ps = POSTS.filter(x => x.project === p.key && x.status !== "suggested").length;
+    return `<div class="mrow"><div><b class="pj" style="--pc:${p.c}">${esc(p.name)}</b><div class="meta"><span class="mono">${esc(p.path)}</span><span>${ss} sessions</span><span>${ps} posts</span></div></div>
+      <select data-mode-proj="${p.key}" aria-label="Mode for ${esc(p.name)}">${["content", "journal", "ignore"].map(m => `<option value="${m}" ${m === p.mode ? "selected" : ""}>${{ content: "Content", journal: "Journal only", ignore: "Ignored" }[m]}</option>`).join("")}</select>
+      ${p.mode === "content" ? `<div class="subs">${p.subs.map(s => `<span class="subchip">${esc(s.name)} <span class="fm">${s.formats.map(f => FORMATS[f].full).join(" · ")}</span><button data-del-sub="${p.key}:${s.key}" aria-label="Remove ${esc(s.name)}">✕</button></span>`).join("")}<button class="btn text" data-new-sub="${p.key}">+ Sub-project</button></div>` : ""}</div>`; }).join("");
+  openModal(head("Projects") + `<div class="sheet-b"><p class="muted" style="font-size:13px">Only <b style="color:var(--fg);font-weight:500">content</b> projects get ideas and posts. <b style="color:var(--fg);font-weight:500">Journal only</b> projects are logged but never used in posts. <b style="color:var(--fg);font-weight:500">Ignored</b> folders are never read.</p><div id="mlist">${render()}</div></div>`,
+  { label: "Projects", wire: s => {
+    s.addEventListener("change", e => { const k = e.target.dataset.modeProj; if (!k) return; proj(k).mode = e.target.value; s.querySelector("#mlist").innerHTML = render(); toast(`${k}: ${e.target.selectedOptions[0].text}`); });
+    s.addEventListener("click", e => {
+      const d = e.target.closest("[data-del-sub]"), n = e.target.closest("[data-new-sub]");
+      if (d) { const [pk, sk] = d.dataset.delSub.split(":"); const c = POSTS.filter(p => p.project === pk && p.sub === sk).length; proj(pk).subs = proj(pk).subs.filter(x => x.key !== sk); POSTS.filter(p => p.project === pk && p.sub === sk).forEach(p => p.sub = null); s.querySelector("#mlist").innerHTML = render(); toast(c ? `Removed. Its ${c} posts stay in the project.` : "Removed", "idle"); }
+      if (n) newSubModal(n.dataset.newSub);
+    });
+  } });
+}
+
+/* ---------- new post: choose a format, then generate or write ---------- */
+function composeModal(pre = {}) {
+  const content = PROJECTS.filter(p => p.mode === "content");
+  let pk = pre.project || (filter.project !== "all" && proj(filter.project).mode === "content" ? filter.project : "invoice-ai");
+  let sk = pre.sub ?? (filter.project === pk ? filter.sub : null), fmt = pre.format || "x-short";
+  const allowed = () => sk ? subOf(pk, sk).formats : Object.keys(FORMATS);
+  const sessFor = () => SESSIONS.filter(s => s.project === pk);
+  const body = () => `<div class="sheet-b">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <label class="field"><span>Project</span><select class="in" id="c-proj">${content.map(p => `<option value="${p.key}" ${p.key === pk ? "selected" : ""}>${esc(p.name)}</option>`).join("")}</select></label>
+        <label class="field"><span>Sub-project</span><select class="in" id="c-sub"><option value="">None</option>${proj(pk).subs.map(s => `<option value="${s.key}" ${s.key === sk ? "selected" : ""}>${esc(s.name)}</option>`).join("")}</select></label>
+      </div>
+      <div class="field"><span>Format</span><div class="fmt-pick">${Object.entries(FORMATS).map(([k, f]) => `<button data-fmt="${k}" aria-pressed="${k === fmt}" ${allowed().includes(k) ? "" : "disabled title=\"Not a format of this sub-project\""}>${fmtChip(k)}<span class="d">${f.d}</span></button>`).join("")}</div></div>
+      <label class="field"><span>From</span><select class="in" id="c-src">${sessFor().map((s, i) => `<option value="${s.id}" ${s.id === pre.session || (!pre.session && i === 0) ? "selected" : ""}>${fmtDay(s.start.slice(0, 10))} · ${esc(s.title)}</option>`).join("")}<option value="">Nothing, I'll write it</option></select></label>
+      <label class="field"><span>Post on <span class="faint">optional</span></span><input class="in" type="datetime-local" id="c-when" value="${pre.when || ""}"></label>
+    </div><div class="sheet-f"><span class="left">Your agent writes the draft. You edit and approve it. Nothing is ever posted for you.</span><button class="btn" id="c-write">Write it myself</button><button class="btn primary" id="c-gen">Generate draft</button></div>`;
+  const wire = s => {
+    s.querySelector("#c-proj").onchange = e => { pk = e.target.value; sk = null; if (!allowed().includes(fmt)) fmt = allowed()[0]; s.querySelector(".sheet-body-host").innerHTML = body(); wire(s); };
+    s.querySelector("#c-sub").onchange = e => { sk = e.target.value || null; if (!allowed().includes(fmt)) fmt = allowed()[0]; s.querySelector(".sheet-body-host").innerHTML = body(); wire(s); };
+    s.querySelectorAll("[data-fmt]").forEach(b => b.onclick = () => { fmt = b.dataset.fmt; s.querySelectorAll("[data-fmt]").forEach(x => x.setAttribute("aria-pressed", x === b)); });
+    const make = gen => {
+      const sid = s.querySelector("#c-src").value, when = s.querySelector("#c-when").value, se = sess(sid);
+      const post = P({ id: (when || nowStamp()).slice(5, 10).replace("-", "") + "-" + uid(), title: se ? (se.hooks[0] || se.title).replace(/\.$/, "") : `Untitled ${FORMATS[fmt].full} post`, project: pk, sub: sk, format: fmt,
+        status: "draft", date: TODAY, session: sid || null, scheduled_for: when || undefined, body: "", attach: se?.shots.filter(x => SHOTS[x]?.state === "approved").slice(0, 1) || [] });
+      POSTS.push(post);
+      if (!gen) { closeModal(); location.hash = "#/post/" + post.id; return; }
+      runGenerate(post, se);
+    };
+    s.querySelector("#c-write").onclick = () => make(false);
+    s.querySelector("#c-gen").onclick = () => make(true);
   };
-  $("#nav").innerHTML = ROUTES.map(([k, l]) =>
-    `<a class="nav-i" href="#/${k}" ${active === k ? 'aria-current="page"' : ""}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ICON[k]}</svg>${l}${counts[k] ? `<span class="count">${counts[k]}</span>` : ""}</a>`).join("");
-  $("#nav").style.display = "contents";
+  openModal(head("New post") + `<div class="sheet-body-host">${body()}</div>`, { label: "New post", wire });
 }
-$("#proj").innerHTML = `<option value="all">All projects</option>` + PROJECTS.filter(p => p.mode !== "ignore").map(p => `<option value="${p.key}">${esc(p.name)}</option>`).join("");
-$("#proj").onchange = e => { filter.project = e.target.value; route(); };
-$("#q").onkeydown = e => { if (e.key === "Enter") { location.hash = "#/timeline?q=" + encodeURIComponent(e.target.value); } };
-$("#theme").onclick = () => {
-  const r = document.documentElement, dark = r.dataset.theme ? r.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
-  r.dataset.theme = dark ? "light" : "dark";
-  try { localStorage.setItem("bip-theme", r.dataset.theme); } catch (e) {}
-};
-try { const t = localStorage.getItem("bip-theme"); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
+function runGenerate(post, se, adaptFrom) {
+  const s = $("#modal").classList.contains("on") ? $("#sheet") : null;
+  const html = head(adaptFrom ? `Adapting for ${FORMATS[post.format].full}` : "Generating") + `<div class="gen">${mascotHTML({ mood: "thinking" })}<span>Your agent is writing a ${FORMATS[post.format].full} draft…</span></div>`;
+  openModal(html, { label: "Generating" });
+  setTimeout(() => {
+    post.body = adaptFrom ? adapt(adaptFrom, post.format) : genBody(post.format, se, post.project);
+    post.history.push({ at: nowStamp(), by: "agent", change: adaptFrom ? `Adapted from ${FORMATS[adaptFrom.format].full}` : "Generated", text: "" });
+    closeModal(); savedBody = null; location.hash = "#/post/" + post.id; route(); toast("Draft ready. Edit it, then approve.", "proud");
+  }, 1400);
+}
+function adapt(src, to) {
+  const t = src.body.trim(), paras = splitThread(t);
+  if (to === "x-short") { const first = paras[0].length > 260 ? paras[0].slice(0, 250).replace(/\s\S*$/, "") + "…" : paras[0]; return [first, ...paras.slice(1, 4).map(x => x.length > 270 ? x.slice(0, 260).replace(/\s\S*$/, "") + "…" : x)].join("\n\n"); }
+  if (to === "x-long") return paras.filter(p => !/^#/.test(p)).join("\n\n") + "\n\nThat's the whole story. What would you have done?";
+  const body = paras.filter(p => !/^#/.test(p)).join("\n\n");
+  return (body.length > 2800 ? body.slice(0, 2780).replace(/\s\S*$/, "") + "…" : body) + "\n\n#buildinpublic #devlog";
+}
 
-/* ------------------------------------------------------------------ Today */
-const dueNow = () => POSTS.filter(p => p.status === "scheduled" && new Date(p.scheduled_for) <= NOW && inFilter(p.project));
-function daysSincePost() {
-  const last = POSTS.filter(p => p.status === "posted").map(p => p.posted_at).sort().pop();
-  return last ? Math.floor((NOW - new Date(last)) / 864e5) : "—";
-}
+/* ====================================================================== Today */
+function daysSincePost() { const last = POSTS.filter(p => p.status === "posted").map(p => p.posted_at).sort().pop(); return last ? Math.floor((NOW - new Date(last)) / 864e5) : 0; }
 function viewToday() {
-  const due = dueNow();
-  const drafts = POSTS.filter(p => p.status === "draft" && inFilter(p.project));
-  const approved = POSTS.filter(p => p.status === "approved" && inFilter(p.project));
-  const sugg = SUGGESTED.filter(s => inFilter(s.project) && POSTS.find(p => p.id === "sugg-" + s.n)?.status === "suggested");
+  const due = dueNow(), drafts = POSTS.filter(p => p.status === "draft" && p.body && inFilterPost(p)), approved = POSTS.filter(p => p.status === "approved" && inFilterPost(p));
+  const sugg = SUGGESTED.filter(s => inFilterPost(s) && POSTS.find(p => p.id === "sugg-" + s.n)?.status === "suggested");
   const pend = Object.entries(SHOTS).filter(([, s]) => s.state === "pending" && inFilter(s.project));
   const todays = SESSIONS.filter(s => s.start.startsWith(TODAY) && inFilter(s.project));
-  const mins = todays.reduce((a, s) => a + s.minutes, 0);
-  const days = daysSincePost();
-  const postRow = (p, extra = "") => `<div class="li ${extra}">
-      <div class="body"><div class="t"><a href="#/post/${p.id}">${esc(p.title)}</a></div>
-      <div class="meta">${pTag(p.project)}<span>${PLAT[p.platform]}</span>${p.scheduled_for ? `<span>${fmtWhen(p.scheduled_for)}</span>` : ""}${p.attach.length ? "<span>🖼 1</span>" : ""}</div></div>
-      <div class="acts">${p.status === "scheduled"
-        ? `<button class="btn solid" data-copy="${p.id}">Copy</button><button class="btn" data-posted="${p.id}">Mark posted</button>`
-        : p.status === "draft" ? `<a class="btn" href="#/post/${p.id}">Review</a><button class="btn solid" data-approve="${p.id}">Approve</button>`
+  const mins = todays.reduce((a, s) => a + s.minutes, 0), days = daysSincePost(), n = due.length + drafts.length;
+  const w = ["", "One thing", "Two things", "Three things", "Four things"];
+  const row = p => `<div class="r">
+      <div class="main"><div class="t"><a href="#/post/${p.id}">${esc(p.title)}</a></div>
+        <div class="meta">${fmtChip(p.format)}${where(p)}${p.status === "scheduled" ? `<span style="color:var(--s-scheduled)">Due ${fmtTime(p.scheduled_for)}</span>` : st(p.status)}</div></div>
+      <div class="acts ${p.status === "scheduled" ? "always" : ""}">${p.status === "scheduled"
+        ? `<button class="btn text" data-posted="${p.id}">Mark posted</button><button class="btn primary" data-copy="${p.id}">Copy</button>`
+        : p.status === "draft" ? `<a class="btn text" href="#/post/${p.id}">Edit</a><button class="btn" data-approve="${p.id}">Approve</button>`
         : `<a class="btn" href="#/post/${p.id}">Schedule</a>`}</div></div>`;
   return `
-  <div class="today-head">
-    <div><p class="muted">${fmtDay(TODAY)}</p><h2>${(() => { const n = due.length + drafts.length; const w = ["Nothing", "One thing", "Two things", "Three things", "Four things"][n] || n + " things"; return n ? `${w} need${n === 1 ? "s" : ""} you. <em>The rest can wait.</em>` : `Nothing needs you. <em>Go build.</em>`; })()}</h2></div>
-    <div class="stats">
-      <div class="card stat ${days >= 2 ? "alert" : ""}"><b>${days}d</b><span>since last post</span></div>
-      <div class="card stat"><b>${todays.length}</b><span>sessions today</span></div>
-      <div class="card stat"><b>${Math.floor(mins / 60)}h ${mins % 60}m</b><span>building today</span></div>
+  <section class="hero">
+    ${mascotHTML({ mood: n ? "idea" : "happy", stage: 2 })}
+    <div>
+      <p class="muted">${fmtLong(TODAY)}</p>
+      <h1>${n ? `${w[n] || n + " things"} need${n === 1 ? "s" : ""} you. <i>The rest can wait.</i>` : `You're all caught up. <i>Go build.</i>`}</h1>
+      <div class="meta"><span>${days ? `${days} days since your last post` : "Posted today"}</span><span>·</span><span>${todays.length} sessions today</span><span>·</span><span>${Math.floor(mins / 60)}h ${mins % 60}m building</span></div>
     </div>
-  </div>
-  <div class="today-grid">
-    <div style="display:grid;gap:24px">
-      <section><div class="sec-h"><h2>Due now</h2><span class="sub">Reminders whose time has come</span></div>
-        <div class="card list">${due.length ? due.map(p => postRow(p, "due")).join("") : `<div class="empty">Nothing due. Your next reminder is ${(() => { const n = POSTS.filter(p => p.status === "scheduled" && new Date(p.scheduled_for) > NOW).sort((a, b) => a.scheduled_for.localeCompare(b.scheduled_for))[0]; return n ? fmtWhen(n.scheduled_for) : "not set"; })()}.</div>`}</div></section>
-      <section><div class="sec-h"><h2>Waiting for you</h2><span class="sub">Drafts to approve, approved posts to schedule</span></div>
-        <div class="card list">${[...drafts, ...approved].map(p => postRow(p)).join("") || '<div class="empty">No drafts waiting.</div>'}</div></section>
-      <section><div class="sec-h"><h2>Today's suggestions</h2><span class="sub">From tonight's gist · your agent writes the draft</span></div>
-        <div class="card list">${sugg.map(s => `<div class="li"><span class="num">${s.n}</span>
-          <div class="body"><div class="t">${esc(s.title)}</div><div class="meta">${pTag(s.project)}<span>${PLAT[s.platform]}</span><span>${s.angle}</span></div></div>
-          <div class="acts"><button class="btn" data-prompt="${s.n}" data-proj="${s.project}" title="Copies a prompt for your agent">Draft this</button><button class="btn ghost" data-skip="sugg-${s.n}">Skip</button></div></div>`).join("") || '<div class="empty">No suggestions left for today.</div>'}</div></section>
+  </section>
+  <div class="cols">
+    <div style="display:grid;gap:40px">
+      <section class="sec"><div class="sec-h"><h2>Needs you</h2><span class="sub">${due.length ? "A post is due" : "Drafts and approved posts"}</span><span class="right"><button class="link" data-new>+ New post</button></span></div>
+        <div class="rows">${[...due, ...drafts, ...approved].map(row).join("") || empty(`Nothing waiting. ${who === "bip" ? "Bip" : "Your buddy"} will tell you when there's something.`, "happy")}</div></section>
+      <section class="sec"><div class="sec-h"><h2>Ideas from tonight's gist</h2><span class="right muted">Your agent writes the draft</span></div>
+        <div class="rows">${sugg.map(s => `<div class="r"><span class="num">${s.n}</span>
+          <div class="main"><div class="t">${esc(s.title)}</div><div class="meta">${fmtChip(s.format)}${pj(s.project)}<span>${s.angle}</span></div></div>
+          <div class="acts"><button class="btn text" data-skip="sugg-${s.n}">Skip</button><button class="btn" data-gen-sugg="${s.n}">Generate</button></div></div>`).join("") || empty("No ideas left for today.", "sleepy")}</div></section>
     </div>
-    <div style="display:grid;gap:24px">
-      <section><div class="sec-h"><h2>Screenshots to review</h2><span class="sub">Only approved ones can go in posts</span></div>
-        <div class="card">${pend.length ? `<div class="shot-row">${pend.map(([id, s]) => `<div class="shot">${thumb(id)}<span class="cap">${esc(s.cap)}</span>
-          <div class="row"><button class="btn" data-shot-ok="${id}">Approve</button><button class="btn ghost" data-shot-no="${id}">Discard</button></div></div>`).join("")}</div>` : '<div class="empty">All caught up.</div>'}</div></section>
-      <section><div class="sec-h"><h2>Built today</h2><a class="right btn ghost" href="#/timeline">Timeline →</a></div>
-        <div class="card list">${todays.map(s => `<div class="li"><span class="mono muted" style="font-size:12px">${fmtTime(s.start)}</span>
-          <div class="body"><div class="t">${esc(s.title)}</div><div class="meta">${pTag(s.project)}<span>${s.agent}</span><span>${s.minutes} min</span></div></div></div>`).join("") || '<div class="empty">No sessions yet today.</div>'}</div></section>
+    <div style="display:grid;gap:40px">
+      <section class="sec"><div class="sec-h"><h2>Screenshots to review</h2><span class="right"><a class="link" href="#/media">All media</a></span></div>
+        ${pend.length ? `<div class="thumbs">${pend.map(([id, s]) => `<div class="shot">${thumbBtn(id)}<span class="cap">${esc(s.cap)}</span><div style="display:flex;gap:2px;margin-left:-8px"><button class="btn text" data-shot-ok="${id}">Approve</button><button class="btn text" data-shot-no="${id}">Discard</button></div></div>`).join("")}</div>` : empty("All reviewed.", "happy")}</section>
+      <section class="sec"><div class="sec-h"><h2>Built today</h2><span class="right"><a class="link" href="#/timeline">Timeline</a></span></div>
+        <div class="rows">${todays.map(s => `<div class="r"><span class="lead">${fmtTime(s.start)}</span><div class="main"><div class="t">${esc(s.title)}</div><div class="meta">${pj(s.project)}<span>${s.agent}</span><span>${s.minutes} min</span></div></div></div>`).join("") || empty("No sessions yet today.", "sleepy")}</div></section>
     </div>
   </div>`;
 }
 
-/* ------------------------------------------------------------------ Posts */
-let postsMode = "board";
+/* ====================================================================== Posts: categories, sub-projects, trail */
+let postsMode = "board", fmtFilter = "all";
 function viewPosts() {
-  const ps = POSTS.filter(p => inFilter(p.project));
-  const card = p => `<a class="card pc" draggable="true" data-id="${p.id}" href="#/post/${p.id}">
-      ${p.attach[0] ? thumb(p.attach[0]) : ""}
-      <span class="t">${esc(p.title)}</span><span class="x">${esc(p.body)}</span>
-      <span class="row">${pTag(p.project)}<span class="tag">${PLAT[p.platform]}</span>${p.scheduled_for && p.status === "scheduled" ? `<span class="tag">${fmtWhen(p.scheduled_for)}</span>` : ""}</span></a>`;
+  const base = POSTS.filter(inFilterPost);
+  const ps = base.filter(p => fmtFilter === "all" || p.format === fmtFilter);
+  const sub = filter.sub && subOf(filter.project, filter.sub);
+  if (postsMode === "trail" && !sub) postsMode = "board";
+  const cnt = f => base.filter(p => p.status !== "suggested" && (f === "all" || p.format === f)).length;
+  const side = `<aside class="side" aria-label="Projects">
+      <button data-pf="all" aria-current="${filter.project === "all"}">All posts<span class="n">${POSTS.filter(p => p.status !== "suggested").length}</span></button>
+      ${PROJECTS.filter(p => p.mode === "content").map(p => `<h3>${esc(p.name)}</h3><button data-pf="${p.key}" aria-current="${filter.project === p.key && !filter.sub}"><span class="pj" style="--pc:${p.c}">All of ${esc(p.name)}</span><span class="n">${POSTS.filter(x => x.project === p.key && x.status !== "suggested").length}</span></button>` +
+        p.subs.map(s => `<button class="subp" data-pf="${p.key}" data-sf="${s.key}" aria-current="${filter.project === p.key && filter.sub === s.key}">${esc(s.name)}<span class="n">${POSTS.filter(x => x.project === p.key && x.sub === s.key && x.status !== "suggested").length}</span></button>`).join("") +
+        `<button class="subp add" data-new-sub="${p.key}">+ Sub-project</button>`).join("")}
+    </aside>`;
+  const sideSelect = `<select class="in side-select" id="side-sel" aria-label="Project or sub-project"><option value="all">All posts</option>${PROJECTS.filter(p => p.mode === "content").map(p => `<option value="${p.key}" ${filter.project === p.key && !filter.sub ? "selected" : ""}>${esc(p.name)}</option>` + p.subs.map(s => `<option value="${p.key}:${s.key}" ${filter.project === p.key && filter.sub === s.key ? "selected" : ""}>&nbsp;&nbsp;${esc(p.name)} › ${esc(s.name)}</option>`).join("")).join("")}</select>`;
+  const title = sub ? `<span class="crumb">${esc(proj(filter.project).name)} › </span>${esc(sub.name)}` : filter.project !== "all" ? esc(proj(filter.project).name) : "Posts";
+  const card = p => `<a class="pc" draggable="true" data-id="${p.id}" href="#/post/${p.id}">
+      <span class="t">${esc(p.title)}</span>${p.body ? `<span class="x">${esc(p.body)}</span>` : `<span class="x faint">Empty. Generate or write it.</span>`}
+      <span class="meta">${fmtChip(p.format)}${pj(p.project)}${p.scheduled_for && p.status !== "posted" ? `<span>${fmtWhen(p.scheduled_for)}</span>` : ""}</span>${p.status === "posted" ? perfLine(p) : ""}</a>`;
   const board = `<div class="board">${BOARD.map(s => { const c = ps.filter(p => p.status === s);
       return `<div class="col" data-status="${s}"><div class="col-h">${st(s)}<span class="n">${c.length}</span></div>${c.map(card).join("")}</div>`; }).join("")}</div>`;
-  const list = `<div class="card tbl-wrap"><table class="tbl"><thead><tr><th>Post</th><th>Status</th><th>Project</th><th>Platform</th><th>About work on</th><th>Scheduled / posted</th></tr></thead><tbody>
-      ${ps.sort((a, b) => b.date.localeCompare(a.date)).map(p => `<tr><td><a href="#/post/${p.id}">${esc(p.title)}</a></td><td>${st(p.status)}</td><td>${pTag(p.project)}</td><td>${PLAT[p.platform]}</td><td class="muted">${fmtDay(p.date)}</td>
-      <td class="muted">${p.posted_at ? fmtWhen(p.posted_at) : p.scheduled_for ? fmtWhen(p.scheduled_for) : "—"}</td></tr>`).join("")}</tbody></table></div>`;
-  const skipped = ps.filter(p => p.status === "skipped").length;
-  return `<div class="toolbar"><div class="seg" role="group" aria-label="View"><button data-mode="board" aria-pressed="${postsMode === "board"}">Board</button><button data-mode="list" aria-pressed="${postsMode === "list"}">List</button></div>
-    <span class="muted" style="font-size:12px">${postsMode === "board" ? "Drag a card to change its status." : ""} ${skipped ? `${skipped} skipped (in list view)` : ""}</span></div>
-    ${postsMode === "board" ? board : list}`;
+  const list = `<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Post</th><th>Format</th><th>Status</th><th>Sub-project</th><th>Post on / posted</th><th class="num-r">Impressions</th><th class="num-r">Engagement</th></tr></thead><tbody>
+      ${ps.filter(p => p.status !== "suggested").sort((a, b) => (b.posted_at || b.scheduled_for || b.date).localeCompare(a.posted_at || a.scheduled_for || a.date)).map(p => { const e = engagement(p);
+        return `<tr><td><a href="#/post/${p.id}">${esc(p.title)}</a></td><td>${fmtChip(p.format)}</td><td>${st(p.status)}</td><td class="muted">${pj(p.project)} ${p.sub ? "› " + esc(subName(p)) : ""}</td>
+        <td class="muted">${p.posted_at ? fmtWhen(p.posted_at) : p.scheduled_for ? fmtWhen(p.scheduled_for) : "—"}</td><td class="num-r">${p.metrics ? num(p.metrics.impressions) : "—"}</td><td class="num-r">${e ? e.rate.toFixed(1) + "%" : "—"}</td></tr>`; }).join("")}</tbody></table></div>`;
+  return `<div class="page-h"><h1>${title}</h1><div class="right"><button class="btn primary" data-new>New post</button></div></div>
+    ${sub ? `<div class="sub-info"><span>Formats: ${sub.formats.map(fmtChip).join(" ")}</span><span>${POSTS.filter(p => p.project === filter.project && p.sub === sub.key && p.status === "posted").length} posted</span><span>${POSTS.filter(p => p.project === filter.project && p.sub === sub.key && p.scheduled_for && p.status !== "posted").length} planned</span></div>` : ""}
+    <div class="posts">${side}<div style="display:grid;gap:24px;min-width:0">
+      ${sideSelect}
+      <div class="filters">
+        <div class="chips" role="group" aria-label="Format">${[["all", "All"], ["x-short", "X · Short"], ["x-long", "X · Long"], ["linkedin", "LinkedIn"]].map(([k, l]) => `<button data-ff="${k}" aria-pressed="${fmtFilter === k}">${l}<span class="n">${cnt(k)}</span></button>`).join("")}</div>
+        <div class="toggle" role="group" aria-label="View" style="margin-left:auto">${sub ? `<button data-mode="trail" aria-pressed="${postsMode === "trail"}">Trail</button>` : ""}<button data-mode="board" aria-pressed="${postsMode === "board"}">Board</button><button data-mode="list" aria-pressed="${postsMode === "list"}">List</button></div>
+      </div>
+      ${postsMode === "trail" ? viewTrail(sub, ps) : postsMode === "board" ? board : list}
+      ${postsMode === "board" ? `<p class="muted" style="font-size:12.5px;margin-top:-12px">Drag a card to change its status.${!sub ? " Pick a sub-project to see its dated trail." : ""}</p>` : ""}
+    </div></div>`;
 }
-function wireBoard() {
-  document.querySelectorAll(".pc").forEach(c => {
-    c.ondragstart = e => { e.dataTransfer.setData("text/plain", c.dataset.id); c.classList.add("dragging"); };
-    c.ondragend = () => c.classList.remove("dragging");
-  });
+function viewTrail(sub, ps) {
+  const items = ps.filter(p => p.status !== "suggested" && p.status !== "skipped").map(p => ({ p, at: p.posted_at || p.scheduled_for || null }));
+  const dated = items.filter(i => i.at).sort((a, b) => a.at.localeCompare(b.at)), undated = items.filter(i => !i.at);
+  const pc = proj(filter.project).c;
+  const entry = ({ p, at }) => {
+    const done = p.status === "posted", d = at ? new Date(at) : null;
+    return `<div class="tr"><div class="when">${d ? `<b>${d.toLocaleDateString("en-US", { month: "short", day: "numeric" })}</b>${d.toLocaleDateString("en-US", { weekday: "short" })} · ${fmtTime(at)}` : '<b class="faint">No date</b>'}</div>
+      <span class="node ${done ? "done" : ""}" style="--pc:${pc}"></span>
+      <a class="card ${p.body ? "" : "slot"}" href="#/post/${p.id}"><span class="meta">${fmtChip(p.format)}${st(p.status)}${done ? `<span>posted</span>` : at && at < nowStamp() ? `<span style="color:var(--warn)">date passed</span>` : ""}</span>
+        <span class="t">${esc(p.title)}</span>${p.body ? `<span class="x">${esc(p.body)}</span>` : `<span class="x">Planned. Open it to generate or write the ${FORMATS[p.format].full} post.</span>`}${done ? perfLine(p) : ""}</a></div>`;
+  };
+  return `<div class="addrow"><span class="lbl">Add a posting date</span><input class="in" type="datetime-local" id="tr-when" value="2026-11-14T09:00" aria-label="Date and time"><select class="in" id="tr-fmt" aria-label="Format">${sub.formats.map(f => `<option value="${f}">${FORMATS[f].full}</option>`).join("")}</select><button class="btn" id="tr-add">Add to trail</button></div>
+    ${dated.length || undated.length ? `<div class="trail">${dated.map(entry).join("")}${undated.map(entry).join("")}</div>` : empty("Nothing on this trail yet. Add a posting date above.", "idle")}`;
+}
+function wirePosts() {
+  document.querySelectorAll(".pc").forEach(c => { c.ondragstart = e => { e.dataTransfer.setData("text/plain", c.dataset.id); c.classList.add("dragging"); }; c.ondragend = () => c.classList.remove("dragging"); });
   document.querySelectorAll(".col").forEach(col => {
     col.ondragover = e => { e.preventDefault(); col.classList.add("over"); };
     col.ondragleave = () => col.classList.remove("over");
-    col.ondrop = e => { e.preventDefault(); col.classList.remove("over");
-      const p = POSTS.find(x => x.id === e.dataTransfer.getData("text/plain")); if (!p) return;
-      setStatus(p, col.dataset.status); route(); };
+    col.ondrop = e => { e.preventDefault(); col.classList.remove("over"); const p = POSTS.find(x => x.id === e.dataTransfer.getData("text/plain")); if (!p) return; setStatus(p, col.dataset.status); route(); };
   });
+  document.querySelectorAll(".side [data-pf]").forEach(b => b.onclick = () => { if (b.dataset.sf) postsMode = "trail"; setFilter(b.dataset.pf, b.dataset.sf || null); });
+  const ss = $("#side-sel"); if (ss) ss.onchange = e => { const [pk, sk] = e.target.value.split(":"); if (sk) postsMode = "trail"; setFilter(pk, sk || null); };
+  const add = $("#tr-add");
+  if (add) add.onclick = () => {
+    const when = $("#tr-when").value, f = $("#tr-fmt").value; if (!when) return $("#tr-when").focus();
+    POSTS.push(P({ id: when.slice(5, 10).replace("-", "") + "-" + uid(), title: `Untitled ${FORMATS[f].full} post`, project: filter.project, sub: filter.sub, format: f, status: "draft", date: TODAY, scheduled_for: when, body: "" }));
+    route(); toast(`Added for ${fmtWhen(when)}. Generate or write it when you're ready.`);
+  };
 }
 function setStatus(p, to) {
   if (p.status === to) return;
   if (to === "scheduled" && !p.scheduled_for) p.scheduled_for = "2026-11-10T09:30";
-  if (to === "posted") p.posted_at = NOW.toISOString().slice(0, 16);
-  p.history.push({ at: NOW.toISOString().slice(0, 16), by: "dashboard", change: `status ${p.status} → ${to}` });
-  toast(`${p.title.slice(0, 40)} → ${LABEL[to]}`); p.status = to;
+  if (to === "posted" && !p.posted_at) p.posted_at = nowStamp();
+  p.history.push({ at: nowStamp(), by: "you", change: `${LABEL[p.status]} → ${LABEL[to]}` });
+  p.status = to;
+  toast(to === "posted" ? "Posted. Nice one 🎉 Add its numbers later." : `Moved to ${LABEL[to]}`, to === "posted" ? "proud" : "happy");
 }
 
-/* ------------------------------------------------------------------ Post */
-let pv = "x", histSel = null, savedBody = null;
-function splitThread(t) { return t.split(/\n\s*\n/).map(s => s.trim()).filter(Boolean); }
+/* ====================================================================== Post editor */
+let histSel = null, savedBody = null, ctxTab = "session";
+function avatar() { return `<span class="av">${mascotHTML({ mood: "idle" })}</span>`; }
 function preview(p, body) {
-  if (pv === "x") {
+  if (!body.trim()) return `<div class="tw"><div class="who">${avatar()}<span>You</span></div><div class="txt faint">Your ${FORMATS[p.format].full} post will show here.</div></div>`;
+  const img = p.attach[0] ? thumb(p.attach[0]) : "";
+  if (p.format === "x-short") {
     const parts = splitThread(body);
-    return parts.map((t, i) => `<div class="tweet"><div class="who"><span class="av"></span><b>You</b><span class="muted">@you · ${i + 1}/${parts.length}</span></div>
-      <div class="txt">${esc(t)}</div>${i === 0 && p.attach[0] ? thumb(p.attach[0]) : ""}<div class="cc ${t.length > 280 ? "over" : ""}">${t.length}/280</div></div>`).join("");
+    return `<div class="thread">${parts.map((t, i) => { const n = xLength(t); return `<div class="tw"><div class="who">${avatar()}<span>You</span><span class="faint">${parts.length > 1 ? `${i + 1}/${parts.length}` : "@you"}</span></div>
+      <div class="txt">${esc(t)}</div>${i === 0 ? img : ""}<div class="cc ${n > 280 ? "over" : ""}">${n}/280</div></div>`; }).join("")}</div>`;
   }
-  const lines = body.split("\n"); const head = lines.slice(0, 2).join("\n"), rest = lines.slice(2).join("\n");
-  return `<div class="tweet li-post"><div class="who"><span class="av"></span><b>You</b><span class="muted">· now</span></div>
-    <div class="txt">${esc(head)}${rest.trim() ? ` <span class="see-more">…see more</span>` : ""}</div>
-    ${rest.trim() ? `<div class="cut">Hidden until "see more"</div><div class="txt muted">${esc(rest.trim())}</div>` : ""}
-    ${p.attach[0] ? thumb(p.attach[0]) : ""}<div class="cc">${body.length} chars</div></div>`;
+  const F = FORMATS[p.format], chars = [...body], shown = chars.slice(0, F.cut).join(""), rest = chars.slice(F.cut).join("");
+  const more = p.format === "x-long" ? "Show more" : "…see more";
+  return `<div class="tw"><div class="who">${avatar()}<span>You</span><span class="faint">${p.format === "x-long" ? "@you" : "· now"}</span></div>
+    <div class="txt">${esc(shown)}${rest ? ` <span class="more">${more}</span>` : ""}</div>${img}
+    ${rest ? `<div class="cut">Hidden until “${more.replace("…", "")}”</div><div class="txt muted">${esc(rest)}</div>` : ""}
+    <div class="cc ${(p.format === "x-long" ? xLength(body) : chars.length) > F.limit ? "over" : ""}">${num(p.format === "x-long" ? xLength(body) : chars.length)} / ${num(F.limit)}</div></div>`;
+}
+function perfPanel(p) {
+  const pl = FORMATS[p.format].platform, m = p.metrics || {}, e = engagement(p);
+  return `<section class="panel" id="perf"><h3>How it did<span class="sub">You enter these from ${pl === "x" ? "X" : "LinkedIn"} analytics</span></h3>
+    <div class="perf">${METRICS[pl].map(([k, l]) => `<label>${l}<input class="in" type="number" min="0" data-metric="${k}" value="${m[k] ?? ""}" placeholder="0"></label>`).join("")}</div>
+    <div class="er" id="er">${e ? `<b>${e.rate.toFixed(1)}%</b><span class="muted">engagement · ${num(e.sum)} interactions on ${num(m.impressions)} impressions</span>` : `<span class="muted">Add impressions to see the engagement rate.</span>`}</div>
+    <p class="faint" style="font-size:12px">Build in Public never connects to your accounts. Numbers stay in the post's file.</p></section>`;
+}
+function viewPost(id) {
+  const p = POSTS.find(x => x.id === id);
+  if (!p) return empty(`No post called ${esc(id)}.`, "confused");
+  if (savedBody === null || viewPost.last !== id) { savedBody = p.body; histSel = null; ctxTab = "session"; }
+  viewPost.last = id;
+  const s = sess(p.session), shots = s ? s.shots : [];
+  const subs = proj(p.project).subs;
+  const tabs = [["session", "Session", 0], ["research", "Research", s?.articles.length || 0], ["hooks", "Hooks", s?.hooks.length || 0], ["images", "Images", shots.length], ["history", "History", p.history.length]];
+  let ctx = "";
+  if (ctxTab === "session") ctx = s ? `<a class="art" href="#/timeline"><span>${esc(s.title)}</span><span class="src">${fmtWhen(s.start)} · ${s.agent} · ${s.minutes} min · ${s.files.length} files</span></a><p class="muted">${esc(s.summary)}</p>${p.trend ? `<p class="muted">Rides the trend <span style="color:var(--fg)">${esc(p.trend)}</span></p>` : ""}` : `<p class="muted">Not linked to a session.</p>`;
+  if (ctxTab === "research") ctx = s?.articles.length ? s.articles.map(a => `<a class="art" href="${a.u}"><span class="src">${a.src}</span><span>${esc(a.t)}</span></a>`).join("") : `<p class="muted">No research for this session.</p>`;
+  if (ctxTab === "hooks") ctx = s?.hooks.length ? s.hooks.map(h => `<button class="hook" data-hook="${esc(h)}">${esc(h)}<span>Use as the first line</span></button>`).join("") : `<p class="muted">No hooks for this session.</p>`;
+  if (ctxTab === "images") ctx = shots.length ? `<div class="pick">${shots.map(sid => `<button class="${SHOTS[sid].state === "pending" ? "pend" : ""}" data-attach="${sid}" aria-pressed="${p.attach.includes(sid)}">${thumb(sid)}<span>${esc(SHOTS[sid].cap)}${SHOTS[sid].state === "pending" ? " · pending" : p.attach.includes(sid) ? " · attached" : ""}</span></button>`).join("")}</div>` : `<p class="muted">No images from this session.</p>`;
+  if (ctxTab === "history") ctx = p.history.length ? `<div>${p.history.slice().reverse().map((h, i) => { const k = p.history.length - 1 - i;
+      return `<button class="ver" ${h.text ? `data-hist="${k}"` : "disabled"} aria-pressed="${histSel === k}"><span>${fmtWhen(h.at)}</span><span class="muted">${esc(h.change)}</span><span class="by">${h.by}</span></button>`; }).join("")}</div>
+      ${histSel !== null && p.history[histSel]?.text ? `<div class="diff">${wordDiff(p.history[histSel].text, p.body)}</div><div style="display:flex;align-items:center"><span class="muted" style="font-size:12.5px">That version compared with now</span><button class="btn" data-restore="${histSel}" style="margin-left:auto">Restore</button></div>` : `<p class="muted" style="font-size:12.5px">Pick a version to compare it with now.</p>`}` : `<p class="muted">No changes yet.</p>`;
+  const others = Object.keys(FORMATS).filter(f => f !== p.format);
+  return `
+  <div class="crumbs"><a href="#/posts">Posts</a><span class="faint">/</span>${pj(p.project)}${p.sub ? `<span class="faint">›</span><a href="#/posts" data-goto-sub="${p.project}:${p.sub}">${esc(subName(p))}</a>` : ""}<span class="faint">/</span><span class="mono faint">${esc(p.id)}.md</span></div>
+  <div class="editor">
+    <div>
+      <textarea class="title-in" id="e-title" rows="1" aria-label="Title">${esc(p.title)}</textarea>
+      <div class="props">
+        <label><span class="dot" style="background:var(--s-${p.status});margin:0 2px 0 6px"></span><select id="e-status" aria-label="Status">${STATUSES.map(x => `<option value="${x}" ${x === p.status ? "selected" : ""}>${LABEL[x]}</option>`).join("")}</select></label>
+        <span class="sep">·</span><select id="e-fmt" aria-label="Format">${Object.entries(FORMATS).map(([k, f]) => `<option value="${k}" ${k === p.format ? "selected" : ""}>${f.full}</option>`).join("")}</select>
+        <span class="sep">·</span><select id="e-sub" aria-label="Sub-project"><option value="">${esc(proj(p.project).name)}</option>${subs.map(s => `<option value="${s.key}" ${s.key === p.sub ? "selected" : ""}>${esc(proj(p.project).name)} › ${esc(s.name)}</option>`).join("")}</select>
+        <span class="sep">·</span>${p.status === "posted"
+          ? `<label title="Posted on">Posted <input id="e-posted" type="datetime-local" value="${p.posted_at || ""}" aria-label="Posted on"></label>`
+          : `<label title="Post on">Post on <input id="e-when" type="datetime-local" value="${p.scheduled_for || ""}" aria-label="Post on"></label>`}
+      </div>
+      ${!p.body ? `<div class="gen-hint">${mascotHTML({ mood: "idea" })}<span>This ${FORMATS[p.format].full} post is empty. Your agent can write a first draft from ${s ? "its session" : `your latest ${esc(proj(p.project).name)} work`}.</span><button class="btn primary" id="e-gen">Generate draft</button></div>` : ""}
+      <textarea class="body" id="e-body" spellcheck="true" aria-label="Post text" placeholder="Write your ${FORMATS[p.format].full} post…">${esc(p.body)}</textarea>
+      <div class="savebar"><span id="e-state">${p.status === "posted" ? `Posted ${fmtWhen(p.posted_at)}` : `Saved${p.history.length ? " " + fmtWhen(p.history[p.history.length - 1].at) : ""}`}</span>
+        <div class="right"><span class="faint">Adapt for</span>${others.map(f => `<button class="btn text" data-adapt="${f}" ${p.body ? "" : "disabled"}>${FORMATS[f].full}</button>`).join("")}<button class="btn primary" id="e-save">Save <span style="opacity:.55;font-size:12px">⌘S</span></button></div></div>
+      <section class="sec" style="margin-top:44px">
+        <div class="ctx-tabs" role="tablist">${tabs.map(([k, l, n]) => `<button role="tab" data-ctx="${k}" aria-selected="${ctxTab === k}">${l}${n ? `<span class="n">${n}</span>` : ""}</button>`).join("")}</div>
+        <div class="ctx">${ctx}</div>
+      </section>
+    </div>
+    <aside class="preview">
+      <div class="pv-h"><span class="lbl">Preview · ${FORMATS[p.format].full}</span></div>
+      <div id="pv">${preview(p, p.body)}</div>
+      <div style="display:flex;gap:6px">${p.status !== "posted" ? `<button class="btn text" data-posted="${p.id}">Mark posted</button>` : ""}<span style="flex:1"></span>${p.format === "x-short" && splitThread(p.body).length > 1 ? `<button class="btn" data-copy-thread="${p.id}">Copy thread</button>` : ""}<button class="btn primary" data-copy="${p.id}" ${p.body ? "" : "disabled"}>Copy</button></div>
+      <section class="panel"><h3>Measures<span class="sub">${FORMATS[p.format].full}</span></h3><div id="ms">${measuresHTML(p, p.body)}</div></section>
+      ${p.status === "posted" ? perfPanel(p) : ""}
+    </aside>
+  </div>`;
 }
 function wordDiff(a, b) {
   const A = a.split(/(\s+)/), B = b.split(/(\s+)/), n = A.length, m = B.length;
@@ -608,106 +1034,65 @@ function wordDiff(a, b) {
   while (i < n) out += `<del>${esc(A[i++])}</del>`; while (j < m) out += `<ins>${esc(B[j++])}</ins>`;
   return out;
 }
-function viewPost(id) {
-  const p = POSTS.find(x => x.id === id);
-  if (!p) return `<div class="empty">No post called ${esc(id)}.</div>`;
-  if (savedBody === null || viewPost.last !== id) { savedBody = p.body; histSel = null; pv = p.platform === "linkedin" ? "li" : "x"; }
-  viewPost.last = id;
-  const s = sess(p.session);
-  const shots = s ? s.shots : [];
-  const versions = p.history.filter(h => h.text);
-  return `
-  <div class="crumbs"><a href="#/posts">Posts</a><span>/</span>${pTag(p.project)}<span>/</span><span class="mono">${esc(p.id)}.md</span></div>
-  <div class="editor">
-    <div class="card pane">
-      <input class="title-in" id="e-title" value="${esc(p.title)}" aria-label="Title">
-      <div class="fields">
-        <label class="field">Status<select class="ctl" id="e-status">${STATUSES.map(x => `<option value="${x}" ${x === p.status ? "selected" : ""}>${LABEL[x]}</option>`).join("")}</select></label>
-        <label class="field">Platform<select class="ctl" id="e-plat">${Object.entries(PLAT).map(([k, v]) => `<option value="${k}" ${k === p.platform ? "selected" : ""}>${v}</option>`).join("")}</select></label>
-        <label class="field">Remind me at<input class="ctl" id="e-when" type="datetime-local" value="${p.scheduled_for || ""}"></label>
-        <label class="field">Project<select class="ctl" id="e-proj">${PROJECTS.filter(x => x.mode === "content").map(x => `<option ${x.key === p.project ? "selected" : ""}>${x.name}</option>`).join("")}</select></label>
-      </div>
-      <textarea class="md" id="e-body" spellcheck="true" aria-label="Post text">${esc(p.body)}</textarea>
-      <div class="savebar"><span id="e-state">Saved · ${p.history.length ? fmtWhen(p.history[p.history.length - 1].at) : "from agent"}</span>
-        <button class="btn solid" id="e-save">Save <span class="mono" style="opacity:.6">⌘S</span></button></div>
-      ${p.status === "posted" ? `<div class="savebar">Posted ${fmtWhen(p.posted_at)} · <a href="${esc(p.link)}">${esc(p.link)}</a></div>` : ""}
-    </div>
-    <div class="card pane">
-      <div class="row"><h3 style="margin-right:auto">Preview</h3>
-        <div class="seg pv-tabs"><button data-pv="x" aria-pressed="${pv === "x"}">X thread</button><button data-pv="li" aria-pressed="${pv === "li"}">LinkedIn</button></div></div>
-      <div class="pv" id="pv">${preview(p, p.body)}</div>
-      <div class="row"><button class="btn solid" data-copy="${p.id}">Copy</button>${pv === "x" ? `<button class="btn" data-copy-thread="${p.id}">Copy as thread</button>` : ""}
-        ${p.status !== "posted" ? `<button class="btn" data-posted="${p.id}" style="margin-left:auto">Mark posted</button>` : ""}</div>
-    </div>
-    <div class="card behind-card"><div class="behind">
-      <div class="blk"><h3>Session</h3>${s ? `<a href="#/timeline" class="art"><span class="at"><b>${esc(s.title)}</b></span><span class="src">${fmtWhen(s.start)} · ${s.agent} · ${s.minutes} min · ${s.files.length} files</span></a>
-        <p class="muted" style="font-size:13px">${esc(s.summary)}</p>` : '<p class="muted">Not linked to a session.</p>'}
-        ${p.trend && p.trend !== "none" ? `<span class="tag">Trend · ${esc(p.trend)}</span>` : ""}</div>
-      ${s && s.articles.length ? `<div class="blk"><h3>Research · articles.md</h3>${s.articles.map(a => `<a class="art" href="${a.u}"><span class="src">${a.src}</span><span class="at">${esc(a.t)}</span></a>`).join("")}</div>` : ""}
-      ${s && s.hooks.length ? `<div class="blk"><h3>Hooks · click to use</h3>${s.hooks.map(h => `<button class="hook" data-hook="${esc(h)}">${esc(h)}</button>`).join("")}</div>` : ""}
-      ${shots.length ? `<div class="blk"><h3>Screenshots · attach one</h3><div class="mini-shots">${shots.map(id => `<button class="${p.attach.includes(id) ? "on" : ""} ${SHOTS[id].state === "pending" ? "pend" : ""}" data-attach="${id}" title="${esc(SHOTS[id].cap)}${SHOTS[id].state === "pending" ? " (approve it in Media first)" : ""}">${thumb(id)}</button>`).join("")}</div></div>` : ""}
-      <div class="blk"><h3>History · ${p.history.length} change${p.history.length === 1 ? "" : "s"}</h3>
-        ${p.history.length ? `<div class="hist">${p.history.slice().reverse().map((h, i) => { const k = p.history.length - 1 - i;
-          return `<button ${h.text ? `data-hist="${k}"` : "disabled"} aria-pressed="${histSel === k}"><span>${fmtWhen(h.at)}</span><span class="muted">${esc(h.change)}</span><span class="by">${h.by}</span></button>`; }).join("")}</div>` : '<p class="muted" style="font-size:13px">No changes yet.</p>'}
-        ${histSel !== null && p.history[histSel]?.text ? `<div class="diff">${wordDiff(p.history[histSel].text, p.body)}</div>
-          <div class="row"><span class="muted" style="font-size:12px">That version → now</span><button class="btn" data-restore="${histSel}" style="margin-left:auto">Restore this version</button></div>` : versions.length ? '<p class="muted" style="font-size:12px">Pick a version to compare it with now.</p>' : ""}
-      </div>
-    </div></div>
-  </div>`;
-}
 function wirePost(id) {
   const p = POSTS.find(x => x.id === id); if (!p) return;
-  const body = $("#e-body"), state = $("#e-state");
-  const markDirty = () => { const d = body.value !== savedBody || $("#e-title").value !== p.title; state.textContent = d ? "Unsaved changes" : "Saved"; state.className = d ? "dirty" : ""; $("#pv").innerHTML = preview(p, body.value); };
-  body.oninput = markDirty; $("#e-title").oninput = markDirty;
+  const body = $("#e-body"), title = $("#e-title"), state = $("#e-state");
+  const fit = () => { title.style.height = "auto"; title.style.height = title.scrollHeight + "px"; }; fit();
+  const live = () => { $("#pv").innerHTML = preview(p, body.value); $("#ms").innerHTML = measuresHTML(p, body.value); mountBips($("#pv")); };
+  const dirty = () => { const d = body.value !== savedBody || title.value !== p.title; state.textContent = d ? "Unsaved changes" : "Saved"; state.className = d ? "unsaved" : ""; live(); };
+  body.oninput = dirty; title.oninput = () => { fit(); dirty(); };
   const save = () => {
-    if (body.value === savedBody && $("#e-title").value === p.title) return toast("Nothing to save");
-    p.history.push({ at: NOW.toISOString().slice(0, 16), by: "dashboard", change: "edit", text: savedBody });
-    p.body = savedBody = body.value; p.title = $("#e-title").value; toast("Saved · previous version kept in history"); route();
+    if (body.value === savedBody && title.value === p.title) return toast("Nothing to save", "idle");
+    p.history.push({ at: nowStamp(), by: "you", change: "Edited", text: savedBody });
+    p.body = savedBody = body.value; p.title = title.value; toast("Saved. The old version is in History."); route();
   };
   $("#e-save").onclick = save;
   document.onkeydown = e => { if ((e.metaKey || e.ctrlKey) && e.key === "s" && location.hash.startsWith("#/post/")) { e.preventDefault(); save(); } };
   $("#e-status").onchange = e => { setStatus(p, e.target.value); route(); };
-  $("#e-plat").onchange = e => { p.platform = e.target.value; pv = p.platform === "linkedin" ? "li" : "x"; route(); };
-  $("#e-when").onchange = e => { p.scheduled_for = e.target.value; if (p.status === "approved" || p.status === "draft") setStatus(p, "scheduled"); else toast("Reminder moved to " + fmtWhen(e.target.value)); route(); };
-  document.querySelectorAll("[data-pv]").forEach(b => b.onclick = () => { pv = b.dataset.pv; route(); });
-  document.querySelectorAll("[data-hook]").forEach(b => b.onclick = () => { const lines = body.value.split("\n"); lines[0] = b.dataset.hook; body.value = lines.join("\n"); markDirty(); toast("Hook swapped in as the first line"); });
-  document.querySelectorAll("[data-attach]").forEach(b => b.onclick = () => {
-    const sid = b.dataset.attach; if (SHOTS[sid].state === "pending") return toast("Approve this screenshot in Media first");
-    p.attach = p.attach.includes(sid) ? [] : [sid]; route(); });
+  $("#e-fmt").onchange = e => { p.history.push({ at: nowStamp(), by: "you", change: `Format → ${FORMATS[e.target.value].full}` }); p.format = e.target.value;
+    // numbers only carry over between formats on the same platform (X Short ↔ X Long)
+    if (p.metrics && FORMATS[p.format].platform !== ("likes" in p.metrics ? "x" : "linkedin")) p.metrics = null;
+    route(); };
+  $("#e-sub").onchange = e => { p.sub = e.target.value || null; toast(p.sub ? `Moved to ${subName(p)}` : `Moved to ${proj(p.project).name}`); route(); };
+  const when = $("#e-when"); if (when) when.onchange = e => { p.scheduled_for = e.target.value || undefined; if (p.status === "approved" && p.scheduled_for) setStatus(p, "scheduled"); else toast(p.scheduled_for ? `Post on ${fmtWhen(p.scheduled_for)}` : "Date removed"); route(); };
+  const posted = $("#e-posted"); if (posted) posted.onchange = e => { p.posted_at = e.target.value; toast("Posted date updated"); route(); };
+  const gen = $("#e-gen"); if (gen) gen.onclick = () => runGenerate(p, sess(p.session) || SESSIONS.find(s => s.project === p.project));
+  document.querySelectorAll("[data-adapt]").forEach(b => b.onclick = () => {
+    const f = b.dataset.adapt, np = P({ id: (p.scheduled_for || nowStamp()).slice(5, 10).replace("-", "") + "-" + uid(), title: p.title, project: p.project, sub: p.sub, format: f, status: "draft", date: TODAY, session: p.session, scheduled_for: p.scheduled_for, attach: [...p.attach], body: "" });
+    POSTS.push(np); runGenerate(np, sess(p.session), p);
+  });
+  document.querySelectorAll("[data-ctx]").forEach(b => b.onclick = () => { ctxTab = b.dataset.ctx; route(); });
+  document.querySelectorAll("[data-hook]").forEach(b => b.onclick = () => { const l = body.value.split("\n"); l[0] = b.dataset.hook; body.value = l.join("\n"); dirty(); toast("Hook is now your first line", "idea"); });
+  document.querySelectorAll("[data-attach]").forEach(b => b.onclick = () => { const sid = b.dataset.attach; if (SHOTS[sid].state === "pending") return toast("Approve it in Media first", "confused"); p.attach = p.attach.includes(sid) ? [] : [sid]; route(); });
   document.querySelectorAll("[data-hist]").forEach(b => b.onclick = () => { histSel = histSel === +b.dataset.hist ? null : +b.dataset.hist; route(); });
-  document.querySelectorAll("[data-restore]").forEach(b => b.onclick = () => {
-    const old = p.history[+b.dataset.restore].text;
-    p.history.push({ at: NOW.toISOString().slice(0, 16), by: "dashboard", change: "restore", text: p.body });
-    p.body = savedBody = old; histSel = null; toast("Restored. The replaced text is in history too."); route(); });
+  document.querySelectorAll("[data-restore]").forEach(b => b.onclick = () => { const old = p.history[+b.dataset.restore].text; p.history.push({ at: nowStamp(), by: "you", change: "Restored", text: p.body }); p.body = savedBody = old; histSel = null; toast("Restored. What it replaced is in History too."); route(); });
+  document.querySelectorAll("[data-goto-sub]").forEach(a => a.onclick = e => { e.preventDefault(); const [pk, sk] = a.dataset.gotoSub.split(":"); postsMode = "trail"; filter = { project: pk, sub: sk }; $("#proj-lbl").innerHTML = projLabel(); location.hash = "#/posts"; });
+  const perf = $("#perf");
+  if (perf) perf.addEventListener("input", e => { const k = e.target.dataset.metric; if (!k) return; p.metrics = Object.assign({}, p.metrics, { [k]: e.target.value === "" ? undefined : +e.target.value });
+    const en = engagement(p); $("#er").innerHTML = en ? `<b>${en.rate.toFixed(1)}%</b><span class="muted">engagement · ${num(en.sum)} interactions on ${num(p.metrics.impressions)} impressions</span>` : `<span class="muted">Add impressions to see the engagement rate.</span>`; });
 }
 
-/* ------------------------------------------------------------------ Calendar */
+/* ====================================================================== Calendar */
 let calMonth = new Date(2026, 10, 1);
 function viewCalendar() {
-  const y = calMonth.getFullYear(), m = calMonth.getMonth();
-  const first = new Date(y, m, 1), start = new Date(first); start.setDate(1 - ((first.getDay() + 6) % 7));
+  const y = calMonth.getFullYear(), m = calMonth.getMonth(), first = new Date(y, m, 1), start = new Date(first); start.setDate(1 - ((first.getDay() + 6) % 7));
   const key = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
   let cells = "";
   for (let i = 0; i < 42; i++) {
     const d = new Date(start); d.setDate(start.getDate() + i); const k = key(d);
     if (i >= 35 && d.getMonth() !== m) break;
-    const ss = SESSIONS.filter(s => s.start.startsWith(k) && inFilter(s.project));
-    const ps = POSTS.filter(p => inFilter(p.project) && ((p.status === "scheduled" && p.scheduled_for?.startsWith(k)) || (p.status === "posted" && p.posted_at?.startsWith(k))));
+    const ss = SESSIONS.filter(s => s.start.startsWith(k) && inFilter(s.project) && proj(s.project).mode !== "ignore");
+    const ps = POSTS.filter(p => inFilterPost(p) && p.status !== "suggested" && p.status !== "skipped" && ((p.status !== "posted" && p.scheduled_for?.startsWith(k)) || (p.status === "posted" && p.posted_at?.startsWith(k))));
     cells += `<div class="day ${d.getMonth() !== m ? "out" : ""} ${k === TODAY ? "today" : ""}" data-day="${k}">
-      <div class="dn"><b>${d.getDate()}</b><span class="work" title="${ss.length} session(s)">${ss.map(s => `<i class="p${proj(s.project).color}"></i>`).join("")}</span></div>
-      ${ps.map(p => `<a class="chip ${p.status}" draggable="${p.status === "scheduled"}" data-id="${p.id}" href="#/post/${p.id}" title="${esc(p.title)}">${fmtTime(p.scheduled_for || p.posted_at)} ${esc(p.title)}</a>`).join("")}</div>`;
+      <div class="dn"><b>${d.getDate()}</b><span class="work" title="${ss.length} session(s)">${ss.map(s => `<i style="--pc:${proj(s.project).c}"></i>`).join("")}</span></div>
+      ${ps.map(p => `<a class="chip" draggable="${p.status !== "posted"}" data-id="${p.id}" href="#/post/${p.id}" title="${esc(p.title)} · ${FORMATS[p.format].full}"><span class="dot" style="background:var(--s-${p.status})"></span><span class="tm">${FORMATS[p.format].platform === "x" ? "X" : "in"} ${fmtTime(p.status === "posted" ? p.posted_at : p.scheduled_for)}</span><span class="t">${esc(p.title)}</span></a>`).join("")}</div>`;
   }
-  const busyNoPost = SESSIONS.filter(s => inFilter(s.project) && s.start.slice(0, 10) <= TODAY && s.start.slice(0, 10) >= "2026-11-03")
-    .map(s => s.start.slice(0, 10)).filter((d, i, a) => a.indexOf(d) === i)
-    .filter(d => !POSTS.some(p => p.posted_at?.startsWith(d)));
-  return `<div class="cal-h"><h2>${first.toLocaleDateString("en-US", { month: "long", year: "numeric" })}</h2>
-      <button class="btn" data-cal="-1" aria-label="Previous month">←</button><button class="btn" data-cal="0">Today</button><button class="btn" data-cal="1" aria-label="Next month">→</button></div>
-    <div class="legend"><span class="row"><span class="work"><i class="p0"></i><i class="p1"></i></span> a session you worked</span>
-      <span class="chip scheduled" style="cursor:default">reminder</span><span class="chip posted" style="cursor:default">posted</span>
-      <span>Drag a reminder to another day to move it.</span></div>
-    ${busyNoPost.length ? `<div class="card" style="padding:10px 14px;font-size:13px">In the last 7 days you built on <b>${busyNoPost.length} days</b> without posting (${busyNoPost.sort().map(d => fmtDay(d).split(",")[0]).join(", ")}). <a href="#/timeline">See what you did →</a></div>` : ""}
-    <div class="cal">${["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map(d => `<div class="dow">${d}</div>`).join("")}${cells}</div>`;
+  const busy = [...new Set(SESSIONS.filter(s => inFilter(s.project) && s.start.slice(0, 10) <= TODAY && s.start.slice(0, 10) >= "2026-11-03").map(s => s.start.slice(0, 10)))].filter(d => !POSTS.some(p => p.posted_at?.startsWith(d))).sort();
+  return `<div class="page-h"><h1>${first.toLocaleDateString("en-US", { month: "long" })} <span class="muted">${y}</span></h1>
+      <div class="right"><button class="btn text" data-cal="-1" aria-label="Previous month">←</button><button class="btn text" data-cal="0">Today</button><button class="btn text" data-cal="1" aria-label="Next month">→</button></div></div>
+    ${busy.length ? `<p class="nudge-line" style="margin-top:-24px">In the last 7 days you built on <b>${busy.length} days</b> without posting: ${busy.map(d => fmtDay(d).split(",")[0]).join(", ")}. <a class="link" href="#/timeline" style="text-decoration:underline">See what you did</a></p>` : ""}
+    <div><div class="cal">${["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map(d => `<div class="dow">${d}</div>`).join("")}${cells}</div>
+    <p class="muted" style="font-size:12.5px;margin-top:12px">Dots on a day are sessions, coloured by project. Posts show their planned or posted time; drag one to another day to move it.</p></div>`;
 }
 function wireCalendar() {
   document.querySelectorAll("[data-cal]").forEach(b => b.onclick = () => { const v = +b.dataset.cal; calMonth = v ? new Date(calMonth.getFullYear(), calMonth.getMonth() + v, 1) : new Date(2026, 10, 1); route(); });
@@ -715,102 +1100,146 @@ function wireCalendar() {
   document.querySelectorAll(".day").forEach(d => {
     d.ondragover = e => { e.preventDefault(); d.classList.add("over"); };
     d.ondragleave = () => d.classList.remove("over");
-    d.ondrop = e => { e.preventDefault(); const p = POSTS.find(x => x.id === e.dataTransfer.getData("text/plain")); if (!p) return;
-      p.scheduled_for = d.dataset.day + p.scheduled_for.slice(10); p.history.push({ at: NOW.toISOString().slice(0, 16), by: "dashboard", change: "rescheduled" });
-      toast("Reminder moved to " + fmtWhen(p.scheduled_for)); route(); };
+    d.ondrop = e => { e.preventDefault(); const p = POSTS.find(x => x.id === e.dataTransfer.getData("text/plain")); if (!p || !p.scheduled_for) return;
+      p.scheduled_for = d.dataset.day + p.scheduled_for.slice(10); p.history.push({ at: nowStamp(), by: "you", change: "Rescheduled" }); toast("Moved to " + fmtWhen(p.scheduled_for)); route(); };
   });
 }
 
-/* ------------------------------------------------------------------ Timeline */
+/* ====================================================================== Timeline */
 function viewTimeline(q) {
   q = (q || "").toLowerCase();
   const ss = SESSIONS.filter(s => inFilter(s.project) && proj(s.project).mode !== "ignore" && (!q || (s.title + s.summary + s.files.join(" ")).toLowerCase().includes(q)));
   const days = [...new Set(ss.map(s => s.start.slice(0, 10)))];
-  if (!ss.length) return `<div class="empty">No sessions match “${esc(q)}”.</div>`;
-  return (q ? `<div class="row"><span class="muted">${ss.length} session(s) matching “${esc(q)}”</span><a class="btn ghost" href="#/timeline">Clear</a></div>` : "") +
-    days.map(d => { const list = ss.filter(s => s.start.startsWith(d)); const mins = list.reduce((a, s) => a + s.minutes, 0);
-    return `<div class="tl-day"><div class="tl-date"><b>${fmtDay(d)}</b><span>${list.length} session${list.length > 1 ? "s" : ""} · ${Math.floor(mins / 60)}h ${mins % 60}m</span></div><div>
+  return `<div class="page-h"><h1>Timeline</h1>${q ? `<div class="right"><span class="muted">${ss.length} matching “${esc(q)}”</span><a class="btn text" href="#/timeline">Clear</a></div>` : ""}</div>
+    ${ss.length ? `<div class="tl">${days.map(d => { const list = ss.filter(s => s.start.startsWith(d)), mins = list.reduce((a, s) => a + s.minutes, 0);
+      return `<section class="tl-day"><h3>${fmtLong(d)}<span>${list.length} session${list.length > 1 ? "s" : ""} · ${Math.floor(mins / 60)}h ${mins % 60}m</span></h3><div>
       ${list.map((s, i) => { const posts = POSTS.filter(p => p.session === s.id && p.status !== "suggested");
-        return `<details class="card sess" ${d === TODAY && i === 0 && !q ? "open" : ""}><summary>
+        return `<details class="sess" ${d === TODAY && i === 0 && !q ? "open" : ""}><summary>
           <span class="time">${fmtTime(s.start)}</span>
-          <div><div class="t">${esc(s.title)}</div><div class="meta">${pTag(s.project)}<span>${s.agent}</span><span>${s.minutes} min</span><span>${s.files.length} files</span>${s.tags.map(t => `<span class="tag">${t}</span>`).join("")}</div></div>
-          <div class="row">${posts.length ? posts.map(p => st(p.status)).join("") : proj(s.project).mode === "content" ? '<span class="muted" style="font-size:12px">no post yet</span>' : '<span class="tag">journal only</span>'}</div></summary>
+          <div class="main"><div>${esc(s.title)}</div><div class="meta">${pj(s.project)}<span>${s.agent}</span><span>${s.minutes} min</span><span>${s.files.length} files</span></div></div>
+          <span class="end">${posts.length ? posts.map(p => st(p.status)).join("") : proj(s.project).mode === "content" ? '<span class="faint" style="font-size:12.5px">No post yet</span>' : '<span class="faint" style="font-size:12.5px">Journal only</span>'}</span></summary>
           <div class="sess-body"><div>
-            <h3>Summary</h3><p>${esc(s.summary)}</p>
-            <h3>Files</h3><div class="files">${s.files.map(esc).join("<br>")}</div>
-            ${s.commands.length ? `<h3>Commands</h3><div class="cmd">${s.commands.map(c => "$ " + esc(c)).join("\n")}</div>` : ""}
+            <p>${esc(s.summary)}</p>
+            <div class="tagline">${s.tags.map(t => `<span class="tag">#${t}</span>`).join("")}</div>
+            <h4>Files</h4><div class="files">${s.files.map(esc).join("<br>")}</div>
+            ${s.commands.length ? `<h4>Commands</h4><div class="cmd">${s.commands.map(c => "$ " + esc(c)).join("\n")}</div>` : ""}
           </div><div>
-            ${s.articles.length ? `<h3>Research</h3>${s.articles.map(a => `<a class="art" href="${a.u}"><span class="src">${a.src}</span><span class="at">${esc(a.t)}</span></a>`).join("")}` : ""}
-            ${s.shots.length ? `<h3>Screenshots</h3><div class="mini-shots">${s.shots.map(id => `<a href="#/media" title="${esc(SHOTS[id].cap)}">${thumb(id)}</a>`).join("")}</div>` : ""}
-            <h3>Posts from this</h3><div class="linked">${posts.map(p => `<a class="btn" href="#/post/${p.id}">${esc(p.title.slice(0, 32))}${p.title.length > 32 ? "…" : ""}</a>`).join("")}
-              ${proj(s.project).mode === "content" ? `<button class="btn ghost" data-suggest="${s.id}">Suggest a post from this</button>` : ""}</div>
-          </div></div></details>`; }).join("")}</div></div>`; }).join("");
+            ${s.articles.length ? `<h4>Research</h4><div>${s.articles.map(a => `<a class="art" href="${a.u}"><span class="src">${a.src}</span><span>${esc(a.t)}</span></a>`).join("")}</div>` : ""}
+            ${s.shots.length ? `<h4>Screenshots</h4><div class="thumbs">${s.shots.map(thumbBtn).join("")}</div>` : ""}
+            <h4>Posts from this</h4><div style="display:flex;gap:6px;flex-wrap:wrap">${posts.map(p => `<a class="btn" href="#/post/${p.id}">${FORMATS[p.format].platform === "x" ? "X" : "in"} · ${esc(p.title.slice(0, 26))}${p.title.length > 26 ? "…" : ""}</a>`).join("")}
+              ${proj(s.project).mode === "content" ? `<button class="btn text" data-new-from="${s.id}">+ New post from this</button>` : ""}</div>
+          </div></div></details>`; }).join("")}</div></section>`; }).join("")}</div>` : empty(`No sessions match “${esc(q)}”.`, "confused")}`;
 }
 
-/* ------------------------------------------------------------------ Media */
+/* ====================================================================== Media + viewer */
 let mediaFilter = "all";
+const mediaList = () => Object.entries(SHOTS).filter(([, s]) => inFilter(s.project) && (mediaFilter === "all" || s.state === mediaFilter))
+  .sort((a, b) => (a[1].state === "pending" ? -1 : 0) - (b[1].state === "pending" ? -1 : 0) || (b[1].day + b[1].at).localeCompare(a[1].day + a[1].at));
 function viewMedia() {
-  const items = Object.entries(SHOTS).filter(([, s]) => inFilter(s.project) && (mediaFilter === "all" || s.state === mediaFilter))
-    .sort((a, b) => (a[1].state === "pending" ? -1 : 0) - (b[1].state === "pending" ? -1 : 0) || b[1].day.localeCompare(a[1].day));
-  return `<div class="toolbar"><div class="seg" role="group" aria-label="Filter">${["all", "pending", "approved"].map(f => `<button data-mf="${f}" aria-pressed="${mediaFilter === f}">${f[0].toUpperCase() + f.slice(1)}</button>`).join("")}</div>
-    <span class="muted" style="font-size:12px">Screenshots your agent took stay pending until you approve them.</span></div>
-    <div class="media">${items.map(([id, s]) => { const used = POSTS.filter(p => p.attach.includes(id));
-      return `<div class="card mcard">${thumb(id)}<div class="cap">${esc(s.cap)}</div>
-        <div class="row">${pTag(s.project)}<span class="tag ${s.state === "pending" ? "badge-pend" : "badge-ok"}">${s.state}</span><span class="meta">${fmtDay(s.day)}</span></div>
-        <div class="meta">${used.length ? "Used in " + used.map(p => `<a href="#/post/${p.id}">${esc(p.title.slice(0, 28))}…</a>`).join(", ") : "Not in a post"}</div>
-        ${s.state === "pending" ? `<div class="row"><button class="btn solid" data-shot-ok="${id}">Approve</button><button class="btn ghost" data-shot-no="${id}">Discard</button></div>` : ""}</div>`; }).join("") || '<div class="empty">Nothing here.</div>'}</div>`;
+  const items = mediaList();
+  return `<div class="page-h"><h1>Media</h1><div class="right"><div class="toggle" role="group" aria-label="Filter">${["all", "pending", "approved"].map(f => `<button data-mf="${f}" aria-pressed="${mediaFilter === f}">${f[0].toUpperCase() + f.slice(1)}</button>`).join("")}</div></div></div>
+    <p class="muted" style="margin-top:-28px">Click any screenshot to inspect it and read every post that uses it. Screenshots your agent took stay pending until you approve them.</p>
+    ${items.length ? `<div class="media">${items.map(([id, s]) => { const used = POSTS.filter(p => p.attach.includes(id) && p.status !== "suggested");
+      return `<div class="m">${thumbBtn(id)}<div>${esc(s.cap)}</div>
+        <div class="meta">${pj(s.project)}<span>${fmtDay(s.day)}</span>${s.state === "pending" ? `<span class="st"><span class="dot" style="background:var(--s-draft)"></span>Pending</span>` : ""}</div>
+        <div class="used">${used.length ? `In ${used.length} post${used.length > 1 ? "s" : ""}: ${used.map(p => FORMATS[p.format].full).join(", ")}` : "Not in a post yet"}</div></div>`; }).join("")}</div>` : empty("Nothing here.", "sleepy")}`;
+}
+let zoom = { s: 1, x: 0, y: 0 };
+function openViewer(id) {
+  const list = mediaList().map(([k]) => k), ids = list.includes(id) ? list : Object.keys(SHOTS);
+  const draw = id => {
+    const s = SHOTS[id], se = sess(s.session), used = POSTS.filter(p => p.attach.includes(id) && p.status !== "suggested");
+    const drafts = POSTS.filter(p => p.project === s.project && ["draft", "approved", "scheduled"].includes(p.status) && !p.attach.includes(id));
+    const i = ids.indexOf(id);
+    zoom = { s: 1, x: 0, y: 0 };
+    return { html: `<div class="viewer">
+      <div class="stage" id="stage" tabindex="0" aria-label="Screenshot. Click to zoom, drag to pan.">
+        <div class="img" id="vimg">${thumb(id, true)}</div>
+        ${ids.length > 1 ? `<button class="nav prev" data-vnav="${ids[(i - 1 + ids.length) % ids.length]}" aria-label="Previous">‹</button><button class="nav next" data-vnav="${ids[(i + 1) % ids.length]}" aria-label="Next">›</button>` : ""}
+        <div class="bar"><button data-z="-1" aria-label="Zoom out">−</button><span class="z" id="zl">100%</span><button data-z="1" aria-label="Zoom in">+</button><button data-z="0">Fit</button></div>
+      </div>
+      <div class="vside">
+        <div style="display:flex;gap:8px;align-items:start"><h3 style="flex:1">${esc(s.cap)}</h3><button class="quiet icon" data-close aria-label="Close">✕</button></div>
+        <dl class="kv"><dt>Status</dt><dd>${s.state === "pending" ? `<span class="st"><span class="dot" style="background:var(--s-draft)"></span>Pending review</span>` : `<span class="st"><span class="dot" style="background:var(--ok)"></span>Approved</span>`}</dd>
+          <dt>Project</dt><dd>${pj(s.project)}</dd><dt>Captured</dt><dd>${fmtDay(s.day)}, ${s.at} · by ${s.by === "you" ? "you" : "your agent"}</dd><dt>Size</dt><dd>${s.size}</dd>
+          ${se ? `<dt>Session</dt><dd><a href="#/timeline" data-close style="text-decoration:underline">${esc(se.title)}</a></dd>` : ""}<dt>File</dt><dd class="mono">shots/${id}.png</dd></dl>
+        ${s.state === "pending" ? `<div style="display:flex;gap:6px"><button class="btn primary" data-v-ok="${id}">Approve</button><button class="btn" data-v-no="${id}">Discard</button></div>`
+          : drafts.length ? `<label class="field"><span>Attach to a post</span><div style="display:flex;gap:6px"><select class="in" id="v-to">${drafts.map(p => `<option value="${p.id}">${FORMATS[p.format].full} · ${esc(p.title.slice(0, 40))}</option>`).join("")}</select><button class="btn" data-v-attach="${id}">Attach</button></div></label>` : ""}
+        <div class="sec"><div class="sec-h"><h2>Used in ${used.length} post${used.length === 1 ? "" : "s"}</h2></div>
+          ${used.length ? used.map(p => `<article class="usedpost"><div class="meta">${fmtChip(p.format)}${st(p.status)}<span>${p.posted_at ? "posted " + fmtWhen(p.posted_at) : p.scheduled_for ? "post on " + fmtWhen(p.scheduled_for) : ""}</span></div>
+            <b style="font-weight:500">${esc(p.title)}</b><div class="txt">${esc(p.body || "(empty)")}</div>${p.status === "posted" ? perfLine(p) : ""}
+            <div><a class="btn text" href="#/post/${p.id}" data-close style="margin-left:-8px">Open in editor →</a></div></article>`).join("") : `<p class="muted" style="font-size:13px">Not in any post yet.${s.state === "approved" ? " Attach it above." : " Approve it first."}</p>`}
+        </div>
+      </div></div>`, id };
+  };
+  const show = id => {
+    const { html } = draw(id);
+    openModal(html, { wide: true, label: "Screenshot viewer", wire: wireViewer,
+      onKey: e => { if (e.target.closest("input, select, textarea")) return; if (e.key === "ArrowRight") $("#sheet .next")?.click(); if (e.key === "ArrowLeft") $("#sheet .prev")?.click(); if (e.key === "+" || e.key === "=") zoomBy(1); if (e.key === "-") zoomBy(-1); if (e.key === "0") zoomBy(0); } });
+  };
+  const apply = () => { const img = $("#vimg"); if (!img) return; img.style.transform = `translate(${zoom.x}px, ${zoom.y}px) scale(${zoom.s})`; $("#zl").textContent = Math.round(zoom.s * 100) + "%"; $("#stage").classList.toggle("zoomed", zoom.s > 1); };
+  const zoomBy = (d, cx, cy) => {
+    const img = $("#vimg"), r = img.getBoundingClientRect(), stage = $("#stage").getBoundingClientRect();
+    const ns = d === 0 ? 1 : Math.max(1, Math.min(4, zoom.s * (d > 0 ? 1.5 : 1 / 1.5)));
+    if (ns === 1) zoom = { s: 1, x: 0, y: 0 };
+    else { const px = (cx ?? stage.left + stage.width / 2) - (r.left - zoom.x), py = (cy ?? stage.top + stage.height / 2) - (r.top - zoom.y); zoom.x -= (px - zoom.x) * (ns / zoom.s - 1); zoom.y -= (py - zoom.y) * (ns / zoom.s - 1); zoom.s = ns; }
+    apply();
+  };
+  const wireViewer = s => {
+    const stage = s.querySelector("#stage"); let drag = null, moved = false;
+    setTimeout(() => { stage.focus({ preventScroll: true }); s.querySelector(".vside").scrollTop = 0; }, 40);
+    stage.addEventListener("pointerdown", e => { if (e.target.closest("button")) return; drag = { x: e.clientX, y: e.clientY, ox: zoom.x, oy: zoom.y }; moved = false; stage.setPointerCapture(e.pointerId); });
+    stage.addEventListener("pointermove", e => { if (!drag) return; const dx = e.clientX - drag.x, dy = e.clientY - drag.y; if (Math.hypot(dx, dy) > 4) moved = true; if (zoom.s > 1 && moved) { stage.classList.add("dragging"); zoom.x = drag.ox + dx; zoom.y = drag.oy + dy; apply(); } });
+    stage.addEventListener("pointerup", e => { stage.classList.remove("dragging"); if (drag && !moved && !e.target.closest("button")) zoomBy(zoom.s > 1 ? 0 : 1, e.clientX, e.clientY); drag = null; });
+    stage.addEventListener("wheel", e => { e.preventDefault(); zoomBy(e.deltaY < 0 ? 1 : -1, e.clientX, e.clientY); }, { passive: false });
+    s.querySelectorAll("[data-z]").forEach(b => b.onclick = () => zoomBy(+b.dataset.z));
+    s.querySelectorAll("[data-vnav]").forEach(b => b.onclick = () => show(b.dataset.vnav));
+    const ok = s.querySelector("[data-v-ok]"); if (ok) ok.onclick = () => { SHOTS[ok.dataset.vOk].state = "approved"; toast("Approved. It can go in posts now."); route(); show(ok.dataset.vOk); };
+    const no = s.querySelector("[data-v-no]"); if (no) no.onclick = () => { const next = ids[(ids.indexOf(no.dataset.vNo) + 1) % ids.length]; delete SHOTS[no.dataset.vNo]; ids.splice(ids.indexOf(no.dataset.vNo), 1); toast("Discarded", "idle"); route(); ids.length ? show(next) : closeModal(); };
+    const at = s.querySelector("[data-v-attach]"); if (at) at.onclick = () => { const p = POSTS.find(x => x.id === $("#v-to").value); p.attach = [at.dataset.vAttach]; p.history.push({ at: nowStamp(), by: "you", change: "Image attached" }); toast(`Attached to “${p.title.slice(0, 30)}”`); route(); show(at.dataset.vAttach); };
+  };
+  show(id);
 }
 
-/* ------------------------------------------------------------------ Projects */
-function viewProjects() {
-  return `<p class="muted">Only <b>content</b> projects get suggestions and posts. <b>Journal only</b> projects are logged but never used in posts. <b>Ignored</b> folders are never read.</p>
-  <div class="card tbl-wrap"><table class="tbl"><thead><tr><th>Project</th><th>Mode</th><th>Last session</th><th>Sessions</th><th>Posts</th><th>Last post</th></tr></thead><tbody>
-  ${PROJECTS.map(p => { const ss = SESSIONS.filter(s => s.project === p.key), ps = POSTS.filter(x => x.project === p.key && x.status !== "suggested");
-    const last = ps.filter(x => x.posted_at).map(x => x.posted_at).sort().pop();
-    return `<tr><td><b>${esc(p.name)}</b><div class="mono muted" style="font-size:11px">${esc(p.path)}</div></td>
-      <td><select class="ctl" data-mode-proj="${p.key}" aria-label="Mode for ${esc(p.name)}">${["content", "journal", "ignore"].map(m => `<option value="${m}" ${m === p.mode ? "selected" : ""}>${{ content: "Content", journal: "Journal only", ignore: "Ignored" }[m]}</option>`).join("")}</select></td>
-      <td class="muted">${ss[0] ? fmtWhen(ss[0].start) : "—"}</td><td>${ss.length}</td><td>${ps.length}</td><td class="muted">${last ? fmtDay(last.slice(0, 10)) : "—"}</td></tr>`; }).join("")}
-  </tbody></table></div>`;
-}
-
-/* ------------------------------------------------------------------ router + global actions */
+/* ====================================================================== router + global actions */
 function route() {
-  const [path, qs] = (location.hash.slice(2) || "today").split("?");
-  const [name, arg] = path.split("/");
+  lives.forEach(l => l.stop()); lives = [];
+  let [path, qs] = (location.hash.slice(2) || "today").split("?");
+  let [name, arg] = path.split("/");
+  if (name === "projects") { location.replace("#/today"); setTimeout(manageModal, 50); return; }
   const q = new URLSearchParams(qs || "").get("q");
-  const titles = { today: "Today", posts: "Posts", post: "Post", calendar: "Calendar", timeline: "Timeline", media: "Media", projects: "Projects" };
-  $("#title").textContent = name === "post" ? (POSTS.find(p => p.id === arg)?.title || "Post") : titles[name] || "Today";
+  const titles = { today: "Today", posts: "Posts", post: "Post", calendar: "Calendar", timeline: "Timeline", media: "Media" };
   document.title = (titles[name] || "Today") + " · Build in Public";
-  renderNav(name === "post" ? "posts" : name);
+  renderTabs(name === "post" ? "posts" : name);
+  $("#proj-lbl").innerHTML = projLabel();
   if (name !== "post") savedBody = null;
   const v = $("#view");
   v.innerHTML = name === "posts" ? viewPosts() : name === "post" ? viewPost(arg) : name === "calendar" ? viewCalendar()
-    : name === "timeline" ? viewTimeline(q) : name === "media" ? viewMedia() : name === "projects" ? viewProjects() : viewToday();
-  if (name === "posts" && postsMode === "board") wireBoard();
+    : name === "timeline" ? viewTimeline(q) : name === "media" ? viewMedia() : viewToday();
+  if (name === "posts") wirePosts();
   if (name === "post") wirePost(arg);
   if (name === "calendar") wireCalendar();
+  mountBips(v); brandBip.redraw();
 }
-window.addEventListener("hashchange", () => { if (!location.hash.startsWith("#/post/")) savedBody = null; route(); window.scrollTo(0, 0); });
-
+window.addEventListener("hashchange", () => { if (!location.hash.startsWith("#/post/")) savedBody = null; closeModal(); route(); window.scrollTo(0, 0); });
 document.addEventListener("click", e => {
-  const t = e.target.closest("button"); if (!t) return;
-  const d = t.dataset, P = id => POSTS.find(p => p.id === id);
+  const t = e.target.closest("button"); if (!t || t.closest("#sheet, #proj-pop")) return;
+  const d = t.dataset, Pp = id => POSTS.find(p => p.id === id);
   if (d.mode) { postsMode = d.mode; route(); }
+  else if (d.ff) { fmtFilter = d.ff; route(); }
   else if (d.mf) { mediaFilter = d.mf; route(); }
-  else if (d.copy) copy(P(d.copy).body, "Post copied. Paste it, then mark it posted.");
-  else if (d.copyThread) copy(splitThread(P(d.copyThread).body).map((s, i, a) => `${s} ${i + 1}/${a.length}`).join("\n\n"), "Thread copied with 1/n numbering");
-  else if (d.posted) { const p = P(d.posted); setStatus(p, "posted"); p.link = "https://x.com/…"; route(); }
-  else if (d.approve) { setStatus(P(d.approve), "approved"); route(); }
-  else if (d.skip) { setStatus(P(d.skip), "skipped"); route(); }
-  else if (d.prompt) copy(`write post ${d.prompt} for ${d.proj}`, `Copied “write post ${d.prompt} for ${d.proj}”. Paste it to your agent.`);
-  else if (d.suggest) copy(`suggest a post from session ${d.suggest}`, "Prompt copied. Paste it to your agent.");
-  else if (d.shotOk) { SHOTS[d.shotOk].state = "approved"; toast("Approved. It can now be attached to posts."); route(); }
-  else if (d.shotNo) { delete SHOTS[d.shotNo]; toast("Discarded"); route(); }
-});
-document.addEventListener("change", e => {
-  const k = e.target.dataset.modeProj; if (!k) return;
-  proj(k).mode = e.target.value; toast(`${k} → ${e.target.selectedOptions[0].text}`);
-  $("#proj").innerHTML = `<option value="all">All projects</option>` + PROJECTS.filter(p => p.mode !== "ignore").map(p => `<option value="${p.key}">${esc(p.name)}</option>`).join("");
+  else if (d.view) openViewer(d.view);
+  else if ("new" in d) composeModal();
+  else if (d.newFrom) { const s = sess(d.newFrom); composeModal({ project: s.project, session: s.id }); }
+  else if (d.newSub) newSubModal(d.newSub);
+  else if (d.genSugg) { const s = SUGGESTED.find(x => x.n === +d.genSugg), p = POSTS.find(x => x.id === "sugg-" + s.n); p.status = "draft"; p.body = ""; p.title = s.title; runGenerate(p, sess(s.session) || SESSIONS.find(x => x.project === s.project)); }
+  else if (d.copy) copy(Pp(d.copy).body, "Copied. Paste it, then mark it posted.");
+  else if (d.copyThread) copy(splitThread(Pp(d.copyThread).body).map((s, i, a) => `${s} ${i + 1}/${a.length}`).join("\n\n"), "Thread copied with 1/n numbers");
+  else if (d.posted) { const p = Pp(d.posted); setStatus(p, "posted"); p.link = "https://x.com/…"; route(); }
+  else if (d.approve) { setStatus(Pp(d.approve), "approved"); route(); }
+  else if (d.skip) { setStatus(Pp(d.skip), "skipped"); route(); }
+  else if (d.shotOk) { SHOTS[d.shotOk].state = "approved"; toast("Approved. It can go in posts now."); route(); }
+  else if (d.shotNo) { delete SHOTS[d.shotNo]; toast("Discarded", "idle"); route(); }
 });
 route();
 </script>

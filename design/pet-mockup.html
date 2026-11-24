@@ -51,11 +51,12 @@ button, input, select, textarea { font: inherit; color: inherit }
 .dock i { width: 40px; height: 40px; border-radius: 10px; background: linear-gradient(135deg, var(--c1), var(--c2)) }
 
 /* ---------- Bip ---------- */
-.pet { position: fixed; z-index: 40; width: 60px; height: 54px; cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none;
+.pet { position: fixed; z-index: 40; width: 64px; height: 61px; cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none;
   transition: left .35s cubic-bezier(.3,.7,.3,1), top .35s cubic-bezier(.3,.7,.3,1), transform .3s ease, opacity .3s }
 .pet.dragging { transition: none; cursor: grabbing }
 .pet.walking { transition: left var(--walk, 1.6s) linear, top .35s ease }
-.pet canvas { position: absolute; inset: 0; width: 60px; height: 54px; image-rendering: pixelated; image-rendering: crisp-edges }
+.pet .mascot { position: absolute; inset: 0; display: block }
+.pet .mascot svg.bip, .pet .mascot img { width: 100%; height: 100%; display: block; overflow: visible; object-fit: contain }
 .fx { position: absolute; left: 50%; top: -14px; font: 700 14px/1 var(--mono); color: var(--muted); pointer-events: none; white-space: nowrap }
 .fx.zz { animation: zz 2.6s ease-in-out infinite } @keyframes zz { 0% { opacity: 0; transform: translate(4px, 6px) } 30% { opacity: 1 } 100% { opacity: 0; transform: translate(16px, -14px) } }
 .fx.q { color: var(--ink); left: 62%; animation: bobq 1.4s ease-in-out infinite } @keyframes bobq { 50% { transform: translateY(-3px) rotate(12deg) } }
@@ -241,6 +242,8 @@ select.sel-in { height: 26px; border: 1px solid var(--line); border-radius: 7px;
     </div>
     <h5>Moods</h5>
     <div class="moods" id="moods"></div>
+    <h5>Mascot</h5>
+    <div class="seg" role="group" aria-label="Mascot"><button data-who="bip" aria-pressed="true">Bip</button><button data-who="sarthak" aria-pressed="false">Sarthak's buddy</button></div>
     <h5>Where Bip sits</h5>
     <div class="seg" role="group" aria-label="Where Bip sits"><button data-home="window" aria-pressed="true">Active window</button><button data-home="corner" aria-pressed="false">Screen corner</button></div>
     <label class="chk"><input type="checkbox" id="wander" checked> Wanders now and then</label>
@@ -263,7 +266,7 @@ select.sel-in { height: 26px; border: 1px solid var(--line); border-radius: 7px;
 </aside>
 
 <div class="pet" id="pet" role="button" tabindex="0" aria-label="Bip, your build-in-public pet. Click for actions." aria-haspopup="menu">
-  <canvas id="cv" width="30" height="27"></canvas>
+  <span class="mascot" id="cv"></span>
   <span class="dot" aria-hidden="true"></span>
 </div>
 <div class="bubble" id="bubble" role="status" aria-live="polite"></div>
@@ -286,174 +289,27 @@ select.sel-in { height: 26px; border: 1px solid var(--line); border-radius: 7px;
 <div class="shade" id="shade"><div class="tip">Drag to capture a region · Esc to cancel</div><div class="sel" id="sel" hidden></div></div>
 <div class="flash" id="flash"></div>
 
+<script src="bip.js"></script>
 <script>
 const $ = s => document.querySelector(s);
-const pet = $("#pet"), bubble = $("#bubble"), card = $("#card"), cv = $("#cv"), ctx = cv.getContext("2d");
-const W = 60, H = 54;
+const pet = $("#pet"), bubble = $("#bubble"), card = $("#card"), cv = $("#cv");
+const W = 64, H = 61;
 
-/* =====================================================================
-   SPRITE — Bip is built from shapes (body, ears, feet, accessories) that
-   are rasterized onto a 30×27 pixel grid and shown at 2× (body ≈ 24 px →
-   48 px on screen). Each shape gets a 1-px outline, so overlapping parts
-   read clearly. scripts/build_sprites.py does the same in Python and
-   writes every frame as a GIF.
-   ===================================================================== */
-const CW = 30, CH = 27, OUT = "#2b2140";
-const THEMES = {
-  peach:    { b: "#ffcf8a", h: "#fff0d4", d: "#f0b060", k: "#ff9aa2", e: OUT, c: "#ff8f9c" },
-  mint:     { b: "#a8ecc4", h: "#e6fff0", d: "#7fd2a2", k: "#ff9aa2", e: OUT, c: "#ff8f9c" },
-  sky:      { b: "#a9d4ff", h: "#e8f4ff", d: "#80b9f3", k: "#ffb3c1", e: OUT, c: "#ff8fa8" },
-  lilac:    { b: "#d4b8ff", h: "#f3ebff", d: "#b597f0", k: "#ff9ccc", e: OUT, c: "#ff8fb8" },
-  charcoal: { b: "#5b5f6b", h: "#8a8f9c", d: "#454852", k: "#ff9aa2", e: "#ffffff", c: "#ff8fa0" },
-};
+/* Bip's drawing code lives in bip.js, shared with the dashboard and the character sheet. */
+const { THEMES, MOODS, CLIP_NAMES } = Bip;
 const PROJECTS = { "invoice-ai": { c: "#ef7d32", d: "#b9581b", file: "api/webhooks/stripe.ts · invoice-ai" }, "build-in-public": { c: "#5b7bff", d: "#3651c9", file: "src/buildinpublic/pet/brain.py · build-in-public" } };
-// face parts, centred on their anchor
-const EYE = {
-  open:    ["wee", "eee", "eee", ".e."],
-  line:    ["...", "...", "eee", "..."],
-  happy:   ["...", ".e.", "e.e", "..."],
-  content: ["...", "e.e", ".e.", "..."],
-  up:      ["wee", "eee", ".e.", "..."],
-  down:    ["...", "...", "eee", "eee"],
-  big:     [".ee.", "weee", "eeee", "eeee", ".ee."],
-  dizzy:   ["eee", "..e", "e.e", "eee"],
-};
-const MOUTH = {
-  smile: ["m..m", ".mm."], open: ["mmmm", ".pp."], o: [".m.", "m.m", ".m."], flat: ["mm"],
-  wavy: ["m.m.", ".m.m"], smug: ["...m", "mmm."], cat: ["m.m.m", ".m.m."], tiny: ["m"],
-};
-// held props (already outlined)
-const PROP = {
-  laptop:  ["..oooooooooo..", "..oKKKKKKKKo..", "..oKKKKwwKKo..", "..oKKKKKKKKo..", "oooooooooooooo", "oggggggggggggo", "oooooooooooooo"],
-  laptop2: ["..oooooooooo..", "..oKKKKKKKKo..", "..oKKKKKKKKo..", "..oKKKKKKKKo..", "oooooooooooooo", "oggggggggggggo", "oooooooooooooo"],
-  book:    [".oooo..oooo.", "oWWWWooWWWWo", "oWggWooWggWo", "oWWWWooWWWWo", "oWggWooWggWo", ".oooooooooo."],
-  flask:   [".oo.", "oGGo", "oGWo", "oGGo", "ollo", "oWlo", "ollo", ".oo."],
-  flask2:  [".oo.", "oGWo", "oGGo", "oGGo", "olWo", "ollo", "ollo", ".oo."],
-  sign:    ["ooooooo", "oWBBBWo", "oWWWBWo", "oWWBBWo", "oWWBWWo", "oWWWWWo", "oWWBWWo", "ooooooo", "...u...", "...u...", "...u...", "...u...", "...u..."],
-  card:    ["ooooo", "oWWWo", "oggWo", "oWWWo", "oggWo", "ooooo"],
-  spark:   ["..y..", ".yYy.", "yYWYy", ".yYy.", "..y.."],
-  star:    ["..Y..", ".YyY.", "YyyyY", ".Y.Y."],
-};
-// ear poses in degrees (left, right); 0 = straight up
-const EARS = {
-  up: [-12, 12], perk: [-3, 3], back: [-38, 38], droop: [-58, 58], flop: [-12, 84], tilt: [-30, 5],
-  proud: [-6, 6], twitch: [-12, 12], listen: [-2, -8],
-};
-const MOODS = {
-  // resting / work states
-  idle:      { eyes: "open",    mouth: "smile", ears: "up" },
-  editing:   { eyes: "line",    mouth: "flat",  ears: "back",   prop: "laptop" },
-  reading:   { eyes: "down",    mouth: "tiny",  ears: "tilt",   prop: "book", scan: true },
-  testing:   { eyes: "open",    mouth: "o",     ears: "perk",   prop: "flask", look: 1 },
-  waiting:   { eyes: "open",    mouth: "smile", ears: "perk",   prop: "sign", fx: "q", bounce: true },
-  sleepy:    { eyes: "line",    mouth: "flat",  ears: "droop",  fx: "zz", hat: "nightcap" },
-  // reactions
-  curious:   { eyes: "open",    mouth: "o",     ears: "twitch", prop: "spark", look: 1 },
-  idea:      { eyes: "open",    mouth: "smile", ears: "perk",   prop: "card" },
-  happy:     { eyes: "happy",   mouth: "open",  ears: "up",     anim: "hop", wiggle: true },
-  surprised: { eyes: "big",     mouth: "o",     ears: "perk",   fx: "bang", anim: "boing", lift: -1 },
-  proud:     { eyes: "content", mouth: "smug",  ears: "proud",  prop: "star", wiggle: true },
-  thinking:  { eyes: "up",      mouth: "flat",  ears: "tilt",   fx: "dots" },
-  confused:  { eyes: ["open", "line"], mouth: "wavy", ears: "flop", fx: "q" },
-  // clicks
-  giggle:    { eyes: "happy",   mouth: "cat",   ears: "up",     anim: "giggle", wiggle: true },
-  dizzy:     { eyes: "dizzy",   mouth: "wavy",  ears: "flop",   fx: "orbit", anim: "wobble" },
-  petted:    { eyes: "content", mouth: "cat",   ears: "droop",  anim: "purr" },
-  // celebration + voice
-  party:     { eyes: "happy",   mouth: "open",  ears: "proud",  hat: "party", anim: "dance", wiggle: true },
-  listening: { eyes: "open",    mouth: "tiny",  ears: "listen", fx: "note", lift: -1 },
-};
 const MOOD_GROUPS = ["idle", "editing", "reading", "testing", "waiting", "sleepy", "curious", "idea", "happy", "surprised", "proud", "thinking", "confused", "giggle", "dizzy", "petted", "party", "listening"];
-const CLIP = [[], [[0, 0, "L"], [-1, 0, "l"]], [[0, 0, "y"], [-1, 0, "f"], [1, 0, "f"], [0, -1, "f"], [0, 1, "f"]], [[0, 0, "y"], [-1, 0, "f"], [1, 0, "f"], [0, -1, "f"], [0, 1, "f"], [3, 1, "y"], [2, 1, "F"], [4, 1, "F"], [3, 0, "F"], [3, 2, "F"]]];
-const CLIP_NAMES = ["none", "bud", "flower", "two flowers"];
 
-let theme = "peach", stage = 2, project = "invoice-ai", facing = 1, lookCursor = 0, blinkUntil = 0;
+let who = "bip", theme = "peach", stage = 2, project = "invoice-ai", facing = 1, lookCursor = 0, blinkUntil = 0;
 const acc = { scarf: true, phones: true, hats: true };
 const fr = { sx: 1, sy: 1, dx: 0, dy: 0, feet: 0, earAlt: false, frame: 0 };
 
 function draw(moodName) {
-  const M = MOODS[moodName], T = THEMES[theme], P = PROJECTS[project];
-  const pal = { o: OUT, b: T.b, h: T.h, d: T.d, k: T.k, e: T.e, c: T.c, m: T.e, w: "#ffffff", W: "#ffffff", p: "#ff6b81", K: "#262a33", q: "#3d4250",
-    g: "#b9c0cc", G: "#e6eef5", s: P.c, S: P.d, r: "#ff5a7a", y: "#ffd23f", Y: "#ffb000", B: "#4c6ef5", n: "#3949ab", u: "#b87a43", l: "#4cc584", L: "#2f9e57", f: "#ff7eb3", F: "#ffa94d" };
-  const G = Array.from({ length: CH }, () => Array(CW).fill(null));
-  const shape = (mask, fill) => {
-    const Mk = Array.from({ length: CH }, (_, y) => Array.from({ length: CW }, (_, x) => mask(x + .5, y + .5)));
-    for (let y = 0; y < CH; y++) for (let x = 0; x < CW; x++)
-      if (!Mk[y][x] && (Mk[y - 1]?.[x] || Mk[y + 1]?.[x] || Mk[y][x - 1] || Mk[y][x + 1])) G[y][x] = "o";
-    for (let y = 0; y < CH; y++) for (let x = 0; x < CW; x++) if (Mk[y][x]) G[y][x] = fill(x + .5, y + .5);
-  };
-  const put = (pat, cx, cy) => {
-    const h = pat.length, w = Math.max(...pat.map(r => r.length));
-    const x0 = Math.round(cx - w / 2), y0 = Math.round(cy - h / 2);
-    pat.forEach((r, j) => [...r].forEach((ch, i) => { const x = x0 + i, y = y0 + j; if (ch !== "." && G[y] && x >= 0 && x < CW) G[y][x] = ch; }));
-  };
-  const ell = (x, y, ex, ey, rx, ry, a = 0) => { const dx = x - ex, dy = y - ey, c = Math.cos(a), s = Math.sin(a); const u = dx * c + dy * s, v = -dx * s + dy * c; return u * u / (rx * rx) + v * v / (ry * ry) <= 1; };
-
-  const sx = fr.sx, sy = fr.sy, cx = 15, a = 10.8 * sx, bt = 8.2 * sy, bb = 5.8 * sy, bottom = 23.5, cy = bottom - bb, top = cy - bt;
-  const inBody = (x, y) => Math.abs((x - cx) / a) ** 2.6 + Math.abs((y - cy) / (y < cy ? bt : bb)) ** 2.6 <= 1;
-  const lift = M.lift || 0;
-  // ears
-  let [la, ra] = EARS[M.ears];
-  if (M.ears === "twitch" && fr.frame % 14 < 2) ra += 18;
-  if (M.wiggle && fr.earAlt) { la -= 9; ra += 9; }
-  if (moodName === "listening" && fr.earAlt) ra -= 4;
-  [[-1, la], [1, ra]].forEach(([side, deg]) => {
-    const an = deg * Math.PI / 180, bx = cx + side * 4.7 * sx, by = top + 2.8 + lift, rx = 2.4, ry = 6.1;
-    const ex = bx + Math.sin(an) * (ry - 1.5), ey = by - Math.cos(an) * (ry - 1.5);
-    const ix = bx + Math.sin(an) * (ry - 2.0), iy = by - Math.cos(an) * (ry - 2.0);
-    shape((x, y) => ell(x, y, ex, ey, rx, ry, an), (x, y) => ell(x, y, ix, iy, 1.05, ry - 2.6, an) ? "k" : "b");
-  });
-  // feet (behind the body, so the body's outline sits on top of them)
-  [-1, 1].forEach(side => { const up = fr.feet === side ? 1 : 0; shape((x, y) => ell(x, y, cx + side * 5.0 + (fr.feet ? side * .4 : 0), 24.4 - up, 2.7, 1.45), () => "d"); });
-  // body + a small shine high on the left
-  shape(inBody, (x, y) => ell(x, y, cx - 6.2 * sx, top + 2.4, 1.9, .9) || ell(x, y, cx - 3.6 * sx, top + 1.5, .7, .6) ? "h" : "b");
-  // scarf in the project's colour
-  if (acc.scarf) { const y1 = cy + 2.9, y2 = cy + 4.7;
-    shape((x, y) => (inBody(x, y) && y > y1 && y < y2) || (x > cx + 4.4 && x < cx + 7.4 && y > y1 && y < 25.8),
-      (x, y) => y > y2 ? (Math.floor(y) % 2 ? "s" : "S") : (Math.floor(x) % 4 === 0 ? "S" : "s")); }
-  // hats
-  const hat = M.hat && acc.hats ? M.hat : (acc.phones && deepWork() && ["editing", "reading", "testing", "thinking"].includes(moodName) ? "phones" : null);
-  if (hat === "phones") {
-    const hy = cy - 1;
-    shape((x, y) => y < hy - 3 && ell(x, y, cx, hy, 12.8, bt + 3.4) && !ell(x, y, cx, hy, 11.9, bt + 2.5), () => "q");
-    [-1, 1].forEach(side => shape((x, y) => ell(x, y, cx + side * 12.1, hy - .4, 1.7, 2.8), (x, y) => y < hy - 1.6 ? "g" : "K"));
-  }
-  // streak flower clip, tucked at the base of the right ear
-  CLIP[stage].forEach(([dx, dy, ch]) => { const x = Math.round(cx + 7.2 + dx), y = Math.round(top + 1.6 + dy); if (G[y]) G[y][x] = ch; });
-  // face
-  const look = M.look ?? (M.scan ? (Math.floor(fr.frame / 10) % 2 ? 1 : -1) : lookCursor);
-  const fcx = cx + look, fcy = cy - .7 + (M.lift || 0) * .5;
-  const blink = performance.now() < blinkUntil && ["open", "up", "big"].includes(Array.isArray(M.eyes) ? "x" : M.eyes);
-  const [le, re] = Array.isArray(M.eyes) ? M.eyes : [M.eyes, M.eyes];
-  put(EYE[blink ? "line" : le], fcx - 4.5, fcy - .7);
-  put(EYE[blink ? "line" : re], fcx + 4.5, fcy - .7);
-  put(["ccc"], fcx - 7.7, fcy + 2.3); put(["ccc"], fcx + 7.7, fcy + 2.3);
-  put(MOUTH[M.mouth], fcx, fcy + 3.0);
-  if (hat === "party") {
-    const ay = top - 6.6, by2 = top + 1.6;
-    shape((x, y) => y > ay && y < by2 && Math.abs(x - cx) <= 3.9 * (y - ay) / (by2 - ay), (x, y) => Math.floor((y - ay) / 1.7) % 2 ? "r" : "y");
-    shape((x, y) => ell(x, y, cx, ay, 1.3, 1.3), () => "Y");
-  }
-  if (hat === "nightcap") {
-    const A = [cx - 5.4, top + 2.6], B = [cx + 5.4, top + 2.6], C = [cx + 7.5, top - 6.2];
-    const sgn = (p, q, r) => (p[0] - r[0]) * (q[1] - r[1]) - (q[0] - r[0]) * (p[1] - r[1]);
-    shape((x, y) => { const P0 = [x, y], d1 = sgn(P0, A, B), d2 = sgn(P0, B, C), d3 = sgn(P0, C, A); return !((d1 < 0 || d2 < 0 || d3 < 0) && (d1 > 0 || d2 > 0 || d3 > 0)); }, (x, y) => y > top + 1.1 ? "W" : "n");
-    shape((x, y) => ell(x, y, C[0], C[1], 1.3, 1.3), () => "W");
-  }
-  // props
-  const alt = fr.frame % 6 < 3;
-  if (M.prop === "laptop") put(alt ? PROP.laptop : PROP.laptop2, cx, 22.4);
-  if (M.prop === "book") put(PROP.book, cx, 22.4);
-  if (M.prop === "flask") put(alt ? PROP.flask : PROP.flask2, cx + 11.4, 19.8);
-  if (M.prop === "sign") put(PROP.sign, cx + 10.6, top + 1.2 + (M.bounce && alt ? -1 : 0));
-  if (M.prop === "card") put(PROP.card, cx + 11.4, cy);
-  if (M.prop === "spark" && alt) put(PROP.spark, cx + 11, top - 4);
-  if (M.prop === "star") put(PROP.star, cx + 11, top - 3);
-
-  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, CW, CH);
-  if (facing < 0) ctx.setTransform(-1, 0, 0, 1, CW, 0);
-  for (let y = 0; y < CH; y++) for (let x = 0; x < CW; x++) { const k = G[y][x]; if (k && pal[k]) { ctx.fillStyle = pal[k]; ctx.fillRect(x, y, 1, 1); } }
-  cv.style.transform = `translate(${fr.dx * 2}px, ${fr.dy * 2}px)`;
+  Bip.mascot(cv, { who, mood: moodName, theme, stage, scarf: acc.scarf ? PROJECTS[project] : null, hats: acc.hats, phones: acc.phones && deepWork(),
+    frame: fr.frame, sx: fr.sx, sy: fr.sy, feet: fr.feet, earAlt: fr.earAlt, look: lookCursor, blink: performance.now() < blinkUntil, facing });
+  // Bip squashes inside its SVG; Sarthak's buddy is a picture, so squash and flip it here
+  cv.style.transformOrigin = "50% 95%";
+  cv.style.transform = `translate(${fr.dx * 3}px, ${fr.dy * 3}px)` + (who === "sarthak" ? ` scale(${(facing < 0 ? -1 : 1) * fr.sx}, ${fr.sy})` : "");
 }
 
 /* ---------- moods, transient reactions and the animation loop ---------- */
@@ -496,7 +352,7 @@ setInterval(() => {
   }
   if (anim) { const [sx, sy, dx, dy, , face] = anim.f[anim.i]; Object.assign(fr, { sx, sy, dx, dy }); if (face) facing = face; fr.feet = 0; }
   else if (pet.classList.contains("walking")) { const ph = Math.floor(now / 170) % 2; Object.assign(fr, { sx: ph ? 1.04 : .97, sy: ph ? .95 : 1.03, dx: 0, dy: ph ? 0 : -1, feet: ph ? -1 : 1 }); }
-  else { const br = Math.floor(now / 900) % 2; Object.assign(fr, { sx: br ? 1.035 : 1, sy: br ? .96 : 1, dx: 0, dy: MOODS[m].bounce && Math.floor(now / 450) % 4 === 0 ? -1 : 0, feet: 0 }); }
+  else { const br = Math.sin(now / 450); Object.assign(fr, { sx: 1 + .02 * br, sy: 1 - .025 * br, dx: 0, dy: MOODS[m].bounce && Math.floor(now / 450) % 4 === 0 ? -1 : 0, feet: 0 }); }
   fr.earAlt = Math.floor(now / 160) % 2 === 0;
   syncFx(); draw(m);
   if (tickN % 6 === 0) markMood();
@@ -755,6 +611,10 @@ $("#fullscreen").onchange = e => { pet.classList.toggle("hidden", e.target.check
 $("#focus").onchange = e => log("focus", e.target.checked ? "Focus on → visible but quiet" : "Focus off");
 $("#peek").onchange = applyPeek;
 $("#wander").onchange = e => { if (!e.target.checked) stopWalk(); };
+document.querySelectorAll("[data-who]").forEach(b => b.onclick = () => {
+  who = b.dataset.who; document.querySelectorAll("[data-who]").forEach(x => x.setAttribute("aria-pressed", x === b));
+  play("hop"); log("mascot", who === "bip" ? "Bip is back" : "Sarthak's buddy takes over; each mood shows its closest pose");
+});
 document.querySelectorAll("[data-home]").forEach(b => b.onclick = () => {
   homeMode = b.dataset.home; document.querySelectorAll("[data-home]").forEach(x => x.setAttribute("aria-pressed", x === b));
   play("hop"); goHome(homeMode === "window" ? "sits on the active window's title bar" : "sits in the screen corner");

@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Meet the Mascots</title>
+<style>
+:root {
+  --bg: #fbfaf8; --card: #ffffff; --fg: #1c1b19; --muted: #85827b; --faint: #b9b6af; --line: #ecebe6; --hover: #f4f3ef; --stage: #f2efe8;
+  --sans: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --serif: "Newsreader", "Iowan Old Style", Georgia, "Times New Roman", serif;
+  --mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: #111110; --card: #171716; --fg: #ecebe6; --muted: #8f8c85; --faint: #5c5a55; --line: #252422; --hover: #1c1c1a; --stage: #1b1b19; color-scheme: dark } }
+:root[data-theme="dark"] { --bg: #111110; --card: #171716; --fg: #ecebe6; --muted: #8f8c85; --faint: #5c5a55; --line: #252422; --hover: #1c1c1a; --stage: #1b1b19; color-scheme: dark }
+:root[data-theme="light"] { color-scheme: light }
+* { box-sizing: border-box }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 400 14px/1.55 var(--sans); -webkit-font-smoothing: antialiased }
+button { font: inherit; color: inherit }
+:focus-visible { outline: 2px solid #3553d6; outline-offset: 2px; border-radius: 8px }
+.mascot { display: block; position: relative }
+.mascot svg.bip { width: 100%; height: 100%; display: block; overflow: visible }
+.wrap { max-width: 1040px; margin: 0 auto; padding: 48px 32px 96px; display: grid; gap: 64px }
+.top { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; color: var(--muted); font-size: 13px }
+.top a { color: inherit } .top a:hover { color: var(--fg) }
+.quiet { border: 0; background: none; color: var(--muted); cursor: pointer; padding: 6px 8px; border-radius: 8px } .quiet:hover { background: var(--hover); color: var(--fg) }
+.toggle { display: inline-flex; gap: 2px; padding: 3px; border-radius: 11px; background: var(--hover) }
+.toggle button { border: 0; background: transparent; height: 30px; padding: 0 14px; border-radius: 8px; cursor: pointer; color: var(--muted); font-size: 13px; white-space: nowrap }
+.toggle button[aria-pressed="true"] { background: var(--card); color: var(--fg); box-shadow: 0 1px 2px rgba(0,0,0,.08) }
+
+.hero { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 48px; align-items: center }
+.stage { background: radial-gradient(70% 60% at 50% 40%, color-mix(in srgb, var(--card) 80%, var(--stage)), var(--stage)); border-radius: 28px; aspect-ratio: 1; display: grid; place-items: center; position: relative; cursor: pointer; overflow: hidden }
+.stage .mascot { width: 72%; aspect-ratio: 200/190 }
+.stage .mood { position: absolute; left: 20px; bottom: 16px; font: 12px var(--mono); color: var(--muted) }
+.stage .hint { position: absolute; right: 20px; bottom: 16px; font-size: 12px; color: var(--faint) }
+.stage .pick { position: absolute; top: 16px; left: 50%; transform: translateX(-50%) }
+h1 { font: 400 54px/1.02 var(--serif); letter-spacing: -0.03em; margin: 0 0 18px }
+h1 i { color: var(--muted) }
+.lede { font-size: 16px; color: var(--muted); max-width: 46ch; display: grid; gap: 12px }
+.lede b { color: var(--fg); font-weight: 500 }
+.facts { display: grid; grid-template-columns: auto 1fr; gap: 8px 20px; margin-top: 24px; font-size: 13px }
+.facts dt { color: var(--muted) } .facts dd { margin: 0 }
+
+h2 { font: 400 26px/1.2 var(--serif); letter-spacing: -0.015em; margin: 0 0 6px }
+.sub { color: var(--muted); margin: 0 0 24px; max-width: 64ch }
+.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 20px }
+.who { display: grid; grid-template-columns: 120px 1fr; gap: 18px; align-items: center; padding: 20px; border-radius: 18px; background: var(--card); border: 1px solid var(--line); cursor: pointer; text-align: left }
+.who[aria-pressed="true"] { border-color: var(--fg) }
+.who .mascot { width: 120px; aspect-ratio: 200/190 }
+.who b { font-weight: 500; font-size: 15px; display: block; margin-bottom: 4px }
+.who span { color: var(--muted); font-size: 13px; line-height: 1.45 }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 28px 20px }
+.cell { display: grid; gap: 8px; border: 0; background: none; padding: 0; text-align: left; cursor: pointer }
+.cell .box { background: var(--stage); border-radius: 16px; aspect-ratio: 1; display: grid; place-items: center; transition: transform .15s }
+.cell:hover .box { transform: translateY(-2px) }
+.cell .mascot { width: 78%; aspect-ratio: 200/190 }
+.cell b { font-weight: 500; font-size: 13.5px }
+.cell span { font-size: 12.5px; color: var(--muted); line-height: 1.4 }
+.group { font: 12px var(--mono); color: var(--faint); grid-column: 1 / -1; margin-top: 8px; padding-bottom: 6px; border-bottom: 1px solid var(--line) }
+.sizes { display: flex; gap: 36px; align-items: flex-end; flex-wrap: wrap }
+.sizes figure { margin: 0; display: grid; gap: 8px; justify-items: start; font-size: 12.5px; color: var(--muted) }
+.rules { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px 32px; font-size: 13.5px }
+.rules div { padding: 12px 0; border-top: 1px solid var(--line) }
+.rules b { font-weight: 500; display: block; margin-bottom: 2px }
+.rules span { color: var(--muted) }
+.bip-only.off { display: none }
+@media (max-width: 760px) {
+  .wrap { padding: 28px 16px 72px; gap: 48px }
+  .hero, .pair { grid-template-columns: minmax(0, 1fr); gap: 24px }
+  h1 { font-size: 40px }
+  .who { grid-template-columns: 88px 1fr } .who .mascot { width: 88px }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top"><span>Build in Public · mascots</span><span><a href="pet-mockup.html">Desk pet</a> · <a href="dashboard-mockup.html">Dashboard</a> · <button class="quiet" id="theme">Light / dark</button></span></div>
+
+  <section class="hero">
+    <div class="stage" id="stage" role="button" tabindex="0" aria-label="The mascot. Click to see the next mood.">
+      <div class="pick toggle" role="group" aria-label="Mascot"><button data-who="bip" aria-pressed="true">Bip</button><button data-who="sarthak" aria-pressed="false">Sarthak's buddy</button></div>
+      <span class="mascot" id="big"></span>
+      <span class="mood" id="mood-l">idle</span><span class="hint">Click for the next mood</span>
+    </div>
+    <div>
+      <h1 id="h1">Two mascots. <i>Pick your buddy.</i></h1>
+      <div class="lede">
+        <p><b>Bip</b> is a squishy jelly blob with bunny ears and little feet, drawn as a soft 3D toy that can move every part: ears, eyes, feet, squash and stretch.</p>
+        <p><b>Sarthak's buddy</b> is a charcoal felt block with a screen for a face, rendered in seven poses: notebook, shipped, excited, thinking, detective, grumpy and sleepy.</p>
+        <p>Both keep the same promise: <b>they never post for you.</b> You choose which one keeps you company.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>The two</h2>
+    <p class="sub">Click one to show it everywhere on this page. The dashboard and the desk pet have the same switch.</p>
+    <div class="pair">
+      <button class="who" data-who="bip" aria-pressed="true"><span class="mascot" data-m="pair-bip"></span><span><b>Bip</b><span>Fully animated: 18 moods, ears that act, feet that walk, accessories that carry meaning (project scarf, headphones, party hat, night cap, streak flower). Drawn in code, five colours.</span></span></button>
+      <button class="who" data-who="sarthak" aria-pressed="false"><span class="mascot" data-m="pair-sarthak"></span><span><b>Sarthak's buddy</b><span>Seven hand-picked 3D renders. Each of Bip's 18 moods maps to the closest pose, and the pose breathes gently. Needs a name.</span></span></button>
+    </div>
+  </section>
+
+  <section>
+    <h2>Moods</h2>
+    <p class="sub" id="moods-sub">Click any mood to see it big.</p>
+    <div class="grid" id="moods"></div>
+  </section>
+
+  <section>
+    <h2>Sarthak's seven poses</h2>
+    <p class="sub">The source renders live in <code>Mascot/</code>. These web copies (in <code>design/mascot/</code>) are 640px WebP files, about 30 KB each. Five of the originals had a checkerboard painted into the pixels, which was removed for these copies; transparent exports from Sarthak would be cleaner.</p>
+    <div class="grid" id="poses"></div>
+  </section>
+
+  <section class="bip-only">
+    <h2>Bip's colours</h2>
+    <p class="sub">Five bodies. The scarf always takes the colour of the project Bip is following. Charcoal Bip borrows Sarthak's big white eyes.</p>
+    <div class="grid" id="colours"></div>
+  </section>
+
+  <section class="bip-only">
+    <h2>Bip's accessories</h2>
+    <p class="sub">Each one tells you something: which project, deep work, a celebration, bedtime, your streak.</p>
+    <div class="grid" id="accessories"></div>
+  </section>
+
+  <section>
+    <h2>Sizes</h2>
+    <p class="sub">Both mascots are smooth at any size, from a 24px avatar to a full hero.</p>
+    <div class="sizes" id="sizes"></div>
+  </section>
+
+  <section>
+    <h2>Rules for both</h2>
+    <div class="rules">
+      <div><b>Never sad about you</b><span>No wilting, no crying, no guilt when you skip a day. Grumpy is only ever aimed at a bug.</span></div>
+      <div><b>Never in the way</b><span>Sits above windows, dodges a rushing cursor, steps out of screenshots.</span></div>
+      <div><b>Never loud</b><span>No sounds, slow small motion, one bubble every 45 minutes at most.</span></div>
+      <div><b>Never a stand-in for you</b><span>Drafts nothing on its own and posts nothing at all.</span></div>
+      <div><b>Readable at a glance</b><span>Bip's ears and the buddy's pose each say the mood from across the screen.</span></div>
+      <div><b>One at a time</b><span>You pick a mascot; the dashboard, the desk pet and the gist all use it.</span></div>
+    </div>
+  </section>
+</div>
+
+<script src="bip.js"></script>
+<script>
+const $ = s => document.querySelector(s);
+const PROJ = { c: "#5b7bff", d: "#3651c9" };
+const INFO = {
+  idle: ["Idle", "Breathing, blinking, waiting."], editing: ["Editing", "Your agent is writing code."], reading: ["Reading", "Your agent is reading files."],
+  testing: ["Testing", "Tests are running."], waiting: ["Waiting for you", "Your agent needs an answer."], sleepy: ["Sleepy", "Late, and nothing running."],
+  curious: ["Curious", "Something's worth capturing."], idea: ["Has an idea", "A post suggestion is ready."], happy: ["Happy", "You saved something."],
+  surprised: ["Surprised", "Tests finally passed."], proud: ["Proud", "You posted."], thinking: ["Thinking", "Waiting on a draft."],
+  confused: ["Confused", "The same test keeps failing."], giggle: ["Giggle", "You clicked it."], dizzy: ["Dizzy", "You clicked it three times."],
+  petted: ["Petted", "You rubbed it."], party: ["Party", "A milestone."], listening: ["Listening", "Recording a voice note."],
+};
+const POSE_INFO = { notebook: "Taking notes. Idle, editing, has an idea.", shipped: "Shipped it. Proud, party.", excited: "Arms up. Happy, surprised, petted.",
+  thinking: "Hmm. Thinking, waiting, listening.", detective: "On the case. Reading, testing, curious.", grumpy: "Grr, that bug. Confused when tests keep failing.", sleepy: "Late night." };
+const GROUPS = [["What your agent is doing", ["editing", "reading", "testing", "waiting"]], ["Resting", ["idle", "sleepy"]],
+  ["Reactions to your work", ["curious", "idea", "happy", "surprised", "proud", "thinking", "confused"]], ["Reactions to you", ["giggle", "dizzy", "petted"]], ["Special", ["party", "listening"]]];
+const ORDER = GROUPS.flatMap(g => g[1]);
+const base = o => Object.assign({ scarf: PROJ, stage: 2, fx: true }, o);
+let who = "bip";
+const big = { who, mood: "idle", scarf: PROJ, stage: 2, fx: true };
+const lives = [];
+const live = (el, get) => lives.push(Bip.live(el, get));
+live($("#big"), () => big);
+function setBig(m) { big.mood = m; big.phones = ["editing", "reading", "testing"].includes(m); $("#mood-l").textContent = who === "sarthak" ? `${m} → ${Bip.POSE[m]}` : m; }
+function setWho(w) {
+  who = w; big.who = w; setBig(big.mood);
+  document.querySelectorAll("[data-who]").forEach(b => b.setAttribute("aria-pressed", b.dataset.who === w));
+  document.querySelectorAll(".bip-only").forEach(s => s.classList.toggle("off", w !== "bip"));
+  $("#moods-sub").textContent = w === "bip" ? "Click any mood to see it big." : "Each of Bip's moods, shown with the buddy's closest pose. Click to see it big.";
+}
+document.querySelectorAll("[data-who]").forEach(b => b.onclick = e => { e.stopPropagation(); setWho(b.dataset.who); });
+const stage = $("#stage");
+stage.onclick = () => setBig(ORDER[(ORDER.indexOf(big.mood) + 1) % ORDER.length]);
+stage.onkeydown = e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); stage.click(); } };
+live(document.querySelector('[data-m="pair-bip"]'), () => base({ who: "bip", mood: "idle" }));
+live(document.querySelector('[data-m="pair-sarthak"]'), () => ({ who: "sarthak", mood: "idle" }));
+
+const cell = (get, title, text, onclick) => {
+  const b = document.createElement(onclick ? "button" : "div"); b.className = "cell";
+  b.innerHTML = `<span class="box"><span class="mascot"></span></span><b>${title}</b><span>${text}</span>`;
+  if (onclick) b.onclick = onclick;
+  live(b.querySelector(".mascot"), get); return b;
+};
+GROUPS.forEach(([g, ms]) => {
+  $("#moods").insertAdjacentHTML("beforeend", `<div class="group">${g}</div>`);
+  ms.forEach(m => $("#moods").append(cell(() => base({ who, mood: m, phones: ["editing", "reading", "testing"].includes(m) }), INFO[m][0], INFO[m][1], () => { setBig(m); stage.scrollIntoView({ behavior: "smooth", block: "center" }); })));
+});
+Bip.POSES.forEach(p => $("#poses").append(cell(() => ({ who: "sarthak", mood: Object.keys(Bip.POSE).find(k => Bip.POSE[k] === p) }), p[0].toUpperCase() + p.slice(1), POSE_INFO[p])));
+Object.keys(Bip.THEMES).forEach(t => $("#colours").append(cell(() => base({ who: "bip", mood: "idle", theme: t, fx: false }), t[0].toUpperCase() + t.slice(1), t === "peach" ? "The default." : t === "charcoal" ? "Sarthak-style eyes." : "Pick it in settings.")));
+[[{ mood: "idle", scarf: { c: "#ef7d32", d: "#b9581b" }, stage: 0 }, "Scarf", "In the project's colour."],
+ [{ mood: "editing", stage: 0, phones: true }, "Headphones", "After 45 minutes of deep work."],
+ [{ mood: "party", stage: 0 }, "Party hat", "Milestones."],
+ [{ mood: "sleepy", stage: 0 }, "Night cap", "Sleepy, late at night."],
+ [{ mood: "idle", stage: 1 }, "Streak: bud", "A few days in a row."],
+ [{ mood: "idle", stage: 2 }, "Streak: flower", "About a week."],
+ [{ mood: "proud", stage: 3 }, "Streak: two flowers", "Two weeks or more."],
+ [{ mood: "idle", scarf: null, stage: 0 }, "Nothing", "Every accessory can be turned off."]].forEach(([o, t, d]) => $("#accessories").append(cell(() => base(Object.assign({ who: "bip", fx: false }, o)), t, d)));
+[24, 48, 96, 160].forEach(px => { const fg = document.createElement("figure"); fg.innerHTML = `<span class="mascot" style="width:${px}px;aspect-ratio:200/190"></span><figcaption>${px}px${px === 24 ? " · avatar" : px === 48 ? " · desk pet" : px === 96 ? " · dashboard" : " · hero"}</figcaption>`; $("#sizes").append(fg); live(fg.querySelector(".mascot"), () => base({ who, mood: "idle", fx: false })); });
+$("#theme").onclick = () => { const r = document.documentElement, dark = r.dataset.theme ? r.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches; r.dataset.theme = dark ? "light" : "dark"; };
+</script>
+</body>
+</html>
