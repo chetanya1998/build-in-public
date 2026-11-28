@@ -500,37 +500,77 @@ def attachment_path(repo, day):
     return str(brief) if brief.exists() else ""
 
 
+class EmailFailed(Exception):
+    """The email couldn't be sent: why, in plain words, and what to do about it."""
+
+    def __init__(self, reason, fix=""):
+        super().__init__(reason)
+        self.reason, self.fix = reason, fix
+
+
+def password_fix(cfg):
+    user, host = cfg.get("smtp_user", ""), cfg.get("smtp_host", "")
+    save = (f"security add-generic-password -U -s buildinpublic-smtp -a {user} -w"
+            if platform.system() == "Darwin" else "put it in ~/.config/buildinpublic/smtp-password (chmod 600)")
+    if "gmail" in host:
+        return ("Make a new app password at https://myaccount.google.com/apppasswords (changing your Google "
+                f"password, or deleting the app password, revokes it), then save it: {save}")
+    return f"Check the password for {user} on {host}, then save it again: {save}"
+
+
 def send(cfg, msg, attachment=""):
     how = method(cfg)
     if how == "mail-app":
         r = subprocess.run(["osascript", "-", cfg["to"], msg["Subject"], msg.get_body(("plain",)).get_content(),
                             attachment], input=MAIL_APP_SCRIPT, capture_output=True, text=True)
         if r.returncode:
-            sys.exit("Apple Mail couldn't send it. Check that Mail has an account set up, and allow "
-                     f"access when macOS asks (run notify.py --test from a terminal once).\n{r.stderr.strip()}")
+            raise EmailFailed(f"Apple Mail couldn't send it: {r.stderr.strip()[:160]}",
+                              "Check that Mail has an account set up, and allow access when macOS asks "
+                              "(run notify.py --test from a terminal once).")
     elif how == "sendmail":
         path = sendmail_path()
         if not path:
-            sys.exit("No sendmail found. Install and configure one (for example msmtp), or skip email.")
+            raise EmailFailed("No sendmail found on this computer.", "Install and configure one (for example msmtp), or skip email.")
         r = subprocess.run([path, "-t", "-oi"], input=msg.as_bytes(), capture_output=True)
         if r.returncode:
-            sys.exit(f"sendmail failed: {r.stderr.decode(errors='ignore').strip()}")
+            raise EmailFailed(f"sendmail failed: {r.stderr.decode(errors='ignore').strip()[:160]}",
+                              "Check your sendmail (msmtp) settings.")
     elif how == "smtp":
         host, port = cfg["smtp_host"], int(cfg.get("smtp_port") or 587)
-        password = smtp_password(cfg["smtp_user"])
+        try:
+            password = smtp_password(cfg["smtp_user"])
+        except SystemExit as e:  # no password saved, or a password file others can read
+            first = str(e.code).splitlines()[0]
+            raise EmailFailed(first if "chmod" in first else "No email password is saved.", password_fix(cfg)) from None
         ctx = ssl.create_default_context()
-        if cfg.get("security") == "ssl" or port == 465:
-            with smtplib.SMTP_SSL(host, port, context=ctx, timeout=30) as s:
-                s.login(cfg["smtp_user"], password)
-                s.send_message(msg)
-        else:
-            with smtplib.SMTP(host, port, timeout=30) as s:
+        step = "connect"
+        try:
+            if cfg.get("security") == "ssl" or port == 465:
+                s = smtplib.SMTP_SSL(host, port, context=ctx, timeout=30)
+            else:
+                s = smtplib.SMTP(host, port, timeout=30)
+                step = "secure"
                 s.starttls(context=ctx)
+            with s:
+                step = "sign-in"
                 s.login(cfg["smtp_user"], password)
+                step = "send"
                 s.send_message(msg)
+        except smtplib.SMTPAuthenticationError as e:
+            raise EmailFailed(f"{host} rejected the password for {cfg['smtp_user']} ({e.smtp_code}).", password_fix(cfg)) from None
+        except (smtplib.SMTPServerDisconnected, smtplib.SMTPResponseException) as e:
+            if step == "sign-in":  # Gmail just hangs up on a revoked app password
+                raise EmailFailed(f"{host} closed the connection while signing in as {cfg['smtp_user']}: "
+                                  "the saved password isn't accepted any more.", password_fix(cfg)) from None
+            raise EmailFailed(f"{host} stopped at the {step} step: {str(e)[:120]}", "Try again later; if it keeps "
+                              "happening, run notify.py --test from a terminal to see the full error.") from None
+        except (OSError, smtplib.SMTPException) as e:  # offline, DNS, timeout, TLS
+            raise EmailFailed(f"Couldn't reach {host}:{port} ({step}): {str(e)[:120] or type(e).__name__}",
+                              "Check you're online. The next run sends again; to resend this day now, "
+                              "run notify.py --date <that day>.") from None
     else:
-        sys.exit("No way to send email on this machine: no Apple Mail and no sendmail. "
-                 "Set up a sendmail (for example msmtp), or skip email; the desktop notification still works.")
+        raise EmailFailed("No way to send email on this machine: no Apple Mail and no sendmail.",
+                          "Set up a sendmail (for example msmtp), or skip email; the desktop notification still works.")
     return how
 
 
@@ -557,7 +597,10 @@ def main():
         if a.dry_run:
             print(f"(would send via {method(cfg)})\n{msg}")
             return
-        how = send(cfg, msg)
+        try:
+            how = send(cfg, msg)
+        except EmailFailed as e:
+            sys.exit(f"✗ Test email not sent: {e.reason}\n  Fix: {e.fix}")
         print(f"Test email sent to {cfg['to']} via {how}.")
         return
 
@@ -578,7 +621,18 @@ def main():
     if a.dry_run:
         print(f"(would send via {method(cfg)})\n{msg}")
         return
-    how = send(cfg, msg, attachment_path(repo, day))
+    err = repo / ".buildinpublic" / "daily" / str(day) / "email-error.txt"
+    try:
+        how = send(cfg, msg, attachment_path(repo, day))
+    except EmailFailed as e:
+        # say it where it'll be seen: the log, a file doctor reads, and a notification
+        err.write_text(f"time: {dt.datetime.now():%Y-%m-%d %H:%M}\nto: {cfg['to']}\nreason: {e.reason}\nfix: {e.fix}\n")
+        print(f"✗ Email not sent: {e.reason}\n  Fix: {e.fix}\n  The gist is saved in {err.parent}/gist.html")
+        if not a.no_desktop:
+            desktop("Build Your Product in Public: email not sent",
+                    f"{e.reason[:120]} The gist is saved on your Mac; run doctor.py for the fix.")
+        sys.exit(1)
+    err.unlink(missing_ok=True)
     print(f"Gist emailed to {cfg['to']} via {how}.")
 
 

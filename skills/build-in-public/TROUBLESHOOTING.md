@@ -123,6 +123,10 @@ claude -p "Reply with just OK" < /dev/null      # should print OK
 
 ## 7. Email
 
+**When an email isn't sent, the run says why:** `nightly.log` ends with `✗ Email not sent:` and a `Fix:` line, the same reason is saved in `daily/<date>/email-error.txt`, you get a desktop notification, and `doctor.py` lists every day that wasn't sent under **Last email**. The gist itself is always saved first, in `daily/<date>/gist.html`, so nothing is lost. After fixing it, resend a day with `notify.py --date <date>`.
+
+The most common cause: Gmail **closes the connection while signing in** (or says the password was rejected). The app password was revoked, usually because the Google account password changed. Make a new one at https://myaccount.google.com/apppasswords and save it with `security add-generic-password -U -s buildinpublic-smtp -a <you>@gmail.com -w`.
+
 **First, find out which method you use:** the doctor's `Email:` line says `via Apple Mail`, `via sendmail` or `via SMTP`. Settings live in `~/.config/buildinpublic/email.json`, shared by all your projects. To test the email on its own:
 
 ```sh

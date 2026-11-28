@@ -208,6 +208,32 @@ def check_email(cfg):
         fail("Email", "no Apple Mail or sendmail on this machine to send it with; remove email.json or set up msmtp")
 
 
+def check_last_email(repo, days=7):
+    """The latest email failure from nightly runs (daily/<day>/email-error.txt), unless a later day sent."""
+    daily = repo / ".buildinpublic" / "daily"
+    if not daily.is_dir():
+        return
+    recent = sorted((d for d in daily.iterdir() if d.is_dir() and re.fullmatch(r"\d{4}-\d\d-\d\d", d.name)),
+                    reverse=True)[:days]
+    for d in recent:
+        log = (d / "nightly.log").read_text(errors="ignore") if (d / "nightly.log").exists() else ""
+        if "Gist emailed to" in log and not (d / "email-error.txt").exists():
+            ok("Last email", f"sent for {d.name}")
+            return
+        crashed = re.search(r"^smtplib\.(\w+): (.*)$", log, re.M)  # runs from before email-error.txt existed
+        if (d / "email-error.txt").exists() or crashed:
+            if (d / "email-error.txt").exists():
+                info = dict(l.split(": ", 1) for l in (d / "email-error.txt").read_text().splitlines() if ": " in l)
+            else:
+                info = {"reason": f"the mail server stopped it ({crashed.group(1)}: {crashed.group(2)[:60]}).",
+                        "fix": "Usually a revoked app password: run notify.py --test to see, and make a new one."}
+            failed = [x.name for x in recent if (x / "email-error.txt").exists() or (
+                (x / "nightly.log").exists() and re.search(r"^smtplib\.\w+:", (x / "nightly.log").read_text(errors="ignore"), re.M))]
+            fail("Last email", f"not sent for {', '.join(sorted(failed))}: {info.get('reason', '?')} "
+                 f"Fix: {info.get('fix', 'run notify.py --test')} Then resend a day: notify.py --date <day>")
+            return
+
+
 def check_share(repo, cfg):
     section("Posts on GitHub")
     hook = repo / ".git" / "hooks" / "pre-commit"
@@ -320,6 +346,7 @@ def main():
     cfg = check_setup(repo)
     check_tools(cfg)
     check_email(cfg)
+    check_last_email(repo)
     check_share(repo, cfg)
     check_schedule(repo)
     check_sessions(repo, today)
